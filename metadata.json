@@ -1,0 +1,6 @@
+{
+  "name": "ViralBoost AI",
+  "description": "Zero-Drop Creator Growth Engine with AI content generator, streak rewards, diamond economy, and monetization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

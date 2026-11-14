@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ad-services-config>
+    <!-- Disable ad services measurement and topics attribution to prevent ServiceUnavailableException -->
+    <attribution allowAdPartnersToAccess="false" />
+    <topics allowAdPartnersToAccess="false" />
+</ad-services-config>

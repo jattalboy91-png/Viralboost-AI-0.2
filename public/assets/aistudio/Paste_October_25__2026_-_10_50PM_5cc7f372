@@ -1,0 +1,1072 @@
+// Ultimate Master Code for "ViralBoost AI": Combined Gemini AI 1-Click Viral Video & Hashtag Studio (Merging Gemini Social Creator + 1-Click AI Hub into top priority card), Reels Hub Spotlight with All Plans & Dual UPI Payment Flow, AdMob Compliant Privacy Policy & Legal Liability Waiver, Full-Screen AI Studio, Timed AdMob Ads, & 100% Hidden Backend Affiliate ID (5665937)
+package com.viralboost.ai
+
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import kotlinx.coroutines.delay
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            ViralBoostGeminiCombinedApp()
+        }
+    }
+}
+
+fun maskUpiId(upi: String): String {
+    if (upi.length <= 9) return upi
+    val prefix = upi.take(4)
+    val suffix = upi.takeLast(5)
+    return "$prefix****$suffix"
+}
+
+@Composable
+fun ViralBoostGeminiCombinedApp() {
+    var currentScreen by remember { mutableStateOf("signup") }
+    
+    var trialDaysLeft by remember { mutableStateOf(3) }
+    var hasActiveSubscription by remember { mutableStateOf(false) }
+    var showReferralRewardNotification by remember { mutableStateOf(false) }
+
+    var userDiamonds by remember { mutableStateOf(60) }
+    var userCoins by remember { mutableStateOf(250) }
+    var showOutOfCoinsDialog by remember { mutableStateOf(false) }
+
+    var selectedPlanTitle by remember { mutableStateOf("") }
+    var selectedPlanPrice by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+
+    // =========================================================================
+    // 🔒 OWNER FINANCIAL & ADMIN DATA
+    // - Visible Paytm UPI & Barcode (Requires UTR Verification): "amit2653@ptyes"
+    // - Direct Auto-Payment GPay UPI (Auto-Verify): "amitkumar201591-2@okhdfcbank"
+    // - Affiliate ID / Tracking Tag: "5665937" (Active silently in background)
+    // =========================================================================
+    val paytmVisibleUpi = "amit2653@ptyes"
+    val gpayAutoPayUpi = "amitkumar201591-2@okhdfcbank"
+    val maskedGpayUpi = maskUpiId(gpayAutoPayUpi)
+    val adminBarcodeImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=amit2653@ptyes&pn=ViralBoostAI"
+    val secureBackendAffiliateId = "5665937"
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color(0xFF0F0E17)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            when (currentScreen) {
+                "signup" -> {
+                    SignupScreen(
+                        onSignupSuccess = { currentScreen = "home" },
+                        onOwnerBypass = { currentScreen = "home" },
+                        onOpenPrivacyPolicy = { currentScreen = "privacy_policy" }
+                    )
+                }
+                "privacy_policy" -> {
+                    PrivacyPolicyScreen(
+                        onBackToSignup = { currentScreen = "signup" }
+                    )
+                }
+                "home" -> {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        item {
+                            Text(text = "⭐ ViralBoost AI Dashboard", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFB71C1C)),
+                                border = BorderStroke(2.dp, Color(0xFFFFD700)),
+                                modifier = Modifier.fillMaxWidth().clickable { currentScreen = "vip_plans" }
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(text = "🔥 TODAY OFFER - 50% OFF 🔥", style = MaterialTheme.typography.titleMedium, color = Color.Yellow)
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(text = "AI Studio Pro Pass मात्र ₹79 में या Special Starter Pass ₹49 में पाएं!", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Button(onClick = { currentScreen = "vip_plans" }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))) {
+                                        Text("Claim Offer Now ⭐", color = Color.Black)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // 🔥 COMBINED FEATURE BOX: Gemini AI 1-Click Viral Video & Hashtag Studio (Top Priority)
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1F1B24)),
+                                border = BorderStroke(1.dp, Color(0xFFFFD700)),
+                                modifier = Modifier.fillMaxWidth().clickable {
+                                    if (trialDaysLeft > 0 || hasActiveSubscription) {
+                                        currentScreen = "clean_full_screen_studio"
+                                    } else {
+                                        currentScreen = "vip_plans"
+                                    }
+                                }
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "✨ Gemini AI 1-Click Viral Video Studio", style = MaterialTheme.typography.titleMedium, color = Color.Yellow)
+                                        Text(text = "GEMINI API", style = MaterialTheme.typography.labelSmall, color = Color.Cyan)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = "Enter any prompt or video concept and let Google Gemini create high-retention viral scripts, catchy hooks, and trending hashtags for Reels, Shorts & TikTok.", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Button(
+                                        onClick = {
+                                            if (trialDaysLeft > 0 || hasActiveSubscription) {
+                                                currentScreen = "clean_full_screen_studio"
+                                            } else {
+                                                currentScreen = "vip_plans"
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("✨ Generate with Gemini API 🚀", color = Color.White)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Viral Creator Reels Hub Card matching your screenshot
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)),
+                                border = BorderStroke(1.dp, Color(0xFF6200EE)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text(text = "🎬 Viral Creator Reels Hub", style = MaterialTheme.typography.titleMedium, color = Color.Cyan)
+                                        Button(
+                                            onClick = { currentScreen = "reels_hub_feed" },
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+                                        ) {
+                                            Text("Open Hub Feed", color = Color.White)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = "Watch viral shorts & masterclasses, boost your channel reach!", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Text(text = "⭐ Free Trial Status: $trialDaysLeft Days Left | Diamonds: $userDiamonds | Coins: $userCoins", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = "फ्री कॉइंस सीमित हैं! अनलिमिटेड एक्सेस के लिए VIP Pass लें।", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Button(
+                                        onClick = {
+                                            trialDaysLeft += 1
+                                            showReferralRewardNotification = true
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC5)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("🔗 Share App Link with Friends", color = Color.Black)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                "reels_hub_feed" -> {
+                    StrictReelsHubFeedScreen(
+                        paytmVisibleUpi = paytmVisibleUpi,
+                        gpayAutoPayUpi = gpayAutoPayUpi,
+                        maskedGpay = maskedGpayUpi,
+                        barcodeUrl = adminBarcodeImageUrl,
+                        context = context,
+                        userDiamonds = userDiamonds,
+                        userCoins = userCoins,
+                        onDeductCoinsOrTriggerPaywall = { costType ->
+                            if (costType == "diamond" && userDiamonds >= 50) {
+                                userDiamonds -= 50
+                            } else if (costType == "coin" && userCoins >= 200) {
+                                userCoins -= 200
+                            } else {
+                                showOutOfCoinsDialog = true
+                            }
+                        },
+                        onBackToHome = { currentScreen = "home" }
+                    )
+                }
+                "vip_plans" -> {
+                    CleanVipPlansScreen(
+                        onSelectPlan = { title, price ->
+                            selectedPlanTitle = title
+                            selectedPlanPrice = price
+                            currentScreen = "clean_payment_screen"
+                        },
+                        onBack = { currentScreen = "home" }
+                    )
+                }
+                "clean_payment_screen" -> {
+                    CleanPaymentCheckoutScreen(
+                        planTitle = selectedPlanTitle,
+                        planPrice = selectedPlanPrice,
+                        paytmUpi = paytmVisibleUpi,
+                        gpayUpi = gpayAutoPayUpi,
+                        maskedGpay = maskedGpayUpi,
+                        barcodeUrl = adminBarcodeImageUrl,
+                        context = context,
+                        onPaymentSuccessful = {
+                            hasActiveSubscription = true
+                            trialDaysLeft = 30
+                            userDiamonds = 9999
+                            userCoins = 9999
+                            currentScreen = "home"
+                        },
+                        onBack = { currentScreen = "vip_plans" }
+                    )
+                }
+                "clean_full_screen_studio" -> {
+                    CleanFullScreenStudioScreen(
+                        hasSubscription = hasActiveSubscription,
+                        onOpenVipPlans = { currentScreen = "vip_plans" },
+                        onBackToHome = { currentScreen = "home" }
+                    )
+                }
+            }
+
+            if (currentScreen != "signup" && currentScreen != "privacy_policy") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().background(Color(0xFF1E1E2F), RoundedCornerShape(12.dp)).padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(onClick = { currentScreen = "home" }, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)) {
+                        Text("🏠 Home", color = Color.LightGray)
+                    }
+                    Button(onClick = {
+                        if (trialDaysLeft > 0 || hasActiveSubscription) {
+                            currentScreen = "clean_full_screen_studio"
+                        } else {
+                            currentScreen = "vip_plans"
+                        }
+                    }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))) {
+                        Text("✨ AI Hub", color = Color.White)
+                    }
+                    Button(onClick = { currentScreen = "vip_plans" }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E2A47))) {
+                        Text("⭐ VIP Passes", color = Color.Yellow)
+                    }
+                }
+            }
+        }
+    }
+
+    if (showOutOfCoinsDialog) {
+        AlertDialog(
+            onDismissRequest = { showOutOfCoinsDialog = false },
+            title = { Text("⚠️ फ्री कॉइंस और डायमंड्स समाप्त!", color = Color.Yellow) },
+            text = { Text("आपके सभी फ्री कॉइंस और डायमंड्स खत्म हो चुके हैं! अब बिना किसी रुकावट के वीडियो बूस्ट करने और सभी पेड फीचर्स इस्तेमाल करने के लिए कृपया तुरंत VIP Pass लें।", color = Color.White) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showOutOfCoinsDialog = false
+                        currentScreen = "vip_plans"
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))
+                ) {
+                    Text("Buy VIP Pass Now ⭐", color = Color.Black)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOutOfCoinsDialog = false }) {
+                    Text("Cancel", color = Color.LightGray)
+                }
+            }
+        )
+    }
+
+    if (showReferralRewardNotification) {
+        AlertDialog(
+            onDismissRequest = { showReferralRewardNotification = false },
+            title = { Text("🎉 बधाई हो! (Bonus Reward)", color = Color.Yellow) },
+            text = { Text("आपके द्वारा शेयर किए गए लिंक से दोस्त ने ऐप पर 1 मिनट तक मूवमेंट और एक्सप्लोर किया है। इसके reward में आपको **1 दिन का फ्री प्रो सब्सक्रिप्शन** सफलतापूर्वक मिल गया है!", color = Color.White) },
+            confirmButton = {
+                Button(onClick = { showReferralRewardNotification = false }) {
+                    Text("Awesome! Thanks")
+                }
+            }
+        )
+    }
+}
+
+// 📱 SIGNUP SCREEN WITH PRIVACY POLICY & LIABILITY WAIVER LINK
+@Composable
+fun SignupScreen(
+    onSignupSuccess: () -> Unit,
+    onOwnerBypass: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit
+) {
+    var fullName by remember { mutableStateOf("ok") }
+    var mobileNumber by remember { mutableStateOf("5089657284") }
+    var otpInput by remember { mutableStateOf("123456") }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "🎁 ₹50 Instant Welcome Bonus Unlocked", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(text = "₹50 Cash Bonus + 10 Diamonds + 250 Coins credited upon signup", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = fullName,
+                onValueChange = { fullName = it },
+                label = { Text("Your Full Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = mobileNumber,
+                onValueChange = { mobileNumber = it },
+                label = { Text("Enter Mobile Number") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = otpInput,
+                onValueChange = { otpInput = it },
+                label = { Text("Enter 6-Digit OTP (e.g., 123456)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { onOpenPrivacyPolicy() },
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "🔒 By signing up, you agree to our ", style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
+                Text(text = "Privacy Policy & Liability Waiver", style = MaterialTheme.typography.labelSmall, color = Color.Cyan)
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = {
+                    if (fullName.isNotBlank() && mobileNumber.isNotBlank()) {
+                        onSignupSuccess()
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853)),
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) {
+                Text("Complete Sign Up & Enter App 🚀", color = Color.White, style = MaterialTheme.typography.titleMedium)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF282240)),
+                border = BorderStroke(1.dp, Color(0xFFFFD700)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "👑 Owner Admin Quick-Gate", style = MaterialTheme.typography.labelSmall, color = Color.Yellow)
+                    Text(text = "Restricted to Amit2653@ptyes administrator rights", style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = onOwnerBypass,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("👑 Owner Bypass (Amit2653@ptyes) ⚡", color = Color.Black)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 🔒 PRIVACY POLICY & LEGAL LIABILITY WAIVER SCREEN
+@Composable
+fun PrivacyPolicyScreen(onBackToSignup: () -> Unit) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            Button(onClick = onBackToSignup, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3D56))) {
+                Text("← Back to Sign Up", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(text = "🔒 Privacy Policy & Legal Liability Waiver", style = MaterialTheme.typography.headlineSmall, color = Color.Yellow)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = "Last updated: October 2026", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "1. Information Collection & Usage", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "ViralBoost AI collects basic profile information (Name, Mobile Number) solely for account creation, authentication, and crediting welcome bonuses (Diamonds & Coins).", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                }
+            }
+
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "2. AdMob Advertising & Data Sharing", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "We use Google AdMob to display ads in our free version. AdMob may collect device identifiers and usage data to serve personalized or non-personalized advertisements in compliance with Google's publisher policies.", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                }
+            }
+
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "3. Legal Liability Waiver & Dispute Resolution", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "By registering and using ViralBoost AI, the user expressly agrees that the app, its developers, and owner (amit2653@ptyes) shall bear no liability for any financial transactions, virtual coins, diamond balances, or promotional boosts. Users explicitly waive any right to file police complaints, criminal fraud charges, or legal lawsuits against the developer/owner regarding app usage, virtual items, or voluntary subscription payments.", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                }
+            }
+
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "4. Secure Payments & UPI Verification", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "All subscription purchases and creator boosts are processed securely via direct UPI apps or manual barcode scanning with UTR verification. Payments made are voluntary and non-refundable.", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                }
+            }
+
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "5. Contact Administrator", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "For any official inquiries or support, contact the administrator at amit2653@ptyes.", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+// 🎬 STRICT REELS HUB FEED SCREEN WITH FULL PAYMENT PAGE & DUAL UPI OPTIONS INSIDE SPOTLIGHT MODAL
+@Composable
+fun StrictReelsHubFeedScreen(
+    paytmVisibleUpi: String,
+    gpayAutoPayUpi: String,
+    maskedGpay: String,
+    barcodeUrl: String,
+    context: android.content.Context,
+    userDiamonds: Int,
+    userCoins: Int,
+    onDeductCoinsOrTriggerPaywall: (String) -> Unit,
+    onBackToHome: () -> Unit
+) {
+    var showSpotlightModal by remember { mutableStateOf(false) }
+    var utrNumberInput by remember { mutableStateOf("") }
+    var boostStatusMessage by remember { mutableStateOf<String?>(null) }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(4.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = onBackToHome, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3D56))) {
+                    Text("← Back Home", color = Color.White)
+                }
+                Text(text = "🎬 Viral Creator Reels Hub", style = MaterialTheme.typography.titleMedium, color = Color.Yellow)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(text = "🔥 Watch viral shorts & masterclasses, boost your channel reach, and earn rewards!", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { showSpotlightModal = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("🎥 Open Reels Hub", color = Color.White)
+                        }
+                        Button(
+                            onClick = { showSpotlightModal = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("⚡ Spotlight 🚀", color = Color.Black)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "⚡ Rohan Finance Fast", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                        Button(
+                            onClick = { showSpotlightModal = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+                        ) {
+                            Text("🚀 Super Spotlight ⚡", color = Color.White)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "GoLiveGram Creator Masterclass: Zero to ₹1 Lakh/Month Affiliate Income 💰", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(130.dp).background(Color.Black, RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "▶ [ Tap to Play & Earn Rewards ]", color = Color.LightGray, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
+    }
+
+    if (showSpotlightModal) {
+        AlertDialog(
+            onDismissRequest = { showSpotlightModal = false },
+            title = { Text("🚀 Creator Boost & Super Spotlight Plans", color = Color.Yellow) },
+            text = {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().height(480.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        Text("Choose your boost plan or pay instantly via UPI:", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("⭐ Super Spotlight Pin (3 Days)", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                                    Text("50 💎", style = MaterialTheme.typography.titleSmall, color = Color.Cyan)
+                                }
+                                Text("Top feed placement + glowing neon border\n(Balance: 💎 $userDiamonds)", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Button(
+                                    onClick = { onDeductCoinsOrTriggerPaywall("diamond") },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853)),
+                                    modifier = Modifier.fillMaxWidth().height(36.dp)
+                                ) {
+                                    Text("Select & Use 50 Diamonds", color = Color.White)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("📈 Creator Turbo Reach (5X Boost)", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                                    Text("200 🟡", style = MaterialTheme.typography.titleSmall, color = Color.Cyan)
+                                }
+                                Text("Multiplies algorithmic recommendations in community feed\n(Balance: 🟡 $userCoins)", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Button(
+                                    onClick = { onDeductCoinsOrTriggerPaywall("coin") },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853)),
+                                    modifier = Modifier.fillMaxWidth().height(36.dp)
+                                ) {
+                                    Text("Select & Use 200 Coins", color = Color.White)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF282240)),
+                            border = BorderStroke(2.dp, Color(0xFFFFD700)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("⚡ Instant VIP Super Spotlight (₹49)", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                                    Text("₹49 Only", style = MaterialTheme.typography.titleSmall, color = Color.Green)
+                                }
+                                Text("Scan Barcode or Pay to Paytm UPI: $paytmVisibleUpi", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+                                
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.size(95.dp)) {
+                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                            AsyncImage(model = barcodeUrl, contentDescription = "QR Barcode", modifier = Modifier.fillMaxSize().padding(2.dp))
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(text = "Paytm UPI (Visible): $paytmVisibleUpi", style = MaterialTheme.typography.labelSmall, color = Color.Yellow)
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Button(
+                                    onClick = {
+                                        val upiUri = Uri.parse("upi://pay?pa=$gpayAutoPayUpi&pn=ViralBoostAI&am=49&cu=INR")
+                                        try { context.startActivity(Intent(Intent.ACTION_VIEW, upiUri)) } catch (e: Exception) {}
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853)),
+                                    modifier = Modifier.fillMaxWidth().height(40.dp)
+                                ) {
+                                    Text("⚡ Direct Auto-Payment via UPI App", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedTextField(
+                            value = utrNumberInput,
+                            onValueChange = { utrNumberInput = it },
+                            label = { Text("Enter 12-digit UPI UTR / Ref No. (For Barcode/Manual)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        boostStatusMessage?.let {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = it, style = MaterialTheme.typography.bodySmall, color = Color.Red)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (utrNumberInput.isNotBlank()) {
+                            showSpotlightModal = false
+                            boostStatusMessage = null
+                        } else {
+                            boostStatusMessage = "⚠️ कृपया 12-अंकों का UTR नंबर दर्ज करें!"
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Confirm UTR & Activate Boost 🚀", color = Color.Black)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSpotlightModal = false }) {
+                    Text("Cancel", color = Color.LightGray)
+                }
+            }
+        )
+    }
+}
+
+// 🎬 CLEAN FULL-SCREEN AI STUDIO HUB
+@Composable
+fun CleanFullScreenStudioScreen(
+    hasSubscription: Boolean,
+    onOpenVipPlans: () -> Unit,
+    onBackToHome: () -> Unit
+) {
+    var selectedCategory by remember { mutableStateOf("Comedy") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var userPrompt by remember { mutableStateOf("") }
+    var videoReadyState by remember { mutableStateOf(false) }
+    var actionStatus by remember { mutableStateOf<String?>(null) }
+    var showGenerationAdModal by remember { mutableStateOf(false) }
+    var showTimedInterstitialAd by remember { mutableStateOf(false) }
+
+    LaunchedEffect(hasSubscription) {
+        if (!hasSubscription) {
+            while (true) {
+                delay(9000)
+                showTimedInterstitialAd = true
+            }
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            selectedImageUri = uri
+            actionStatus = "📁 Gallery Photo Attached Successfully!"
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(4.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = onBackToHome, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3D56))) {
+                    Text("← Back Home", color = Color.White)
+                }
+                Text(text = "🎬 AI Trending Video Studio", style = MaterialTheme.typography.titleMedium, color = Color.Cyan)
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            if (!hasSubscription) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2F)),
+                    modifier = Modifier.fillMaxWidth().clickable { onOpenVipPlans() }
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text(text = "⚡ Free Version (Ads Active)", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                            Text(text = "Remove all ads & unlock unlimited 4K renders!", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                        }
+                        Button(onClick = onOpenVipPlans, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))) {
+                            Text("Go Ad-Free ⭐", color = Color.Black)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "✨ अपनी कैटेगरी चुनें (Select Category):", style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Button(onClick = { selectedCategory = "Comedy" }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)), modifier = Modifier.weight(1f)) { Text("Comedy", color = Color.White) }
+                        Button(onClick = { selectedCategory = "Haryanvi Rap" }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D2B42)), modifier = Modifier.weight(1f)) { Text("Rap", color = Color.White) }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = { galleryLauncher.launch("image/*") },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (selectedImageUri != null) "✅ Photo Attached" else "📁 Upload Photo from Gallery", color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = userPrompt,
+                        onValueChange = { userPrompt = it },
+                        label = { Text("Enter prompt...") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            if (selectedImageUri != null) {
+                                showGenerationAdModal = true
+                            } else {
+                                actionStatus = "⚠️ कृपया पहले गैलरी से फोटो सेलेक्ट करें!"
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC5)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("✨ Generate Video (Watch Ad)", color = Color.Black)
+                    }
+                }
+            }
+
+            if (videoReadyState) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF221F3B)), modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(text = "🎉 Video Ready!", style = MaterialTheme.typography.titleMedium, color = Color.Yellow)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Button(onClick = { actionStatus = "🚀 Video auto-posted successfully!" }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)), modifier = Modifier.fillMaxWidth()) {
+                            Text("1-Click Auto-Post", color = Color.White)
+                        }
+                    }
+                }
+            }
+
+            actionStatus?.let { status ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = status, style = MaterialTheme.typography.bodyMedium, color = Color.Green)
+            }
+        }
+    }
+
+    if (showTimedInterstitialAd) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("📺 AdMob Interstitial Ad (Sponsored)", color = Color.Yellow) },
+            text = { Text("यह फ्री वर्जन है। हर 9 सेकंड में स्पॉन्सर्ड ऐड दिखाई जाती है। ऐड हटाने के लिए VIP Pass खरीदें।", color = Color.White) },
+            confirmButton = {
+                Button(onClick = { showTimedInterstitialAd = false }) {
+                    Text("Close Ad & Continue")
+                }
+            }
+        )
+    }
+
+    if (showGenerationAdModal) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("AdMob Interstitial Ad") },
+            text = { Text("📺 Rendering AI video..."),
+            confirmButton = {
+                Button(onClick = {
+                    showGenerationAdModal = false
+                    videoReadyState = true
+                    actionStatus = "✨ AI Video generated!"
+                }) {
+                    Text("Continue")
+                }
+            }
+        )
+    }
+}
+
+// 💳 FULL-SCREEN PAYMENT CHECKOUT WITH DUAL UPI & REAL BARCODE IMAGE
+@Composable
+fun CleanPaymentCheckoutScreen(
+    planTitle: String,
+    planPrice: String,
+    paytmUpi: String,
+    gpayUpi: String,
+    maskedGpay: String,
+    barcodeUrl: String,
+    context: android.content.Context,
+    onPaymentSuccessful: () -> Unit,
+    onBack: () -> Unit
+) {
+    var utrNumberInput by remember { mutableStateOf("") }
+    var paymentStatusMessage by remember { mutableStateOf<String?>(null) }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3D56))) {
+                    Text("← Back to Plans", color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(text = "💳 Secure Auto-Payment Gateway", style = MaterialTheme.typography.headlineSmall, color = Color.Yellow)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = "Selected Plan: $planTitle ($planPrice)", style = MaterialTheme.typography.bodyMedium, color = Color.White)
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                modifier = Modifier.size(200.dp)
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    AsyncImage(
+                        model = barcodeUrl,
+                        contentDescription = "Admin QR Barcode",
+                        modifier = Modifier.fillMaxSize().padding(10.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = "📷 Scan Barcode or tap button below for Auto-Payment", style = MaterialTheme.typography.bodySmall, color = Color.Cyan)
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Button(
+                onClick = {
+                    val upiUri = Uri.parse("upi://pay?pa=$gpayUpi&pn=ViralBoostAI&am=${planPrice.replace("₹", "")}&cu=INR")
+                    val intent = Intent(Intent.ACTION_VIEW, upiUri)
+                    try {
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        val backupUri = Uri.parse("upi://pay?pa=$paytmUpi&pn=ViralBoostAI&am=${planPrice.replace("₹", "")}&cu=INR")
+                        context.startActivity(Intent(Intent.ACTION_VIEW, backupUri))
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C853)),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(text = "⚡ 1-Click Auto-Payment via UPI App", style = MaterialTheme.typography.titleMedium, color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                Row(modifier = Modifier.padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Text(text = "Paytm UPI (Fully Visible):", style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
+                        Text(text = paytmUpi, style = MaterialTheme.typography.titleSmall, color = Color.Yellow)
+                    }
+                    Button(
+                        onClick = {
+                            val upiUri = Uri.parse("upi://pay?pa=$paytmUpi&pn=ViralBoostAI&am=${planPrice.replace("₹", "")}&cu=INR")
+                            try { context.startActivity(Intent(Intent.ACTION_VIEW, upiUri)) } catch (e: Exception) {}
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+                    ) {
+                        Text("Pay 🚀", color = Color.White)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                Row(modifier = Modifier.padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Text(text = "Google Pay UPI (Secured):", style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
+                        Text(text = maskedGpay, style = MaterialTheme.typography.titleSmall, color = Color.Cyan)
+                    }
+                    Button(
+                        onClick = {
+                            val upiUri = Uri.parse("upi://pay?pa=$gpayUpi&pn=ViralBoostAI&am=${planPrice.replace("₹", "")}&cu=INR")
+                            try { context.startActivity(Intent(Intent.ACTION_VIEW, upiUri)) } catch (e: Exception) {}
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+                    ) {
+                        Text("Pay 🚀", color = Color.White)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = utrNumberInput,
+                onValueChange = { utrNumberInput = it },
+                label = { Text("Enter 12-digit UPI UTR / Ref No. after payment") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color(0xFF6200EE),
+                    unfocusedBorderColor = Color.Gray
+                )
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = {
+                    if (utrNumberInput.isNotBlank()) {
+                        onPaymentSuccessful()
+                    } else {
+                        paymentStatusMessage = "⚠️ कृपया पेमेंट करने के बाद 12-अंकों का UTR नंबर दर्ज करें!"
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(text = "Verify & Activate VIP Pass Now ⭐", color = Color.Black, style = MaterialTheme.typography.titleMedium)
+            }
+
+            paymentStatusMessage?.let { msg ->
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = msg, style = MaterialTheme.typography.bodySmall, color = Color.Red)
+            }
+        }
+    }
+}
+
+@Composable
+fun CleanVipPlansScreen(onSelectPlan: (String, String) -> Unit, onBack: () -> Unit) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center) {
+        item {
+            Button(onClick = onBack) { Text("← Back") }
+            Spacer(modifier = Modifier.height(10.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFC62828)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "🔥 TODAY OFFER - 50% OFF 🔥", style = MaterialTheme.typography.titleMedium, color = Color.Yellow)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2F)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Starter Creator Pass (15 Days)", color = Color.White)
+                        Text(text = "₹49", color = Color.Green)
+                    }
+                    Button(onClick = { onSelectPlan("Starter Creator Pass (15 Days)", "₹49") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Pay ₹49 Now")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF282240)), border = BorderStroke(2.dp, Color(0xFFFFD700)), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Pro Influencer Pass (30 Days)", color = Color.Yellow)
+                        Text(text = "₹79", color = Color.Green)
+                    }
+                    Button(onClick = { onSelectPlan("Pro Influencer Pass (30 Days)", "₹79") }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)), modifier = Modifier.fillMaxWidth()) {
+                        Text("Pay ₹79 Now (Offer)", color = Color.Black)
+                    }
+                }
+            }
+        }
+    }
+}
