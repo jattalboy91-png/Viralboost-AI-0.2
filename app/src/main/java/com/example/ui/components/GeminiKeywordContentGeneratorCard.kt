@@ -69,7 +69,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.BuildConfig
 import com.example.data.service.GeminiSocialContentService
 import com.example.data.service.SocialContentResult
 import com.example.ui.theme.BrandPurple
@@ -85,8 +84,8 @@ private val AccentPink = Color(0xFFEC4899)
 
 /**
  * Reusable Compose UI component that allows users to input keywords (typed or chip-selected),
- * customize platform & format, and trigger an AI content generation request via the configured
- * Gemini API ([GeminiSocialContentService] using `BuildConfig.GEMINI_API_KEY`).
+ * customize platform & format, and trigger an AI content generation request via
+ * Firebase AI Logic (`Firebase.ai.generativeModel("gemini-3.8-flash")`).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -101,14 +100,7 @@ fun GeminiKeywordContentGeneratorCard(
     val geminiService = remember { GeminiSocialContentService() }
     val triggerInterstitial = rememberMediatedInterstitialTrigger(isVip = isVip)
 
-    val apiKeyConfigured = remember {
-        try {
-            val key = BuildConfig.GEMINI_API_KEY
-            key.isNotBlank() && key != "MY_GEMINI_API_KEY"
-        } catch (_: Throwable) {
-            false
-        }
-    }
+    val apiKeyConfigured = true
 
     var keywordInput by remember { mutableStateOf("") }
     val activeKeywords = remember {

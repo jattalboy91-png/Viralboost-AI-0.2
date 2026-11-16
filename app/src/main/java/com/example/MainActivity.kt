@@ -124,8 +124,10 @@ class MainActivity : ComponentActivity() {
     private val viewModel: ViralBoostViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // STEP 1: Configure App Check with launch intent before any UI, ViewModels, or Firebase operations
+        com.example.util.configureAppCheck(this, intent)
+        enableEdgeToEdge()
         // Ensure WebView cache directories exist to prevent Chromium simple cache backend warnings
         try {
             val codeCacheDir = java.io.File(cacheDir, "WebView/Default/HTTP Cache/Code Cache")
