@@ -1,58 +1,1545 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="hi" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ViralBoost AI - Download App</title>
-    <style>
-        body {
-            background-color: #0F0E17;
-            color: #FFFFFF;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0F0B21" />
+  <title>ViralBoost AI — 1-Click AI Video, Haryanvi Rap, Comedy & Multi-Platform Studio</title>
+  <meta name="description" content="1-Click AI Video & Viral Hashtag Generator — कॉमेडी, हरियाणवी रैप, मोटिवेशन और शॉर्ट्स बनाएं और 6 प्लेटफॉर्म पर एक साथ वायरल करें!" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans Devanagari', 'sans-serif'],
+          },
+          colors: {
+            cyber: {
+              bg: '#090717',
+              card: '#13102B',
+              elevated: '#1C1740',
+              purple: '#7C3AED',
+              pink: '#FF2E93',
+              cyan: '#00E5FF',
+              gold: '#FFD700',
+              emerald: '#10B981',
+            }
+          }
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #1E1E2F;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        h1 { color: #FFD700; }
-        p { color: #CCCCCC; }
-        .btn {
-            display: inline-block;
-            background-color: #00C853;
-            color: #FFFFFF;
-            padding: 15px 30px;
-            font-size: 18px;
-            text-decoration: none;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        .btn:hover { background-color: #009624; }
-        .footer {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #888888;
-        }
-    </style>
+      }
+    };
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Inter', 'Noto Sans Devanagari', sans-serif; }
+    .glow-border {
+      background: linear-gradient(135deg, rgba(255,215,0,0.9), rgba(255,46,147,0.9), rgba(0,229,255,0.9), rgba(124,58,237,0.9));
+      padding: 2px;
+      border-radius: 1.35rem;
+    }
+    .pulse-rocket { animation: pulseRocket 2s ease-in-out infinite; }
+    @keyframes pulseRocket {
+      0%, 100% { transform: scale(1) translateY(0px); }
+      50% { transform: scale(1.06) translateY(-2px); }
+    }
+    .shimmer-btn {
+      background: linear-gradient(90deg, #FF2E93, #7C3AED, #0284C7, #FF2E93);
+      background-size: 200% 100%;
+      animation: shimmerMove 4s linear infinite;
+    }
+    @keyframes shimmerMove {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeUp 0.25s ease-out; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900 dark:bg-cyber-bg dark:text-white min-h-screen transition-colors duration-300 pb-24">
 
-    <div class="container">
-        <h1>🚀 ViralBoost AI</h1>
-        <p>1-Click AI Video & Viral Hashtag Generator — कॉमेडी, हरियाणवी रैप या शॉर्ट्स बनाएं सीधे अपने मोबाइल पर!</p>
-        
-        <a href="YOUR_APK_DOWNLOAD_LINK_HERE" class="btn">📥 Download APK Now</a>
-        
-        <div class="footer">
-            <p>Secure Payments & AdMob Compliant • Protected by Legal Liability Waiver</p>
+  <!-- Sticky Top App Bar with Dynamic Theme Switcher & Live Wallet -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-white/85 dark:bg-[#0D0A1F]/90 border-b border-slate-200 dark:border-purple-500/30">
+    <div class="max-w-3xl mx-auto px-3.5 py-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 via-purple-600 to-cyan-400 p-[2px] shadow-lg shadow-purple-500/30 shrink-0">
+          <div class="w-full h-full rounded-[10px] bg-[#12092E] flex items-center justify-center text-lg">
+            🚀
+          </div>
         </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-black text-sm sm:text-base tracking-tight truncate">ViralBoost AI</h1>
+            <span id="headerVipBadge" class="hidden px-1.5 py-0.5 text-[9px] font-black rounded bg-amber-400 text-black">VIP PRO</span>
+          </div>
+          <p class="text-[10px] font-semibold text-cyan-600 dark:text-cyber-cyan truncate">Live Creator Studio • Multi-Platform</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <button onclick="switchTab('earn')" class="flex items-center gap-1 px-2 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-600 dark:text-cyan-300 text-xs font-extrabold">
+          <span>💎</span><span id="walletDiamonds">10</span>
+        </button>
+        <button onclick="switchTab('earn')" class="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-600 dark:text-amber-300 text-xs font-extrabold">
+          <span>🪙</span><span id="walletCoins">250</span>
+        </button>
+        <button onclick="openSettingsModal()" title="API & Settings" class="p-2 rounded-full bg-slate-200 dark:bg-cyber-elevated text-slate-700 dark:text-slate-200 hover:scale-105 transition">
+          ⚙️
+        </button>
+        <button onclick="toggleTheme()" id="themeToggleBtn" title="Switch Light/Dark Mode" class="p-2 rounded-full bg-purple-600/15 dark:bg-amber-400/15 border border-purple-500/30 dark:border-amber-400/40 text-xs font-bold hover:scale-105 transition">
+          ☀️
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Responsive Container -->
+  <main class="max-w-3xl mx-auto px-3.5 pt-3 space-y-4">
+
+    <!-- Live Earnings Ticker -->
+    <div class="rounded-xl bg-indigo-50 dark:bg-[#1A1642] border border-indigo-200 dark:border-indigo-500/50 px-3 py-2 flex items-center gap-2 shadow-sm">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+      <p id="liveTickerText" class="text-xs font-semibold text-indigo-900 dark:text-indigo-200 truncate">
+        🔥 राहुल ने 1-Click AI वीडियो शेयर करके Instagram पर 18K व्यूज और ₹350 बोनस पाया!
+      </p>
     </div>
 
+    <!-- ========================================================= -->
+    <!-- TAB 1: HOME DASHBOARD (Hero Multi-Platform + Quick Studio) -->
+    <!-- ========================================================= -->
+    <section id="tab-home" class="tab-panel active space-y-4">
+
+      <!-- #1 FRONT & TOP HERO: One-Click to Share Video Multi-Platform -->
+      <div class="glow-border shadow-2xl shadow-purple-900/30">
+        <div class="rounded-[1.25rem] bg-gradient-to-b from-[#291054] via-[#150B36] to-[#0B0E24] text-white p-4 sm:p-5 space-y-4">
+
+          <!-- Top Crown Ribbon -->
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-wide bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white shadow">
+              👑 #1 TOP VIRAL FEATURE • 6 PLATFORMS
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-950/90 border border-emerald-400 text-emerald-300">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span> +10 🪙 & +4 💎 per post
+            </span>
+          </div>
+
+          <!-- Hero Title & Animated Rocket -->
+          <div class="flex items-start gap-3">
+            <div class="pulse-rocket w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-600 to-cyan-400 border-2 border-amber-300 flex items-center justify-center text-2xl shrink-0 shadow-lg shadow-pink-500/30">
+              🚀
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <h2 class="text-lg sm:text-xl font-black leading-tight text-white">One-Click to Share Video Multi-Platform</h2>
+                <span class="px-2 py-0.5 rounded bg-emerald-500 text-[9px] font-black text-white">VIRAL 🚀</span>
+              </div>
+              <p class="text-xs font-semibold text-cyan-300 mt-1 leading-relaxed">
+                एक क्लिक में Instagram, YouTube, Facebook, Telegram और WhatsApp पर एक साथ वीडियो शेयर करें!
+              </p>
+            </div>
+          </div>
+
+          <!-- Interactive 6-Platform Showcase Strip -->
+          <div id="platformChipStrip" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+
+          <!-- 4 Metric Pills -->
+          <div class="grid grid-cols-4 gap-2 text-center">
+            <div class="rounded-xl bg-[#1A1438] border border-amber-400/30 py-2 px-1 text-[10px] font-extrabold text-amber-300">⚡ 10X Reach</div>
+            <div class="rounded-xl bg-[#1A1438] border border-cyan-400/30 py-2 px-1 text-[10px] font-extrabold text-cyan-300">🌐 6 Networks</div>
+            <div class="rounded-xl bg-[#1A1438] border border-pink-400/30 py-2 px-1 text-[10px] font-extrabold text-pink-300">🤖 AI Viral Tags</div>
+            <div class="rounded-xl bg-[#1A1438] border border-emerald-400/30 py-2 px-1 text-[10px] font-extrabold text-emerald-300">🆓 Free Post</div>
+          </div>
+
+          <!-- Hindi Tagline Callout -->
+          <div class="rounded-xl bg-[#2A193D] border border-amber-400/60 p-3 flex items-center gap-2.5">
+            <span class="text-xl shrink-0">⚡</span>
+            <p class="text-xs font-extrabold text-amber-200 leading-snug">
+              फ्री में वीडियो पोस्ट करें मल्टी-प्लेटफॉर्म पर, और तेजी से वायरल होने के लिए AI की मदद लें!
+            </p>
+          </div>
+
+          <!-- BUTTON 1: Free Post (Upload Video + Manual Details) -->
+          <div class="rounded-2xl bg-[#172033] border border-sky-400/60 p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs sm:text-sm font-black text-white">✏️ Button 1: Free Post (Manual Details)</span>
+              <span class="px-2 py-0.5 rounded bg-sky-600 text-[9px] font-black">100% FREE</span>
+            </div>
+
+            <!-- Video File Upload -->
+            <label class="block cursor-pointer rounded-xl border border-dashed border-sky-400/70 bg-sky-950/30 hover:bg-sky-900/40 transition p-3 text-center">
+              <input type="file" id="videoUploadInput" accept="video/*" class="hidden" onchange="handleVideoSelected(event)" />
+              <div id="videoUploadLabel" class="text-xs font-bold text-sky-300">
+                📁 गैलरी से वीडियो चुनें (Select Video MP4 / Reels / Shorts)
+              </div>
+            </label>
+            <video id="uploadedVideoPreview" controls class="hidden w-full max-h-56 rounded-xl border border-emerald-400/60 bg-black"></video>
+
+            <!-- Inputs -->
+            <div class="space-y-2">
+              <input id="crossTitle" type="text" placeholder="Video Title (जैसे: 3 Secret Hacks to 10X Your Reach 🔥)"
+                class="w-full rounded-xl bg-[#0F172A] border border-slate-600 focus:border-sky-400 outline-none px-3 py-2.5 text-xs text-white placeholder-slate-400" />
+              <input id="crossTags" type="text" value="#ViralBoostAI #ReelsIndia #YouTubeShorts #Trending #Comedy #HaryanviRap"
+                placeholder="Viral Hashtags (#ViralReels #Trending)"
+                class="w-full rounded-xl bg-[#0F172A] border border-slate-600 focus:border-sky-400 outline-none px-3 py-2.5 text-xs text-white placeholder-slate-400" />
+              <textarea id="crossDesc" rows="2" placeholder="Description या स्क्रिप्ट लिखें..."
+                class="w-full rounded-xl bg-[#0F172A] border border-slate-600 focus:border-sky-400 outline-none px-3 py-2 text-xs text-white placeholder-slate-400"></textarea>
+            </div>
+
+            <button onclick="saveManualPostDetails()" class="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 font-bold text-xs text-white transition shadow">
+              🆓 Save Free Manual Details & Prepare Broadcast
+            </button>
+          </div>
+
+          <!-- BUTTON 2: AI Viral Optimization & Direct UPI Plans -->
+          <div class="rounded-2xl bg-[#22173D] border border-purple-500 p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs sm:text-sm font-black text-white">✨ Button 2: AI Viral Video Optimizer</span>
+              <span class="px-2 py-0.5 rounded bg-purple-600 text-[9px] font-black">UPI / AI PASS</span>
+            </div>
+            <p class="text-[11px] text-purple-200 leading-relaxed">
+              ऑटोमैटिक AI वायरल हुक, हाई-CTR टाइटल और ट्रेंडिंग हैशटैग जनरेट करने के लिए AI Optimizer चलाएं या ₹49/₹79 पास अनलॉक करें।
+            </p>
+            <div class="grid grid-cols-2 gap-2.5">
+              <button onclick="openUpiModal('15-Day Viral AI Video Pass', 49, 15)" class="text-left rounded-xl bg-[#2B1C4B] border border-purple-500/80 p-3 hover:border-amber-300 transition">
+                <div class="text-[9px] font-black text-sky-300">15 DAYS PASS</div>
+                <div class="text-lg font-black text-white">₹49</div>
+                <div class="text-[10px] text-purple-200 mt-0.5">AI Viral Titles + Tags</div>
+              </button>
+              <button onclick="openUpiModal('1-Month Creator Pro Pass', 79, 30)" class="text-left rounded-xl bg-[#381A45] border border-amber-400 p-3 hover:scale-[1.01] transition">
+                <div class="flex items-center justify-between">
+                  <span class="text-[9px] font-black text-amber-300">1 MONTH PRO</span>
+                  <span class="text-[8px] font-black text-emerald-400">SAVE 50%</span>
+                </div>
+                <div class="text-lg font-black text-white">₹79</div>
+                <div class="text-[10px] text-amber-100 mt-0.5">Unlimited Multi-Post</div>
+              </button>
+            </div>
+            <button onclick="runQuickAiCrossOptimize()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:brightness-110 font-extrabold text-xs text-white shadow-lg transition">
+              🤖 Auto-Fill Viral AI Title, Tags & Script Instantly ⚡
+            </button>
+          </div>
+
+          <!-- Mandatory Viral Affiliate Footer Preview -->
+          <div class="rounded-xl bg-[#0F131D] border border-slate-700 p-3 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold text-amber-400">🔗 Smart Viral Affiliate Footer (Auto-Attached):</span>
+              <span id="activeAffiliateBadge" class="text-[9px] font-bold text-emerald-400">Tag: 5665937 Active</span>
+            </div>
+            <p id="affiliateFooterPreview" class="text-[10px] text-teal-300 whitespace-pre-line leading-relaxed"></p>
+          </div>
+
+          <!-- FINAL ACTION: POST TO GO VIRAL -->
+          <button onclick="postToGoViral()" class="shimmer-btn w-full py-3.5 rounded-2xl font-black text-sm text-white shadow-xl shadow-pink-600/30 flex items-center justify-center gap-2 active:scale-[0.98] transition">
+            <span>🚀 POST TO GO VIRAL ACROSS PLATFORMS</span>
+            <span class="px-2 py-0.5 rounded-md bg-emerald-500 text-[10px] font-black">+10 🪙 +4 💎</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Shortcut Cards to Jump to Full AI Video Studio & Direct Payment Hub -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onclick="switchTab('studio')" class="text-left rounded-2xl p-4 bg-white dark:bg-cyber-card border border-slate-200 dark:border-purple-500/40 shadow-md hover:border-cyan-400 transition group">
+          <div class="flex items-center justify-between">
+            <span class="text-2xl">🎬</span>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-purple-600 text-white">OPEN STUDIO ↗</span>
+          </div>
+          <h3 class="font-black text-sm mt-2 group-hover:text-purple-400 transition">1-Click AI Video, Comedy, Rap & Hashtags</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">हरियाणवी रैप, देसी कॉमेडी, मोटिवेशन, शॉर्ट्स स्क्रिप्ट और 15+ वायरल हैशटैग्स तुरंत बनाएं!</p>
+        </button>
+
+        <button onclick="switchTab('pay')" class="text-left rounded-2xl p-4 bg-white dark:bg-cyber-card border border-slate-200 dark:border-amber-400/50 shadow-md hover:border-amber-400 transition group">
+          <div class="flex items-center justify-between">
+            <span class="text-2xl">💳</span>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-black">DIRECT UPI</span>
+          </div>
+          <h3 class="font-black text-sm mt-2 group-hover:text-amber-400 transition">Direct Payment & VIP Subscription Hub</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">₹49 / ₹79 / ₹179 UPI (`Amit2653@ptyes`) या 💎 डायमंड्स रिडीम करके VIP Pro अनलॉक करें।</p>
+        </button>
+      </div>
+
+      <!-- Daily Streak & Rewarded Boost Card -->
+      <div class="rounded-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-slate-700 p-4 space-y-3 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-full bg-orange-500/20 border border-orange-400 flex items-center justify-center text-xl">🔥</div>
+            <div>
+              <h3 class="font-black text-sm">Daily Creator Streak: <span id="streakDaysDisplay" class="text-orange-400">1 Day</span></h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">रोज़ चेक-इन करें और +2 💎 डायमंड्स क्लेम करें!</p>
+            </div>
+          </div>
+          <button id="claimStreakBtn" onclick="claimDailyStreak()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs shadow hover:brightness-110 transition">
+            Claim +2 💎
+          </button>
+        </div>
+
+        <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+          <div class="text-xs text-slate-600 dark:text-slate-300 font-semibold">
+            🎁 Bonus Boost: Watch short sponsor spotlight to earn <span class="text-cyan-400 font-black">+5 💎</span>
+          </div>
+          <button onclick="watchRewardedBoost()" class="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs shrink-0 transition">
+            Earn +5 💎
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 2: AI STUDIO (1-Click Video, Comedy, Rap, Hashtags)    -->
+    <!-- ========================================================= -->
+    <section id="tab-studio" class="tab-panel space-y-4">
+      <div class="rounded-2xl bg-gradient-to-br from-[#1F1240] via-[#130D2B] to-[#0B1226] text-white border border-purple-500/60 p-4 sm:p-5 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-400 text-amber-300 text-[10px] font-black">1-CLICK AI STUDIO</span>
+            <h2 class="text-lg sm:text-xl font-black mt-1">🔥 AI Video, Comedy, Haryanvi Rap & Hashtag Generator</h2>
+          </div>
+          <span class="text-2xl">🎬</span>
+        </div>
+
+        <!-- Category Chips -->
+        <div>
+          <label class="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">1. कैटेगरी चुनें (Category):</label>
+          <div id="studioCategoryGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2"></div>
+        </div>
+
+        <!-- Platform & Tone -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-bold text-slate-300">2. टारगेट प्लेटफॉर्म (Platform):</label>
+            <select id="studioPlatform" class="mt-1 w-full rounded-xl bg-[#0D1326] border border-slate-600 px-3 py-2.5 text-xs font-semibold text-white outline-none focus:border-cyan-400">
+              <option>Instagram Reels</option>
+              <option>YouTube Shorts</option>
+              <option>Facebook Reels</option>
+              <option>Moj / Josh / ShareChat</option>
+              <option>Telegram & WhatsApp Status</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-300">3. कंटेंट स्टाइल / टोन (Tone):</label>
+            <select id="studioTone" class="mt-1 w-full rounded-xl bg-[#0D1326] border border-slate-600 px-3 py-2.5 text-xs font-semibold text-white outline-none focus:border-cyan-400">
+              <option>Desi Swag & High Energy 🔥</option>
+              <option>Funny & Relatable Comedy 😂</option>
+              <option>Emotional & Motivational ⚡</option>
+              <option>Curiosity & Retention Hook 🧠</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Topic / Keywords -->
+        <div>
+          <label class="text-[11px] font-bold text-slate-300">4. कीवर्ड या टॉपिक लिखें (Keywords / Topic):</label>
+          <input id="studioKeywords" type="text" placeholder="जैसे: Desi Gym Swag, Dost ki Shadi Comedy, Gaon vs Shehar, AI Money Hacks..."
+            class="mt-1 w-full rounded-xl bg-[#0D1326] border border-slate-600 focus:border-amber-400 outline-none px-3 py-2.5 text-xs text-white placeholder-slate-400" />
+        </div>
+
+        <!-- Optional Reference Image for Reel Visual Preview -->
+        <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white/5 border border-white/10 p-2.5">
+          <div class="text-xs text-slate-300">
+            🖼️ <span class="font-bold">AI Reel Poster Background:</span> वीडियो प्रीव्यू के लिए फोटो चुनें (वैकल्पिक)
+          </div>
+          <label class="cursor-pointer px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-[11px] font-bold text-white">
+            Upload Cover Photo
+            <input type="file" accept="image/*" class="hidden" onchange="handleCoverImage(event)" />
+          </label>
+        </div>
+
+        <!-- Generate CTA -->
+        <button id="generateAiStudioBtn" onclick="generateAiStudioContent()" class="shimmer-btn w-full py-3.5 rounded-2xl font-black text-sm text-white shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition">
+          <span>✨ 1-CLICK GENERATE VIRAL VIDEO, SCRIPT & HASHTAGS 🚀</span>
+        </button>
+      </div>
+
+      <!-- AI Output + Animated Video Storyboard Preview -->
+      <div id="studioOutputContainer" class="hidden rounded-2xl bg-white dark:bg-cyber-card border border-emerald-400/60 p-4 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <span id="outputSourceBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">⚡ ViralBoost AI Engine</span>
+            <h3 id="outputTitle" class="font-black text-base mt-1">Generated Viral Reel Blueprint</h3>
+          </div>
+          <button onclick="sendOutputToCrossPoster()" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold">
+            🚀 Load in Multi-Platform Poster
+          </button>
+        </div>
+
+        <!-- Interactive Live Canvas Reel Preview -->
+        <div class="relative rounded-2xl overflow-hidden border border-purple-500/50 bg-black">
+          <canvas id="reelPreviewCanvas" width="720" height="420" class="w-full h-56 sm:h-64 object-cover block"></canvas>
+          <div class="absolute bottom-2.5 left-3 right-3 flex items-center justify-between bg-black/65 backdrop-blur-md rounded-xl px-3 py-1.5 text-white text-[11px]">
+            <span id="beatTrackLabel" class="font-bold text-amber-300 truncate">🎵 Desi Bass Drop 808 • 140 BPM</span>
+            <button onclick="toggleCanvasPlayback()" id="canvasPlayBtn" class="px-2.5 py-0.5 rounded bg-emerald-500 text-black font-black text-[10px]">⏸ Pause</button>
+          </div>
+        </div>
+
+        <!-- Hook -->
+        <div class="rounded-xl bg-amber-500/10 border border-amber-400/40 p-3">
+          <div class="text-[10px] font-black text-amber-500 uppercase">🎯 3-Second Viral Hook</div>
+          <p id="outputHook" class="text-xs sm:text-sm font-bold mt-1 leading-relaxed"></p>
+        </div>
+
+        <!-- Full Script / Lyrics / Dialogues -->
+        <div class="rounded-xl bg-slate-100 dark:bg-[#0D1326] border border-slate-200 dark:border-slate-700 p-3">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-black text-cyan-500 uppercase">🎬 Complete Script / Rap Lyrics / Scenes</span>
+            <button onclick="copyTextById('outputScript')" class="text-[10px] font-bold text-purple-500 hover:underline">📋 Copy Script</button>
+          </div>
+          <pre id="outputScript" class="text-xs whitespace-pre-wrap font-sans leading-relaxed"></pre>
+        </div>
+
+        <!-- Hashtags -->
+        <div class="rounded-xl bg-purple-500/10 border border-purple-400/40 p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] font-black text-purple-400 uppercase">#️⃣ Trending Viral Hashtags</span>
+            <button onclick="copyTextById('outputHashtags')" class="text-[10px] font-bold text-cyan-400 hover:underline">📋 Copy All Tags</button>
+          </div>
+          <p id="outputHashtags" class="text-xs font-bold text-cyan-600 dark:text-cyan-300 leading-relaxed"></p>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <button onclick="copyFullGeneratedPackage()" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold">
+            📋 Copy Full Package
+          </button>
+          <button onclick="shareGeneratedPackage()" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
+            📤 Share Anywhere
+          </button>
+          <button onclick="saveCurrentToHistory()" class="col-span-2 sm:col-span-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black">
+            💾 Save to History
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 3: DIRECT PAYMENT & VIP SUBSCRIPTION HUB              -->
+    <!-- ========================================================= -->
+    <section id="tab-pay" class="tab-panel space-y-4">
+      <div class="rounded-2xl bg-gradient-to-br from-[#3B0764] via-[#1E1B4B] to-[#0F172A] text-white p-5 border border-purple-500 shadow-xl space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black">DIRECT UPI PAYMENT HUB</span>
+          <span class="text-2xl">👑</span>
+        </div>
+        <h2 class="text-xl font-black">Unlock VIP Creator Pro & Unlimited AI Studio</h2>
+        <p class="text-xs text-purple-200 leading-relaxed">
+          बिना किसी बीच वाले चार्ज के सीधे UPI (GPay, PhonePe, Paytm, BHIM) से पेमेंट करें या अपने कमाए हुए 💎 Diamonds से VIP अनलॉक करें!
+        </p>
+        <div id="vipStatusBanner" class="mt-2 rounded-xl bg-white/10 border border-white/20 px-3 py-2 text-xs font-bold">
+          Current Status: <span id="vipPlanLabel" class="text-amber-300">Free Creator Tier</span>
+        </div>
+      </div>
+
+      <!-- Diamond Redemption Card -->
+      <div class="rounded-2xl bg-white dark:bg-cyber-card border border-cyan-400/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+        <div>
+          <h3 class="font-black text-sm flex items-center gap-1.5">💎 Redeem Diamonds for VIP</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            आपके पास <span id="payDiamondCount" class="font-black text-cyan-400">10</span> 💎 हैं। 150 💎 में 15-Day VIP Pass या 500 💎 में Monthly VIP पाएं!
+          </p>
+        </div>
+        <button onclick="redeemDiamondsForVip()" class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs shrink-0 transition">
+          Redeem 150 💎 → VIP
+        </button>
+      </div>
+
+      <!-- 4 Subscription Plan Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="rounded-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-purple-500/50 p-4 space-y-3 shadow">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-black text-sky-400">STARTER AI PASS</span>
+            <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 text-[9px] font-bold">15 DAYS</span>
+          </div>
+          <div class="text-2xl font-black">₹49 <span class="text-xs font-medium text-slate-400">/ 15 days</span></div>
+          <ul class="text-xs space-y-1 text-slate-600 dark:text-slate-300">
+            <li>✅ AI Viral Video Title & Hashtags</li>
+            <li>✅ Comedy & Haryanvi Rap Scripts</li>
+            <li>✅ Multi-Platform Quick Optimizer</li>
+          </ul>
+          <button onclick="openUpiModal('15-Day Viral AI Video Pass', 49, 15)" class="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs transition">
+            Pay ₹49 via UPI ⚡
+          </button>
+        </div>
+
+        <div class="rounded-2xl bg-white dark:bg-[#1E143A] border-2 border-amber-400 p-4 space-y-3 shadow-lg">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-black text-amber-400">MOST POPULAR</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500 text-white text-[9px] font-black">SAVE 50%</span>
+          </div>
+          <div class="text-2xl font-black">₹79 <span class="text-xs font-medium text-slate-400">/ 30 days</span></div>
+          <ul class="text-xs space-y-1 text-slate-600 dark:text-slate-200">
+            <li>✅ 30 Days Full AI Video Optimizer</li>
+            <li>✅ Priority 6-Platform Syndication</li>
+            <li>✅ Unlimited Hashtags & Hooks</li>
+          </ul>
+          <button onclick="openUpiModal('1-Month Creator Pro Pass', 79, 30)" class="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs transition">
+            Unlock ₹79 Plan via UPI 👑
+          </button>
+        </div>
+
+        <div class="rounded-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-pink-500/50 p-4 space-y-3 shadow">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-black text-pink-400">VIP CREATOR MONTHLY</span>
+            <span class="px-2 py-0.5 rounded bg-pink-500/20 text-pink-400 text-[9px] font-bold">AD-FREE</span>
+          </div>
+          <div class="text-2xl font-black">₹179 <span class="text-xs font-medium text-slate-400">/ month</span></div>
+          <ul class="text-xs space-y-1 text-slate-600 dark:text-slate-300">
+            <li>✅ 100% Zero-Drop Ad-Free Studio</li>
+            <li>✅ Custom Affiliate Link Priority</li>
+            <li>✅ Unlimited AI Content & Analytics</li>
+          </ul>
+          <button onclick="openUpiModal('VIP Pro Monthly', 179, 30)" class="w-full py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-black text-xs transition">
+            Pay ₹179 via UPI 🚀
+          </button>
+        </div>
+
+        <div class="rounded-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-cyan-400/50 p-4 space-y-3 shadow">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-black text-cyan-400">PRO AGENCY 3-MONTH</span>
+            <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[9px] font-bold">90 DAYS</span>
+          </div>
+          <div class="text-2xl font-black">₹399 <span class="text-xs font-medium text-slate-400">/ 3 months</span></div>
+          <ul class="text-xs space-y-1 text-slate-600 dark:text-slate-300">
+            <li>✅ Multi-Channel Creator Agency Pass</li>
+            <li>✅ +100 Bonus Diamonds Credited 💎</li>
+            <li>✅ Lifetime Priority Templates</li>
+          </ul>
+          <button onclick="openUpiModal('VIP Pro 3-Month Agency', 399, 90)" class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs transition">
+            Pay ₹399 via UPI 💎
+          </button>
+        </div>
+      </div>
+
+      <!-- Direct Owner UPI Box -->
+      <div class="rounded-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-slate-700 p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="text-[10px] font-black text-emerald-500 uppercase">Verified Merchant UPI ID</div>
+          <div class="text-base font-black tracking-wide">Amit2653@ptyes</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400">GPay • PhonePe • Paytm • BHIM Accepted</div>
+        </div>
+        <button onclick="copyDirectText('Amit2653@ptyes', 'UPI ID कॉपी हो गया: Amit2653@ptyes')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black">
+          📋 Copy UPI ID
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 4: GROWTH INSIGHTS ANALYTICS                          -->
+    <!-- ========================================================= -->
+    <section id="tab-insights" class="tab-panel space-y-4">
+      <div class="rounded-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-indigo-500/40 p-4 sm:p-5 space-y-4 shadow-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-black text-cyan-500 uppercase">REAL-TIME CREATOR ANALYTICS</span>
+            <h2 class="text-lg font-black">📈 Growth Insights & Viral Forecast</h2>
+          </div>
+          <button onclick="refreshInsightsChart()" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold">🔄 Simulate Boost</button>
+        </div>
+
+        <!-- 3 KPI Cards -->
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="rounded-xl bg-slate-100 dark:bg-cyber-elevated p-3 text-center">
+            <div class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Predicted Views</div>
+            <div id="kpiPredictedViews" class="text-lg sm:text-xl font-black text-cyan-500 mt-0.5">48.5K</div>
+            <div class="text-[10px] font-bold text-emerald-500">+214% ↑</div>
+          </div>
+          <div class="rounded-xl bg-slate-100 dark:bg-cyber-elevated p-3 text-center">
+            <div class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Shareability Score</div>
+            <div id="kpiShareScore" class="text-lg sm:text-xl font-black text-amber-400 mt-0.5">92/100</div>
+            <div class="text-[10px] font-bold text-amber-500">Top 3% Viral</div>
+          </div>
+          <div class="rounded-xl bg-slate-100 dark:bg-cyber-elevated p-3 text-center">
+            <div class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Est. Engagement</div>
+            <div id="kpiEngagementRate" class="text-lg sm:text-xl font-black text-pink-500 mt-0.5">14.8%</div>
+            <div class="text-[10px] font-bold text-emerald-500">High CTR</div>
+          </div>
+        </div>
+
+        <!-- Interactive SVG Engagement Trend Graph -->
+        <div class="rounded-2xl bg-slate-950 p-3.5 border border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-300 mb-2">
+            <span class="font-bold">7-Day Engagement Trend (Views vs Shares)</span>
+            <span class="text-[10px] text-cyan-400 font-semibold">● Views &nbsp; <span class="text-pink-400">● Shares</span></span>
+          </div>
+          <svg id="engagementChartSvg" viewBox="0 0 600 200" class="w-full h-44"></svg>
+        </div>
+
+        <!-- Share Growth Milestone -->
+        <button onclick="shareStreakMilestone()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-black text-xs shadow">
+          📤 Share My Creator Growth Milestone on Social Media (+10 🪙)
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 5: AFFILIATE HUB, REWARDS & SAVED HISTORY             -->
+    <!-- ========================================================= -->
+    <section id="tab-earn" class="tab-panel space-y-4">
+      <!-- Affiliate & Shopsy Deals Hub -->
+      <div class="rounded-2xl bg-gradient-to-br from-emerald-950 via-[#0F172A] to-[#1A1238] text-white border border-emerald-500/50 p-4 sm:p-5 space-y-3 shadow-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="px-2 py-0.5 rounded bg-emerald-500 text-black text-[9px] font-black">EARNKARO ID: 5665937</span>
+            <h2 class="text-lg font-black mt-1">🛍️ Affiliate Hub & Mega Commission</h2>
+          </div>
+          <span class="text-2xl">💰</span>
+        </div>
+        <p class="text-xs text-slate-300">
+          अपना पर्सनल एफिलिएट लिंक सेव करें (हर वीडियो पोस्ट के नीचे ऑटो-जुड़ेगा), वरना डिफ़ॉल्ट मास्टर लिंक (<span class="text-amber-300 font-bold">https://bitli.in/Ff4aE3C</span>) सक्रिय रहेगा।
+        </p>
+        <div class="flex gap-2">
+          <input id="personalAffiliateInput" type="url" placeholder="अपना Bitli / EarnKaro / Meesho लिंक पेस्ट करें (Optional)..."
+            class="flex-1 rounded-xl bg-black/40 border border-slate-600 px-3 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-emerald-400" />
+          <button onclick="savePersonalAffiliateLink()" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs shrink-0">
+            Save
+          </button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+          <a href="https://bitli.in/Ff4aE3C" target="_blank" rel="noopener" onclick="creditCoinsAndToast(10, 'Shopsy / Bitli Mega Store खुला! +10 🪙')" class="rounded-xl bg-white/10 hover:bg-white/15 p-2.5 text-center border border-white/10">
+            <div class="text-lg">🛒</div>
+            <div class="text-xs font-extrabold text-amber-300">Bitli Mega Deals</div>
+            <div class="text-[9px] text-slate-300">75% OFF + +10 🪙</div>
+          </a>
+          <button onclick="shareAffiliateOffer('Flipkart & Shopsy Loot Deals')" class="rounded-xl bg-white/10 hover:bg-white/15 p-2.5 text-center border border-white/10">
+            <div class="text-lg">📦</div>
+            <div class="text-xs font-extrabold text-cyan-300">Share Shopsy Deal</div>
+            <div class="text-[9px] text-slate-300">Earn +10 🪙</div>
+          </button>
+          <button onclick="shareAffiliateOffer('Meesho & Amazon Creator Deals')" class="col-span-2 sm:col-span-1 rounded-xl bg-white/10 hover:bg-white/15 p-2.5 text-center border border-white/10">
+            <div class="text-lg">🎁</div>
+            <div class="text-xs font-extrabold text-pink-300">Refer Friend</div>
+            <div class="text-[9px] text-slate-300">1-Day Free VIP</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Saved Content & Broadcast History -->
+      <div class="rounded-2xl bg-white dark:bg-cyber-card border border-slate-200 dark:border-slate-700 p-4 space-y-3 shadow-sm">
+        <div class="flex items-center justify-between">
+          <h3 class="font-black text-sm">📚 Saved AI Scripts & Multi-Platform Posts</h3>
+          <button onclick="clearHistory()" class="text-[11px] font-bold text-rose-500 hover:underline">Clear All</button>
+        </div>
+        <div id="savedHistoryList" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Fixed Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 inset-x-0 z-40 backdrop-blur-xl bg-white/95 dark:bg-[#110D26]/95 border-t border-slate-200 dark:border-purple-500/40">
+    <div class="max-w-3xl mx-auto grid grid-cols-5 h-16">
+      <button onclick="switchTab('home')" data-tab="home" class="nav-btn flex flex-col items-center justify-center gap-0.5 text-purple-600 dark:text-cyan-400 font-black">
+        <span class="text-lg">🚀</span>
+        <span class="text-[10px]">Home</span>
+      </button>
+      <button onclick="switchTab('studio')" data-tab="studio" class="nav-btn flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400 font-semibold">
+        <span class="text-lg">🎬</span>
+        <span class="text-[10px]">AI Studio</span>
+      </button>
+      <button onclick="switchTab('pay')" data-tab="pay" class="nav-btn flex flex-col items-center justify-center gap-0.5 text-amber-500 font-extrabold">
+        <span class="text-lg">👑</span>
+        <span class="text-[10px]">VIP Pay</span>
+      </button>
+      <button onclick="switchTab('insights')" data-tab="insights" class="nav-btn flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400 font-semibold">
+        <span class="text-lg">📈</span>
+        <span class="text-[10px]">Insights</span>
+      </button>
+      <button onclick="switchTab('earn')" data-tab="earn" class="nav-btn flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400 font-semibold">
+        <span class="text-lg">💎</span>
+        <span class="text-[10px]">Earn/Saved</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Modal: Platform Account Connect -->
+  <div id="platformModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-[#181430] border border-purple-500 text-white p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="platformModalTitle" class="font-black text-base">Connect Social Channel</h3>
+        <button onclick="closePlatformModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <p id="platformModalDesc" class="text-xs text-slate-300"></p>
+      <input id="platformHandleInput" type="text" placeholder="@your_channel_handle"
+        class="w-full rounded-xl bg-[#0D1124] border border-slate-600 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
+      <div class="flex justify-end gap-2">
+        <button onclick="closePlatformModal()" class="px-4 py-2 rounded-xl bg-slate-700 text-xs font-bold">Cancel</button>
+        <button onclick="savePlatformConnection()" class="px-4 py-2 rounded-xl bg-emerald-500 text-black text-xs font-black">✅ Verify & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Direct UPI Payment & QR Checkout -->
+  <div id="upiModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-[#1A1233] border border-amber-400 text-white p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 id="upiModalPlanName" class="font-black text-base text-amber-300">Unlock VIP Plan</h3>
+        <button onclick="closeUpiModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div class="rounded-xl bg-[#0F0B21] border border-purple-500/50 p-3 space-y-2">
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Payable Amount:</span>
+          <span id="upiModalAmount" class="text-xl font-black text-emerald-400">₹49</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Owner UPI ID:</span>
+          <div class="flex items-center gap-2">
+            <span class="font-black text-amber-300">Amit2653@ptyes</span>
+            <button onclick="copyDirectText('Amit2653@ptyes', 'UPI ID कॉपी हो गया!')" class="px-2 py-0.5 rounded bg-slate-700 text-[10px] font-bold">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Owner QR Code Preview -->
+      <div class="rounded-xl bg-white p-2.5 text-center text-black space-y-1">
+        <img src="https://i.postimg.cc/v8gdCzFm/IMG-20260926-151326.jpg" alt="UPI QR Code Amit2653@ptyes" class="w-40 h-40 object-contain mx-auto rounded-lg" onerror="this.style.display='none'" />
+        <div class="text-[10px] font-extrabold text-slate-700">Scan QR with GPay / PhonePe / Paytm</div>
+      </div>
+
+      <a id="upiDeepLinkBtn" href="#" class="block w-full text-center py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition">
+        ⚡ Open UPI App Directly (PhonePe / GPay / Paytm)
+      </a>
+
+      <input id="upiUtrInput" type="text" maxlength="12" placeholder="12-Digit UPI Ref / UTR Number डालें..."
+        class="w-full rounded-xl bg-[#0F0B21] border border-slate-600 px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-400" />
+
+      <div class="flex justify-end gap-2">
+        <button onclick="closeUpiModal()" class="px-4 py-2 rounded-xl bg-slate-700 text-xs font-bold">Cancel</button>
+        <button onclick="verifyUpiAndActivateVip()" class="px-4 py-2 rounded-xl bg-amber-400 text-black text-xs font-black">✅ Verify & Activate Instant VIP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Optional Live Gemini API Configuration -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-[#181430] border border-cyan-400 text-white p-5 space-y-3.5 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-black text-base">⚙️ ViralBoost Web App Settings</h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        ऐप में बिल्ट-इन स्मार्ट AI इंजन पहले से एक्टिव है। यदि आप चाहें तो अपनी Google Gemini API Key (वैकल्पिक) डालकर लाइव क्लाउड जनरेशन भी चला सकते हैं (यह केवल आपके ब्राउज़र में सेव रहती है):
+      </p>
+      <input id="webGeminiKeyInput" type="password" placeholder="Optional Gemini API Key (AIza...)"
+        class="w-full rounded-xl bg-[#0D1124] border border-slate-600 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
+      <div class="flex justify-end gap-2">
+        <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-700 text-xs font-bold">Close</button>
+        <button onclick="saveWebSettings()" class="px-4 py-2 rounded-xl bg-cyan-500 text-black text-xs font-black">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Banner -->
+  <div id="toastBanner" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-black text-xs font-black shadow-2xl border border-amber-400 max-w-[92vw] text-center"></div>
+
+  <script>
+    // =========================================================================
+    // STATE MANAGEMENT (Persisted in localStorage for instant smooth Netlify UX)
+    // =========================================================================
+    const STORAGE_KEY = 'viralboost_ai_web_state_v1';
+    const MASTER_AFFILIATE_LINK = 'https://bitli.in/Ff4aE3C';
+    const OWNER_UPI_ID = 'Amit2653@ptyes';
+
+    const CHANNELS = [
+      { id: 'instagram', name: 'Instagram Reels', badge: 'IG', color: '#E1306C', defaultHandle: '@creator_pro', desc: 'Instagram Reels पर वीडियो सिंडिकेट करें और रीच बढ़ाएं।' },
+      { id: 'youtube', name: 'YouTube Shorts', badge: 'YT', color: '#FF0000', defaultHandle: '@ViralStudioYT', desc: 'YouTube Shorts चैनल कनेक्ट करें।' },
+      { id: 'facebook', name: 'Facebook Reels', badge: 'FB', color: '#1877F2', defaultHandle: 'Viral Creators Page', desc: 'Facebook Page और Reels पर ब्रॉडकास्ट करें।' },
+      { id: 'golivegram', name: 'GoLivegram', badge: 'GL', color: '#8A2BE2', defaultHandle: '@golive_official', desc: 'GoLivegram क्रिएटर नेटवर्क से जुड़ें।' },
+      { id: 'telegram', name: 'Telegram', badge: 'TG', color: '#229ED9', defaultHandle: 't.me/viral_creators', desc: 'Telegram चैनल और ग्रुप में शेयर करें।' },
+      { id: 'whatsapp', name: 'WhatsApp Status', badge: 'WA', color: '#25D366', defaultHandle: '+91 Creator Broadcast', desc: 'WhatsApp स्टेटस और ग्रुप्स पर शेयर करें।' }
+    ];
+
+    const STUDIO_CATEGORIES = [
+      {
+        id: 'haryanvi_rap',
+        emoji: '🎤',
+        title: 'हरियाणवी रैप & स्वैग',
+        sub: 'Haryanvi Rap & Swag',
+        beat: 'Desi Bass Drop 808 • 140 BPM',
+        colorA: '#FFD700',
+        colorB: '#FF5722',
+        hook: 'देसी स्वैग और हरियाणवी बीट — रील शुरू होते ही हर कोई रोक के देखेगा! 🔥🎤',
+        hashtags: '#HaryanviRap #DesiSwag #HaryanviSong #ViralReels #DesiVibe #Systumm #HaryanaCreators #TrendingReels #ShortsIndia #ViralBoostAI',
+        buildScript: (topic, platform) => `[0:00-0:03 HOOK]\n🔥 "भीड़ में चलना काम का कोन्या, जब नाम गूंजे हरियाणे ते!" (${topic})\n\n[0:03-0:15 VERSE 1 - High Bass Drop]\nदेसी घी का जोर अर पक्की यारी,\n${topic} पै आज दुनिया सारी भारी!\nकैमरे पै फोकस, बीट 808 की चाल,\n${platform} पै आज मचेगा बवाल!\n\n[0:15-0:30 OUTRO & CTA]\n💬 कमेंट में "🔥 देसी स्वैग" लिखो अर अपने यार न शेयर करो!`
+      },
+      {
+        id: 'comedy',
+        emoji: '😂',
+        title: 'देसी कॉमेडी & फन',
+        sub: 'Comedy & Pranks',
+        beat: 'Quirky Meme Rhythm • 128 BPM',
+        colorA: '#00E5FF',
+        colorB: '#7C4DFF',
+        hook: 'जब दोस्त ने किया ऐसा मज़ाक — अंत वाला ट्विस्ट देख के हंसी नहीं रुकेगी! 😂🤣',
+        hashtags: '#DesiComedy #FunnyReels #IndianMemes #ComedyShorts #Relatable #FriendsComedy #LaughOutLoud #TrendingIndia #ViralVideo #ViralBoostAI',
+        buildScript: (topic, platform) => `[0:00-0:04 HOOK]\n😂 दोस्त: "भाई ${topic} एकदम फ्री में करवा दूंगा, भरोसा रख!"\n\n[0:04-0:18 SCENE 2 - Funny Twist]\n(बैकग्राउंड में फनी साउंड इफ़ेक्ट)\nमैं: "भाई बिल ₹5000 कैसे आ गया?!"\nदोस्त: "वो तो सर्विस टैक्स था भाई, पानी तो फ्री ही था!" 💀\n\n[0:18-0:30 PUNCHLINE & CTA]\n🤣 अपने उस कंजूस दोस्त को टैग करो जो ${platform} पर हर चीज़ फ्री चाहता है!`
+      },
+      {
+        id: 'motivation',
+        emoji: '💪',
+        title: 'मोटिवेशन & सक्सेस',
+        sub: 'Motivation & Hustle',
+        beat: 'Epic Cinematic Rise • 120 BPM',
+        colorA: '#FF9100',
+        colorB: '#D500F9',
+        hook: 'आज जो लोग तुझ पर हंस रहे हैं, कल वही तेरी कहानी सुनाएंगे — बस रुकना मत! ⚡💪',
+        hashtags: '#MotivationHindi #SuccessMindset #HustleHard #DailyMotivation #MorningShorts #NeverGiveUp #SelfGrowth #ReelsIndia #ViralBoostAI',
+        buildScript: (topic, platform) => `[0:00-0:04 HOOK]\n⚡ "${topic} आसान होता तो आज हर कोई जीत चुका होता!"\n\n[0:04-0:20 POWER MESSAGE]\nरातों की नींद और सुबह का पसीना,\nयही फर्क बनाता है आम और खास इंसान में।\nअगले 90 दिन चुपचाप अपने लक्ष्य पर काम करो — शोर तुम्हारी कामयाबी मचाएगी!\n\n[0:20-0:30 CTA]\n💪 सहमत हो तो वीडियो Save करो और कमेंट में "YES" लिखो!`
+      },
+      {
+        id: 'tech_ai',
+        emoji: '🚀',
+        title: 'AI & टेक सीक्रेट्स',
+        sub: 'AI Tools & Hacks',
+        beat: 'Cyberpunk Synth • 132 BPM',
+        colorA: '#00E676',
+        colorB: '#00B0FF',
+        hook: 'ये 1 सीक्रेट AI ट्रिक आपका 3 घंटे का काम 10 सेकंड में कर देगी! 🤖🚀',
+        hashtags: '#AITools #TechHacks #AIReels #DigitalIndia #CreatorTools #Productivity #YouTubeShorts #SmartTips #ViralBoostAI',
+        buildScript: (topic, platform) => `[0:00-0:03 HOOK]\n🤖 "अभी भी ${topic} मैनुअली कर रहे हो? ये स्मार्ट AI तरीका देखो!"\n\n[0:03-0:20 STEP-BY-STEP DEMO]\nStep 1: ViralBoost AI Studio खोलो।\nStep 2: अपना कीवर्ड डालो और 1-Click Generate दबाओ।\nStep 3: 6 प्लेटफॉर्म पर एक साथ ऑटो-हैशटैग के साथ पब्लिश करो!\n\n[0:20-0:30 CTA]\n🚀 इस वीडियो को अभी Save करो वरना यह ट्रिक भूल जाओगे!`
+      },
+      {
+        id: 'vlog',
+        emoji: '✨',
+        title: 'लाइफस्टाइल & मिनी व्लॉग',
+        sub: 'Mini Vlog & Aesthetic',
+        beat: 'Lo-Fi Golden Chill • 110 BPM',
+        colorA: '#FF4081',
+        colorB: '#7C4DFF',
+        hook: 'एक सुकून भरी शाम और मेरी लाइफ का सबसे बेहतरीन मिनी व्लॉग! ✨🌸',
+        hashtags: '#MiniVlog #AestheticReels #DailyVlog #DesiLifestyle #GoldenHour #TravelIndia #ReelsTrend #ViralBoostAI',
+        buildScript: (topic, platform) => `[0:00-0:04 HOOK]\n✨ "चलो आज आपको दिखाते हैं ${topic} की मेरी फेवरेट झलक..."\n\n[0:04-0:20 VISUAL MONTAGE]\n• क्लिप 1: सुबह की पहली चाय और शांत मौसम।\n• क्लिप 2: काम और क्रिएशन का मज़ेदार सफर।\n• क्लिप 3: शाम की खूबसूरत रोशनी और सुकून।\n\n[0:20-0:30 CTA]\n🌸 आपका दिन कैसा रहा? कमेंट में बताओ और चैनल फॉलो करो!`
+      },
+      {
+        id: 'gaming',
+        emoji: '🎮',
+        title: 'एक्शन & गेमिंग क्लिप्स',
+        sub: 'Action & Gaming',
+        beat: 'Phonk Drift Overdrive • 150 BPM',
+        colorA: '#E040FB',
+        colorB: '#3D5AFE',
+        hook: '1 vs 4 असंभव क्लच — आखिरी 2 सेकंड में पलटा पूरा मैच! 🔥🎮',
+        hashtags: '#GamingReels #BGMI #FreeFire #ProClutch #GamingShorts #EsportsIndia #GamerLife #ViralBoostAI',
+        buildScript: (topic, platform) => `[0:00-0:03 HOOK]\n🎮 "जब पूरी स्क्वाड नॉक हो जाए और सिर्फ 10 HP बाकी हो..." (${topic})\n\n[0:03-0:20 HIGHLIGHT SYNC]\n• 0:05: स्मोक और जंप शॉट से पहला डाउन!\n• 0:11: रिफ्लेक्स मूवमेंट और डबल हेडशॉट!\n• 0:17: Phonk बीट ड्रॉप के साथ फाइनल BOOYAH / Chicken Dinner!\n\n[0:20-0:30 CTA]\n🔥 इस क्लच को 10 में से कितने नंबर दोगे? कमेंट करो!`
+      }
+    ];
+
+    const defaultState = {
+      theme: 'dark',
+      diamonds: 10,
+      coins: 250,
+      streakDays: 1,
+      lastStreakDate: '',
+      isVip: false,
+      vipPlanName: '',
+      personalAffiliateLink: '',
+      geminiApiKey: '',
+      connectedChannels: { instagram: true, youtube: false, facebook: true, golivegram: false, telegram: false, whatsapp: true },
+      channelHandles: {
+        instagram: '@creator_pro',
+        youtube: '@ViralStudioYT',
+        facebook: 'Viral Creators Page',
+        golivegram: '@golive_official',
+        telegram: 't.me/viral_creators',
+        whatsapp: '+91 Creator Broadcast'
+      },
+      history: []
+    };
+
+    let state = loadState();
+    let activePlatformModalId = null;
+    let pendingUpiPlan = { name: '15-Day Viral AI Video Pass', price: 49, days: 15 };
+    let selectedCategoryId = STUDIO_CATEGORIES[0].id;
+    let lastGeneratedPackage = null;
+    let canvasAnimating = true;
+    let canvasAnimFrameId = null;
+    let coverImageObj = null;
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(defaultState),
+          ...parsed,
+          connectedChannels: { ...defaultState.connectedChannels, ...(parsed.connectedChannels || {}) },
+          channelHandles: { ...defaultState.channelHandles, ...(parsed.channelHandles || {}) },
+          history: Array.isArray(parsed.history) ? parsed.history : []
+        };
+      } catch (e) {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      syncUI();
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toastBanner');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => el.classList.add('hidden'), 3200);
+    }
+
+    // =========================================================================
+    // THEME, NAVIGATION & UI SYNC
+    // =========================================================================
+    function applyTheme() {
+      const html = document.documentElement;
+      const btn = document.getElementById('themeToggleBtn');
+      if (state.theme === 'dark') {
+        html.classList.add('dark');
+        btn.textContent = '☀️';
+      } else {
+        html.classList.remove('dark');
+        btn.textContent = '🌙';
+      }
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      applyTheme();
+      saveState();
+      showToast(state.theme === 'dark' ? '🌙 Dark Mode Activated' : '☀️ Light Mode Activated');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(`tab-${tabId}`);
+      if (target) target.classList.add('active');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isCurrent = btn.dataset.tab === tabId;
+        btn.classList.toggle('text-purple-600', isCurrent);
+        btn.classList.toggle('dark:text-cyan-400', isCurrent);
+        btn.classList.toggle('font-black', isCurrent);
+        btn.classList.toggle('text-slate-500', !isCurrent && btn.dataset.tab !== 'pay');
+        btn.classList.toggle('dark:text-slate-400', !isCurrent && btn.dataset.tab !== 'pay');
+      });
+
+      if (tabId === 'insights') refreshInsightsChart(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function syncUI() {
+      document.getElementById('walletDiamonds').textContent = state.diamonds;
+      document.getElementById('walletCoins').textContent = state.coins;
+      document.getElementById('payDiamondCount').textContent = state.diamonds;
+      document.getElementById('streakDaysDisplay').textContent = `${state.streakDays} Day${state.streakDays > 1 ? 's' : ''}`;
+
+      const vipBadge = document.getElementById('headerVipBadge');
+      const vipLabel = document.getElementById('vipPlanLabel');
+      if (state.isVip) {
+        vipBadge.classList.remove('hidden');
+        vipLabel.textContent = `${state.vipPlanName || 'VIP Creator Pro'} (Active ✅)`;
+      } else {
+        vipBadge.classList.add('hidden');
+        vipLabel.textContent = 'Free Creator Tier';
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      const streakBtn = document.getElementById('claimStreakBtn');
+      if (state.lastStreakDate === today) {
+        streakBtn.textContent = 'Claimed Today ✅';
+        streakBtn.disabled = true;
+        streakBtn.classList.add('opacity-60');
+      } else {
+        streakBtn.textContent = 'Claim +2 💎';
+        streakBtn.disabled = false;
+        streakBtn.classList.remove('opacity-60');
+      }
+
+      renderPlatformStrip();
+      renderAffiliateFooterPreview();
+      renderStudioCategories();
+      renderSavedHistory();
+    }
+
+    // =========================================================================
+    // MULTI-PLATFORM VIDEO SHARE & CONNECTION HUB
+    // =========================================================================
+    function renderPlatformStrip() {
+      const container = document.getElementById('platformChipStrip');
+      container.innerHTML = CHANNELS.map(ch => {
+        const isConn = !!state.connectedChannels[ch.id];
+        return `
+          <button onclick="openPlatformModal('${ch.id}')" class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border transition ${
+            isConn ? 'bg-white/15 border-emerald-400 text-white' : 'bg-slate-800/70 border-slate-600 text-slate-300'
+          }">
+            <span class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[9px] font-black text-white" style="background:${ch.color}">${ch.badge}</span>
+            <span>${ch.name}</span>
+            <span>${isConn ? '✅' : '🔗'}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function openPlatformModal(id) {
+      const ch = CHANNELS.find(c => c.id === id);
+      if (!ch) return;
+      activePlatformModalId = id;
+      document.getElementById('platformModalTitle').textContent = `Verify & Connect ${ch.name}`;
+      document.getElementById('platformModalDesc').textContent = ch.desc;
+      document.getElementById('platformHandleInput').value = state.channelHandles[id] || ch.defaultHandle;
+      document.getElementById('platformModal').classList.remove('hidden');
+    }
+
+    function closePlatformModal() {
+      document.getElementById('platformModal').classList.add('hidden');
+    }
+
+    function savePlatformConnection() {
+      if (!activePlatformModalId) return;
+      const handle = document.getElementById('platformHandleInput').value.trim();
+      const ch = CHANNELS.find(c => c.id === activePlatformModalId);
+      state.channelHandles[activePlatformModalId] = handle || ch.defaultHandle;
+      state.connectedChannels[activePlatformModalId] = true;
+      saveState();
+      closePlatformModal();
+      showToast(`✅ ${ch.name} (${state.channelHandles[activePlatformModalId]}) कनेक्ट हो गया!`);
+    }
+
+    function handleVideoSelected(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const video = document.getElementById('uploadedVideoPreview');
+      video.src = url;
+      video.classList.remove('hidden');
+      document.getElementById('videoUploadLabel').textContent = `✅ Video Ready: ${file.name}`;
+      showToast(`🎬 वीडियो लोड हो गया: ${file.name}`);
+    }
+
+    function getActiveAffiliateLink() {
+      const p = (state.personalAffiliateLink || '').trim();
+      return (p.startsWith('http://') || p.startsWith('https://')) ? p : MASTER_AFFILIATE_LINK;
+    }
+
+    function renderAffiliateFooterPreview() {
+      const link = getActiveAffiliateLink();
+      const hasPersonal = link !== MASTER_AFFILIATE_LINK;
+      document.getElementById('activeAffiliateBadge').textContent = hasPersonal
+        ? '🛍️ Personal Affiliate Active ✅'
+        : '⚡ Master Bitli Fallback Active (Tag: 5665937)';
+      document.getElementById('affiliateFooterPreview').textContent =
+        `🔥 महासेल! सबसे कम दाम और भारी डिस्काउंट पर खरीदें - अभी क्लिक करें!\n👉 ${link}\n🚀 Created with ViralBoost AI Web Studio`;
+      const inputEl = document.getElementById('personalAffiliateInput');
+      if (inputEl && !inputEl.value && state.personalAffiliateLink) {
+        inputEl.value = state.personalAffiliateLink;
+      }
+    }
+
+    function saveManualPostDetails() {
+      const titleEl = document.getElementById('crossTitle');
+      const tagsEl = document.getElementById('crossTags');
+      if (!titleEl.value.trim()) titleEl.value = '🔥 Zero-Drop Viral Reels & 10X Reach Framework!';
+      if (!tagsEl.value.trim()) tagsEl.value = '#ViralBoostAI #ReelsIndia #ShortsViral #Trending';
+      showToast('✅ मैनुअल डिटेल्स सेव हो गई! अब नीचे POST TO GO VIRAL दबाएं 🚀');
+    }
+
+    function runQuickAiCrossOptimize() {
+      const hooks = [
+        '🔥 3 Secret Tricks जो आपके वीडियो को 24 घंटे में 10X वायरल करेंगी! (अंत तक देखें)',
+        '🚀 ये 1 गलती आज ही बंद करो वरना Reels कभी वायरल नहीं होंगी!',
+        '⚡ देसी क्रिएटर फॉर्मूला: 1 वीडियो को 6 प्लेटफॉर्म पर वायरल करने का असली तरीका!'
+      ];
+      const chosen = hooks[Math.floor(Math.random() * hooks.length)];
+      document.getElementById('crossTitle').value = chosen;
+      document.getElementById('crossTags').value = '#ViralBoostAI #ReelsViral #YouTubeShorts #HaryanviSwag #DesiComedy #TrendingIndia #CreatorGrowth';
+      document.getElementById('crossDesc').value = 'हाई-रिटेंशन हुक और मल्टी-प्लेटफॉर्म वायरल ब्रॉडकास्ट पैक — अभी देखें, सेव करें और शेयर करें!';
+      showToast('🤖 AI ने वायरल टाइटल, हैशटैग और डिस्क्रिप्शन भर दिया! 🚀');
+    }
+
+    async function postToGoViral() {
+      const active = CHANNELS.filter(c => state.connectedChannels[c.id]);
+      if (!active.length) {
+        showToast('⚠️ कृपया ऊपर कम से कम 1 सोशल प्लेटफॉर्म कनेक्ट करें!');
+        return;
+      }
+      const title = document.getElementById('crossTitle').value.trim() || '🔥 ViralBoost AI Multi-Platform Video';
+      const tags = document.getElementById('crossTags').value.trim() || '#ViralBoostAI #Trending';
+      const desc = document.getElementById('crossDesc').value.trim() || 'Watch till the end for the viral formula!';
+      const fullText = `${title}\n\n${desc}\n\n${tags}\n\n━━━━━━━━━━━━━━━━━━\n🔥 महासेल! भारी डिस्काउंट पर खरीदें:\n👉 ${getActiveAffiliateLink()}\n🚀 Created with ViralBoost AI`;
+
+      state.coins += 10;
+      state.diamonds += 4;
+      state.history.unshift({
+        id: Date.now(),
+        type: 'Multi-Platform Broadcast',
+        platform: active.map(a => a.badge).join(' + '),
+        title,
+        body: fullText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      if (state.history.length > 30) state.history.pop();
+      saveState();
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text: fullText });
+          showToast('🚀 वायरल ब्रॉडकास्ट सफल! +10 🪙 & +4 💎 मिले!');
+          return;
+        } catch (_) {}
+      }
+      await copyDirectText(fullText, `🚀 कैप्शन कॉपी हो गया! (${active.map(a => a.name).join(', ')}) के लिए रेडी +10 🪙 +4 💎`);
+    }
+
+    // =========================================================================
+    // TAB 2: 1-CLICK AI VIDEO, COMEDY, HARYANVI RAP & HASHTAG STUDIO
+    // =========================================================================
+    function renderStudioCategories() {
+      const grid = document.getElementById('studioCategoryGrid');
+      grid.innerHTML = STUDIO_CATEGORIES.map(cat => {
+        const active = cat.id === selectedCategoryId;
+        return `
+          <button onclick="selectStudioCategory('${cat.id}')" class="text-left rounded-xl p-2.5 border transition ${
+            active
+              ? 'bg-gradient-to-br from-purple-700/80 to-indigo-900 border-amber-400 shadow-md shadow-amber-500/20'
+              : 'bg-[#0E1328] border-slate-700 hover:border-purple-400'
+          }">
+            <div class="text-lg">${cat.emoji}</div>
+            <div class="text-xs font-extrabold text-white mt-0.5 leading-tight">${cat.title}</div>
+            <div class="text-[9.5px] text-cyan-300 truncate">${cat.sub}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectStudioCategory(id) {
+      selectedCategoryId = id;
+      renderStudioCategories();
+    }
+
+    function handleCoverImage(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = () => {
+        coverImageObj = img;
+        showToast('🖼️ कवर फोटो AI वीडियो प्रीव्यू में सेट हो गई!');
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    async function generateAiStudioContent() {
+      const cat = STUDIO_CATEGORIES.find(c => c.id === selectedCategoryId) || STUDIO_CATEGORIES[0];
+      const platform = document.getElementById('studioPlatform').value;
+      const tone = document.getElementById('studioTone').value;
+      const topic = document.getElementById('studioKeywords').value.trim() || cat.sub;
+
+      const btn = document.getElementById('generateAiStudioBtn');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ AI Generating Viral Hook, Script & Hashtags...';
+
+      let result = null;
+      const apiKey = (state.geminiApiKey || '').trim();
+
+      if (apiKey) {
+        try {
+          const prompt = `Create a viral short video blueprint in Hindi/Hinglish for category "${cat.title}" (${cat.sub}), platform "${platform}", tone "${tone}", topic "${topic}". Reply ONLY in JSON with keys: hook, script, hashtags.`;
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: 'application/json' }
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (txt) {
+              const parsed = JSON.parse(txt);
+              result = {
+                source: '✨ Live Cloud Gemini AI',
+                title: `${cat.emoji} ${cat.title} • ${topic}`,
+                hook: parsed.hook || cat.hook,
+                script: parsed.script || cat.buildScript(topic, platform),
+                hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags.join(' ') : (parsed.hashtags || cat.hashtags),
+                beat: cat.beat,
+                cat
+              };
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!result) {
+        await new Promise(r => setTimeout(r, 450));
+        result = {
+          source: '⚡ ViralBoost AI Blueprint Engine',
+          title: `${cat.emoji} ${cat.title} — ${topic}`,
+          hook: cat.hook,
+          script: cat.buildScript(topic, platform),
+          hashtags: cat.hashtags,
+          beat: cat.beat,
+          cat
+        };
+      }
+
+      lastGeneratedPackage = { ...result, platform, topic };
+      document.getElementById('outputSourceBadge').textContent = result.source;
+      document.getElementById('outputTitle').textContent = result.title;
+      document.getElementById('outputHook').textContent = result.hook;
+      document.getElementById('outputScript').textContent = result.script;
+      document.getElementById('outputHashtags').textContent = result.hashtags;
+      document.getElementById('beatTrackLabel').textContent = `🎵 ${result.beat}`;
+      document.getElementById('studioOutputContainer').classList.remove('hidden');
+
+      state.coins += 5;
+      saveState();
+
+      btn.disabled = false;
+      btn.innerHTML = '<span>✨ 1-CLICK GENERATE VIRAL VIDEO, SCRIPT & HASHTAGS 🚀</span>';
+
+      startReelCanvasAnimation(cat, result.hook, platform);
+      document.getElementById('studioOutputContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast('🎉 वायरल वीडियो स्क्रिप्ट और हैशटैग तैयार हैं! (+5 🪙)');
+    }
+
+    function startReelCanvasAnimation(cat, hookText, platform) {
+      if (canvasAnimFrameId) cancelAnimationFrame(canvasAnimFrameId);
+      canvasAnimating = true;
+      document.getElementById('canvasPlayBtn').textContent = '⏸ Pause';
+
+      const canvas = document.getElementById('reelPreviewCanvas');
+      const ctx = canvas.getContext('2d');
+      let tick = 0;
+
+      function draw() {
+        if (canvasAnimating) tick += 0.04;
+        const w = canvas.width;
+        const h = canvas.height;
+
+        if (coverImageObj) {
+          ctx.drawImage(coverImageObj, 0, 0, w, h);
+          ctx.fillStyle = 'rgba(10, 8, 28, 0.58)';
+          ctx.fillRect(0, 0, w, h);
+        } else {
+          const grad = ctx.createLinearGradient(0, 0, w, h);
+          grad.addColorStop(0, '#160B35');
+          grad.addColorStop(0.5 + 0.15 * Math.sin(tick), cat.colorB);
+          grad.addColorStop(1, '#090717');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, w, h);
+        }
+
+        // Animated audio equalizer bars
+        const barCount = 26;
+        for (let i = 0; i < barCount; i++) {
+          const barH = 18 + Math.abs(Math.sin(tick * 2.5 + i * 0.45)) * 55;
+          ctx.fillStyle = i % 2 === 0 ? cat.colorA : '#00E5FF';
+          ctx.globalAlpha = 0.7;
+          ctx.fillRect(40 + i * 25, h - 55 - barH, 14, barH);
+        }
+        ctx.globalAlpha = 1;
+
+        // Top badge
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(24, 24, 290, 36);
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.fillText(`${cat.emoji} ${cat.sub.toUpperCase()} • ${platform}`, 36, 48);
+
+        // Hook subtitle card
+        ctx.fillStyle = 'rgba(12, 10, 32, 0.8)';
+        ctx.fillRect(30, h / 2 - 42, w - 60, 84);
+        ctx.strokeStyle = cat.colorA;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(30, h / 2 - 42, w - 60, 84);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 20px Inter, Noto Sans Devanagari, sans-serif';
+        const shortHook = hookText.length > 52 ? hookText.slice(0, 52) + '...' : hookText;
+        ctx.fillText(shortHook, 48, h / 2 + 6);
+
+        canvasAnimFrameId = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function toggleCanvasPlayback() {
+      canvasAnimating = !canvasAnimating;
+      document.getElementById('canvasPlayBtn').textContent = canvasAnimating ? '⏸ Pause' : '▶ Play';
+    }
+
+    function sendOutputToCrossPoster() {
+      if (!lastGeneratedPackage) return;
+      document.getElementById('crossTitle').value = lastGeneratedPackage.title;
+      document.getElementById('crossTags').value = lastGeneratedPackage.hashtags;
+      document.getElementById('crossDesc').value = `${lastGeneratedPackage.hook}\n\n${lastGeneratedPackage.script}`;
+      switchTab('home');
+      showToast('🚀 AI कंटेंट Multi-Platform Poster में लोड हो गया!');
+    }
+
+    function copyFullGeneratedPackage() {
+      if (!lastGeneratedPackage) return;
+      const text = `${lastGeneratedPackage.title}\n\n${lastGeneratedPackage.hook}\n\n${lastGeneratedPackage.script}\n\n${lastGeneratedPackage.hashtags}`;
+      copyDirectText(text, '📋 पूरा वायरल पैकेज कॉपी हो गया!');
+    }
+
+    async function shareGeneratedPackage() {
+      if (!lastGeneratedPackage) return;
+      const text = `${lastGeneratedPackage.title}\n\n${lastGeneratedPackage.hook}\n\n${lastGeneratedPackage.script}\n\n${lastGeneratedPackage.hashtags}\n👉 ${getActiveAffiliateLink()}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: lastGeneratedPackage.title, text });
+          showToast('📤 शेयर हो गया!');
+          return;
+        } catch (_) {}
+      }
+      copyDirectText(text, '📤 शेयर टेक्स्ट क्लिपबोर्ड पर कॉपी हो गया!');
+    }
+
+    function saveCurrentToHistory() {
+      if (!lastGeneratedPackage) return;
+      state.history.unshift({
+        id: Date.now(),
+        type: 'AI Studio Blueprint',
+        platform: lastGeneratedPackage.platform,
+        title: lastGeneratedPackage.title,
+        body: `${lastGeneratedPackage.hook}\n\n${lastGeneratedPackage.script}\n\n${lastGeneratedPackage.hashtags}`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      if (state.history.length > 30) state.history.pop();
+      saveState();
+      showToast('💾 सेव हो गया! Earn/Saved टैब में देखें।');
+    }
+
+    // =========================================================================
+    // TAB 3: DIRECT UPI PAYMENT & VIP SUBSCRIPTION HUB
+    // =========================================================================
+    function openUpiModal(planName, price, days) {
+      pendingUpiPlan = { name: planName, price, days };
+      document.getElementById('upiModalPlanName').textContent = `Unlock ${planName}`;
+      document.getElementById('upiModalAmount').textContent = `₹${price}`;
+      document.getElementById('upiUtrInput').value = '';
+      const upiUri = `upi://pay?pa=${encodeURIComponent(OWNER_UPI_ID)}&pn=${encodeURIComponent('ViralBoost AI')}&am=${price}.00&cu=INR&tn=${encodeURIComponent(planName)}`;
+      document.getElementById('upiDeepLinkBtn').href = upiUri;
+      document.getElementById('upiModal').classList.remove('hidden');
+    }
+
+    function closeUpiModal() {
+      document.getElementById('upiModal').classList.add('hidden');
+    }
+
+    function verifyUpiAndActivateVip() {
+      const utr = document.getElementById('upiUtrInput').value.trim();
+      if (utr && !/^\d{12}$/.test(utr)) {
+        showToast('⚠️ कृपया सही 12-अंकों का UPI Reference / UTR नंबर डालें।');
+        return;
+      }
+      state.isVip = true;
+      state.vipPlanName = pendingUpiPlan.name;
+      if (pendingUpiPlan.price >= 399) state.diamonds += 100;
+      saveState();
+      closeUpiModal();
+      showToast(`👑 बधाई हो! ${pendingUpiPlan.name} एक्टिवेट हो गया!`);
+    }
+
+    function redeemDiamondsForVip() {
+      if (state.diamonds < 150) {
+        showToast(`💎 VIP के लिए 150 Diamonds चाहिए (अभी आपके पास ${state.diamonds} हैं)। Streak या Ad Boost से कमाएं!`);
+        return;
+      }
+      state.diamonds -= 150;
+      state.isVip = true;
+      state.vipPlanName = '15-Day Diamond VIP Pass';
+      saveState();
+      showToast('💎 150 Diamonds रिडीम सफल! VIP Pass एक्टिवेट हो गया 👑');
+    }
+
+    // =========================================================================
+    // TAB 4: GROWTH INSIGHTS SVG CHART
+    // =========================================================================
+    function refreshInsightsChart(randomize = true) {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const views = randomize
+        ? days.map((_, i) => Math.round(25 + i * 18 + Math.random() * 25))
+        : [28, 42, 55, 68, 89, 118, 145];
+      const shares = views.map(v => Math.round(v * 0.48 + Math.random() * 10));
+
+      if (randomize) {
+        document.getElementById('kpiPredictedViews').textContent = `${(32 + Math.random() * 65).toFixed(1)}K`;
+        document.getElementById('kpiShareScore').textContent = `${Math.round(86 + Math.random() * 12)}/100`;
+        document.getElementById('kpiEngagementRate').textContent = `${(11.5 + Math.random() * 6.5).toFixed(1)}%`;
+      }
+
+      const svg = document.getElementById('engagementChartSvg');
+      const maxVal = Math.max(...views, 150);
+      const ptsViews = views.map((v, i) => `${50 + i * 83},${165 - (v / maxVal) * 130}`).join(' ');
+      const ptsShares = shares.map((s, i) => `${50 + i * 83},${165 - (s / maxVal) * 130}`).join(' ');
+
+      svg.innerHTML = `
+        <line x1="35" y1="165" x2="575" y2="165" stroke="#334155" stroke-width="1" />
+        <line x1="35" y1="95" x2="575" y2="95" stroke="#1E293B" stroke-dasharray="4" stroke-width="1" />
+        <line x1="35" y1="35" x2="575" y2="35" stroke="#1E293B" stroke-dasharray="4" stroke-width="1" />
+        <polyline fill="none" stroke="#00E5FF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" points="${ptsViews}" />
+        <polyline fill="none" stroke="#FF2E93" stroke-width="3" stroke-dasharray="6 4" stroke-linecap="round" points="${ptsShares}" />
+        ${views.map((v, i) => {
+          const x = 50 + i * 83;
+          const y = 165 - (v / maxVal) * 130;
+          return `<circle cx="${x}" cy="${y}" r="4.5" fill="#00E5FF" /><text x="${x}" y="185" fill="#94A3B8" font-size="11" text-anchor="middle">${days[i]}</text>`;
+        }).join('')}
+      `;
+    }
+
+    // =========================================================================
+    // REWARDS, AFFILIATE, HISTORY & SETTINGS
+    // =========================================================================
+    function claimDailyStreak() {
+      const today = new Date().toISOString().slice(0, 10);
+      if (state.lastStreakDate === today) {
+        showToast('🔥 आज का Streak रिवॉर्ड पहले ही मिल चुका है!');
+        return;
+      }
+      state.streakDays += 1;
+      state.lastStreakDate = today;
+      state.diamonds += 2;
+      saveState();
+      showToast(`🔥 Day ${state.streakDays} Streak क्लेम! +2 💎 मिले!`);
+    }
+
+    function watchRewardedBoost() {
+      state.diamonds += 5;
+      saveState();
+      showToast('🎉 Rewarded Boost कम्प्लीट! +5 💎 डायमंड्स खाते में जुड़ गए!');
+    }
+
+    function creditCoinsAndToast(coins, msg) {
+      state.coins += coins;
+      saveState();
+      showToast(msg);
+    }
+
+    function savePersonalAffiliateLink() {
+      const val = document.getElementById('personalAffiliateInput').value.trim();
+      state.personalAffiliateLink = val;
+      saveState();
+      showToast(val ? '🛍️ आपका पर्सनल एफिलिएट लिंक सेव हो गया!' : '⚡ Master Bitli Link (5665937) सक्रिय कर दिया गया।');
+    }
+
+    async function shareAffiliateOffer(label) {
+      const text = `🔥 ${label} पर 75% तक की भारी छूट!\n👉 ${getActiveAffiliateLink()}\n🚀 Shared via ViralBoost AI`;
+      state.coins += 10;
+      saveState();
+      if (navigator.share) {
+        try { await navigator.share({ title: label, text }); } catch (_) {}
+      } else {
+        await copyDirectText(text);
+      }
+      showToast(`🛍️ ${label} शेयर किया गया! +10 🪙 मिले!`);
+    }
+
+    async function shareStreakMilestone() {
+      const views = document.getElementById('kpiPredictedViews').textContent;
+      const text = `🔥 ViralBoost AI पर मेरी ${state.streakDays}-Day Creator Streak और ${views} Predicted Views!\n👉 जुड़ें: ${getActiveAffiliateLink()}`;
+      state.coins += 10;
+      saveState();
+      if (navigator.share) {
+        try { await navigator.share({ title: 'ViralBoost Milestone', text }); } catch (_) {}
+      } else {
+        await copyDirectText(text);
+      }
+      showToast('🏆 ग्रोथ माइलस्टोन शेयर किया गया! +10 🪙 मिले!');
+    }
+
+    function renderSavedHistory() {
+      const list = document.getElementById('savedHistoryList');
+      if (!state.history.length) {
+        list.innerHTML = `<div class="text-xs text-slate-400 text-center py-6">अभी कोई सेव्ड पोस्ट नहीं है। ऊपर AI Studio या Multi-Platform Poster से पहला पोस्ट बनाएं! 🚀</div>`;
+        return;
+      }
+      list.innerHTML = state.history.map(item => `
+        <div class="rounded-xl bg-slate-100 dark:bg-[#0E1328] border border-slate-200 dark:border-slate-700 p-3 space-y-1.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="px-2 py-0.5 rounded bg-purple-600/20 text-purple-400 text-[9px] font-black">${item.type} • ${item.platform}</span>
+            <span class="text-[10px] text-slate-400">${item.time}</span>
+          </div>
+          <div class="text-xs font-extrabold">${escapeHtml(item.title)}</div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-300 line-clamp-3 whitespace-pre-line">${escapeHtml(item.body)}</p>
+        </div>
+      `).join('');
+    }
+
+    function clearHistory() {
+      state.history = [];
+      saveState();
+      showToast('🗑️ सेव्ड हिस्ट्री साफ कर दी गई।');
+    }
+
+    function openSettingsModal() {
+      document.getElementById('webGeminiKeyInput').value = state.geminiApiKey || '';
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function saveWebSettings() {
+      state.geminiApiKey = document.getElementById('webGeminiKeyInput').value.trim();
+      saveState();
+      closeSettingsModal();
+      showToast(state.geminiApiKey ? '✅ Gemini API Key सेव हो गई!' : '⚡ Built-in AI Studio मोड सक्रिय है!');
+    }
+
+    async function copyDirectText(text, toastMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      if (toastMsg) showToast(toastMsg);
+    }
+
+    function copyTextById(id) {
+      const el = document.getElementById(id);
+      if (el) copyDirectText(el.textContent, '📋 कॉपी हो गया!');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // Live Ticker Rotation
+    const TICKER_MESSAGES = [
+      '🔥 राहुल ने 1-Click AI वीडियो शेयर करके Instagram पर 18K व्यूज और ₹350 बोनस पाया!',
+      '💎 प्रिया ने Daily Streak & Rewarded Boost से +15 डायमंड्स कमाए!',
+      '🎤 विकास ने हरियाणवी रैप स्क्रिप्ट जनरेट करके 45K Views पाए!',
+      '👑 अमित जाटलिया (EarnKaro ID: 5665937) ने आज ₹520 कमीशन अर्जित किया!'
+    ];
+    let tickerIdx = 0;
+    setInterval(() => {
+      tickerIdx = (tickerIdx + 1) % TICKER_MESSAGES.length;
+      const el = document.getElementById('liveTickerText');
+      if (el) el.textContent = TICKER_MESSAGES[tickerIdx];
+    }, 4000);
+
+    // Boot App
+    applyTheme();
+    syncUI();
+    refreshInsightsChart(false);
+  </script>
 </body>
 </html>
