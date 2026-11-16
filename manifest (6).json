@@ -1,0 +1,32 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "viralboost-ai",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Viral boost",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "https://viralboost-ai-fudge-323c2.netlify.app/favicon.ico",
+      "type": "image/x-icon",
+      "isSquare": false,
+      "isPng": false,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 0,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    }
+  ],
+  "description": "Click AI Video &amp; Viral Hashtag Generator — कॉमेडी, हरियाणवी रैप या शॉर्ट्स बनाएं सीधे अपने मोबाइल पर!\"",
+  "categories": [
+    "entertainment",
+    "photo &amp; video",
+    "social",
+    "video"
+  ]
+}
