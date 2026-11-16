@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1092939667146",
+    "project_id": "gen-lang-client-0822394015",
+    "storage_bucket": "gen-lang-client-0822394015.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1092939667146:android:f66a725364376ef2ecc633",
+        "android_client_info": {
+          "package_name": "com.aistudio.viralboostai.vrbst"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxEBz9lqeNyBl6DYY6lVJbXaI0UpzONrk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
