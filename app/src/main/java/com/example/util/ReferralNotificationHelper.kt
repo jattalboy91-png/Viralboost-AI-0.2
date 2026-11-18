@@ -156,6 +156,8 @@ object ReferralNotificationHelper {
 
             val manager = NotificationManagerCompat.from(context)
             manager.notify(20263, builder.build())
+        } catch (_: SecurityException) {
+            // Permission might not be granted yet on Android 13+, handled gracefully
         } catch (_: Throwable) {
             // Safe fallback
         }
@@ -198,6 +200,8 @@ object ReferralNotificationHelper {
 
             val manager = NotificationManagerCompat.from(context)
             manager.notify(NOTIFICATION_ID, builder.build())
+        } catch (_: SecurityException) {
+            // Permission might not be granted yet on Android 13+, handled gracefully
         } catch (_: Throwable) {
             // Safe fallback
         }
