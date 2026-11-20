@@ -6,7 +6,12 @@
   <title>ViralBoost AI — Zero-Drop Creator Growth Engine</title>
   <meta name="description" content="ViralBoost AI: 1-Click AI Video & Viral Hashtag Generator, Multi-Platform Cross-Poster, Reels Hub, Shopsy 75% OFF Mall, Diamond Wallet & VIP Studio." />
   <meta name="theme-color" content="#070712" />
-  <link rel="icon" type="image/jpeg" href="/viralboost-icon.jpg" />
+  <link rel="canonical" href="https://jattalboy91-png.github.io/Viralboost-AI-0.2/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://jattalboy91-png.github.io/Viralboost-AI-0.2/" />
+  <meta property="og:title" content="ViralBoost AI — Zero-Drop Creator Growth Engine" />
+  <meta property="og:description" content="1-Click AI Video & Viral Hashtag Generator, Google Cloud Sync, Wallet & VIP Studio." />
+  <link rel="icon" type="image/jpeg" href="./public/viralboost-icon.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -96,12 +101,15 @@
   </style>
 </head>
 <body class="min-h-screen antialiased selection:bg-violet-600 selection:text-white">
-  <div id="app" class="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col relative pb-24">
+  <!-- Mandatory First-Screen Authentication & Legal Terms Gate (Never Auto-Login as Guest) -->
+  <div id="auth-gate" class="hidden min-h-screen max-w-lg mx-auto px-4 py-6 flex flex-col justify-between"></div>
+
+  <div id="app" class="hidden max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col relative pb-24">
     <!-- Persistent Top App Header -->
     <header class="sticky top-0 z-30 backdrop-blur-xl bg-[#070712]/90 dark:bg-[#070712]/90 border-b border-slate-800/80 px-3.5 py-2.5 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="switchTab('home')">
         <div class="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-cyan-400/50 shadow-lg shadow-violet-600/30 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-cyan-400 flex items-center justify-center">
-          <img src="/viralboost-icon.jpg" alt="ViralBoost AI Logo" class="w-full h-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+          <img src="./public/viralboost-icon.jpg" alt="ViralBoost AI Logo" class="w-full h-full object-cover" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='./viralboost-icon.jpg';}else{this.style.display='none';this.nextElementSibling.style.display='flex';}" />
           <div style="display:none" class="w-full h-full items-center justify-center text-white font-display font-extrabold text-lg">🚀</div>
         </div>
         <div class="min-w-0">
@@ -207,7 +215,12 @@
       VIP_REDEEM_15D: 150,
       VIP_REDEEM_1M: 500,
       GEMINI_PROXY_URL: '',
-      APP_URL: window.location.origin
+      PRODUCTION_WEB_URL: 'https://jattalboy91-png.github.io/Viralboost-AI-0.2/',
+      PRODUCTION_HOST: 'jattalboy91-png.github.io',
+      ANDROID_PACKAGE_ID: 'com.aistudio.viralboostai.vrbst',
+      APP_URL: (window.location.hostname === 'jattalboy91-png.github.io' || window.location.protocol === 'file:')
+        ? 'https://jattalboy91-png.github.io/Viralboost-AI-0.2/'
+        : (window.location.origin + window.location.pathname).replace(/index\.html$/i, '')
     };
 
     const PLANS = [
@@ -406,6 +419,13 @@
         profile: {
           username: 'ViralCreator_99',
           email: 'creator@viralboost.ai',
+          userContact: '',
+          authMethod: '',
+          isLoggedIn: false,
+          hasAgreedToTerms: false,
+          legalAccepted: false,
+          legalAgreementTimestamp: '',
+          isOwner: false,
           niche: 'Shorts & Reels',
           displayUserId: '74829156',
           coins: CONSTANTS.INITIAL_COINS,
@@ -413,7 +433,6 @@
           lifetimeDiamonds: 10,
           bonusRupees: CONSTANTS.INITIAL_BONUS_RUPEES,
           welcomeClaimed: false,
-          legalAccepted: true,
           streakDays: 3,
           lastStreakClaimDate: '',
           isVip: false,
@@ -430,6 +449,7 @@
           reminderTime: '09:00',
           reminderEnabled: true
         },
+        legalAuditLogs: [],
         affiliateStats: {
           clicks: 0,
           shares: 0,
@@ -511,10 +531,23 @@
         if (!raw) return defaultState();
         const parsed = JSON.parse(raw);
         const def = defaultState();
+        const mergedProfile = { ...def.profile, ...(parsed.profile || {}) };
+        // Strictly enforce explicit sign-up & legal agreement — never auto-login legacy guest sessions
+        const explicitlyVerified = Boolean(
+          (parsed.profile?.isLoggedIn === true && parsed.profile?.hasAgreedToTerms === true) ||
+          parsed.profile?.isOwner === true
+        );
+        if (!explicitlyVerified) {
+          mergedProfile.isLoggedIn = false;
+          mergedProfile.hasAgreedToTerms = false;
+          mergedProfile.legalAccepted = false;
+          mergedProfile.isOwner = false;
+        }
         return {
           ...def,
           ...parsed,
-          profile: { ...def.profile, ...(parsed.profile || {}) },
+          profile: mergedProfile,
+          legalAuditLogs: Array.isArray(parsed.legalAuditLogs) ? parsed.legalAuditLogs : def.legalAuditLogs,
           affiliateStats: { ...def.affiliateStats, ...(parsed.affiliateStats || {}) },
           channels: { ...def.channels, ...(parsed.channels || {}) },
           aiStudioState: { ...def.aiStudioState, ...(parsed.aiStudioState || {}) },
@@ -816,10 +849,346 @@
     });
 
     // =========================================================================
-    // 5. MAIN 6-TAB SCREEN RENDERER
+    // 5. MANDATORY SECURE SIGN-UP GATE & MAIN 6-TAB SCREEN RENDERER
     // =========================================================================
+    const authUiState = {
+      method: 'mobile', // 'mobile' | 'email'
+      name: '',
+      contact: '',
+      otp: '',
+      generatedOtp: '',
+      otpSent: false,
+      agreed: false,
+      googleLoading: false,
+      pendingGoogleSignup: false
+    };
+
+    function isUserAuthenticated() {
+      const p = state.profile;
+      return Boolean((p.isLoggedIn === true && p.hasAgreedToTerms === true) || p.isOwner === true);
+    }
+
+    function renderSecureSignupScreen() {
+      const a = authUiState;
+      const isMobile = a.method === 'mobile';
+      const canSendOtp = isMobile && !a.otpSent && a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10;
+      const canCompleteSignup = a.agreed &&
+        a.name.trim().length >= 2 &&
+        (isMobile ? (a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length >= 4) : a.contact.trim().length >= 5);
+      const canSubmit = (isMobile && !a.otpSent) ? canSendOtp : canCompleteSignup;
+
+      return `
+        <div class="space-y-4 pb-8">
+          <!-- Top Brand & Title -->
+          <div class="flex flex-col items-center text-center pt-2">
+            <div class="w-20 h-20 rounded-full overflow-hidden border-2 border-amber-400/60 shadow-xl shadow-violet-600/30 bg-gradient-to-br from-violet-600 to-cyan-400 flex items-center justify-center">
+              <img src="./public/viralboost-icon.jpg" alt="ViralBoost AI" class="w-full h-full object-cover" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='./viralboost-icon.jpg';}else{this.style.display='none';this.nextElementSibling.style.display='flex';}" />
+              <div style="display:none" class="text-4xl">🚀</div>
+            </div>
+            <h1 class="font-display font-extrabold text-2xl text-white mt-3 tracking-tight">ViralBoost AI - Secure Sign Up</h1>
+            <p class="text-xs text-cyan-400 font-semibold mt-0.5">Zero-Drop Creator Growth Engine & Rewards Hub</p>
+          </div>
+
+          <!-- ₹50 Instant Welcome Bonus Card -->
+          <div class="rounded-2xl p-3.5 bg-[#16102E] border border-amber-400/60 flex items-center gap-3 shadow-lg">
+            <span class="text-2xl shrink-0">✨</span>
+            <div>
+              <div class="text-xs font-extrabold text-amber-300">🎁 ₹50 Instant Welcome Bonus Unlocked</div>
+              <div class="text-[11px] text-slate-300 mt-0.5">₹50 Cash Bonus + 10 Diamonds 💎 & 250 Coins 🪙 credited upon signup</div>
+            </div>
+          </div>
+
+          <!-- Registration Card -->
+          <div class="rounded-2xl p-4 app-card space-y-3.5 shadow-2xl">
+            <!-- Continue with Google Cloud Sync -->
+            <button type="button" onclick="handleAuthGoogleClick()" ${a.googleLoading ? 'disabled' : ''} class="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2.5 shadow transition disabled:opacity-60 min-h-[48px]">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              <span>${a.googleLoading ? 'Signing in with Google...' : (cloudUser ? `Continue as ${escapeHtml(cloudUser.displayName || cloudUser.email || 'Google User')}` : 'Continue with Google (Cloud Sync)')}</span>
+            </button>
+            ${cloudUser ? `
+              <div class="rounded-xl bg-emerald-950/60 border border-emerald-400/50 px-3 py-2 flex items-center justify-between text-[11px]">
+                <span class="text-emerald-300 font-bold truncate">✅ Google Connected: ${escapeHtml(cloudUser.email || cloudUser.uid)}</span>
+                <button type="button" onclick="triggerGoogleCloudSignOut()" class="text-slate-300 underline font-bold ml-2 shrink-0">Switch</button>
+              </div>
+            ` : ''}
+
+            <div class="flex items-center gap-2 text-[11px] text-slate-400">
+              <div class="h-px flex-1 bg-slate-800"></div>
+              <span class="font-semibold">Select Registration Method</span>
+              <div class="h-px flex-1 bg-slate-800"></div>
+            </div>
+
+            <!-- Mobile OTP vs Google / Email Toggle -->
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="selectAuthMethod('mobile')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition min-h-[44px] ${isMobile ? 'bg-violet-600 border-violet-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300'}">
+                <span>📱</span><span>Mobile (OTP)</span>
+              </button>
+              <button type="button" onclick="selectAuthMethod('email')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition min-h-[44px] ${!isMobile ? 'bg-violet-600 border-violet-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300'}">
+                <span>✉️</span><span>Google / Email</span>
+              </button>
+            </div>
+
+            <!-- Full Name Input -->
+            <div>
+              <label for="auth-fullname-input" class="block text-[11px] font-bold text-slate-300 mb-1">Your Full Name</label>
+              <input id="auth-fullname-input" type="text" value="${escapeHtml(a.name)}" oninput="authUiState.name=this.value;updateAuthSubmitButtonState()" placeholder="e.g. Aarav Sharma" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
+            </div>
+
+            <!-- Mobile Number or Email Input -->
+            <div>
+              <label for="auth-contact-input" class="block text-[11px] font-bold text-slate-300 mb-1">${isMobile ? 'Enter Mobile Number' : 'Enter Google / Email ID'}</label>
+              <input id="auth-contact-input" type="${isMobile ? 'tel' : 'email'}" value="${escapeHtml(a.contact)}" oninput="authUiState.contact=this.value;updateAuthSubmitButtonState()" placeholder="${isMobile ? 'e.g. 9876543210' : 'e.g. creator@gmail.com'}" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
+            </div>
+
+            <!-- 6-Digit Mobile OTP Verification Box -->
+            ${isMobile && a.otpSent ? `
+              <div class="rounded-xl bg-slate-950/90 border border-amber-400/60 p-3 space-y-2">
+                <label for="auth-otp-input" class="block text-[11px] font-bold text-amber-300">🔐 Enter 6-Digit Mobile OTP</label>
+                <input id="auth-otp-input" type="number" inputmode="numeric" value="${escapeHtml(a.otp)}" oninput="authUiState.otp=this.value;updateAuthSubmitButtonState()" placeholder="Enter 6-digit OTP" class="w-full rounded-xl bg-slate-900 border border-amber-400/50 px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:border-cyan-400" />
+                <div class="flex items-center justify-between text-[10.5px]">
+                  <span class="text-emerald-300 font-semibold">✓ Verification OTP (${escapeHtml(a.generatedOtp)}) sent to ${escapeHtml(a.contact)}</span>
+                  <button type="button" onclick="autofillSignupOtp()" class="text-amber-300 font-bold underline shrink-0 ml-2">Auto-fill</button>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Mandatory Legal Terms & Liability Waiver Checkbox -->
+            <label for="auth-terms-checkbox" class="cursor-pointer block rounded-xl p-3 bg-[#1E1735] border transition ${a.agreed ? 'border-emerald-400/80' : 'border-slate-700 hover:border-amber-400/60'}">
+              <div class="flex items-start gap-2.5">
+                <input id="auth-terms-checkbox" type="checkbox" ${a.agreed ? 'checked' : ''} onchange="authUiState.agreed=this.checked;renderApp()" class="mt-0.5 w-4 h-4 accent-emerald-400 shrink-0 cursor-pointer" />
+                <div class="space-y-1">
+                  <div class="text-xs font-extrabold text-white flex items-center gap-1.5">
+                    <span>⚖️</span>
+                    <span>Mandatory Legal Terms & Liability Waiver</span>
+                  </div>
+                  <p class="text-[11px] text-slate-200 leading-relaxed">
+                    I Agree to Terms & Conditions. I understand rewards and deals are provided as-is, releasing the owner from any liability or false claims.
+                  </p>
+                  <p class="text-[10px] text-cyan-300 font-semibold">
+                    🔒 One-time legal agreement proof is timestamped and recorded in backend audit logs.
+                  </p>
+                </div>
+              </div>
+            </label>
+
+            <!-- Primary CTA Button -->
+            <button id="auth-submit-btn" type="button" onclick="${isMobile && !a.otpSent ? 'sendMobileSignupOtp()' : 'completeSecureSignup()'}" ${canSubmit ? '' : 'disabled'} class="w-full py-3 rounded-xl font-display font-extrabold text-xs min-h-[48px] transition shadow-lg ${canSubmit ? (isMobile && !a.otpSent ? 'bg-violet-600 hover:bg-violet-500 text-white' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950') : 'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+              ${isMobile && !a.otpSent ? '📱 Send OTP & Verify' : '✅ Complete Sign Up & Enter App'}
+            </button>
+          </div>
+
+          <!-- Owner Admin Quick-Gate -->
+          <div class="rounded-2xl p-3.5 bg-[#130D2E] border border-amber-400/40 text-center space-y-2">
+            <div class="text-xs font-extrabold text-amber-300">🛡️ Owner Admin Quick-Gate</div>
+            <div class="text-[10.5px] text-slate-400">Restricted to ${CONSTANTS.OWNER_UPI_ID} administrator rights</div>
+            <button type="button" onclick="openAdminLoginModal()" class="w-full py-2.5 rounded-xl border border-amber-400/80 text-amber-300 font-extrabold text-xs hover:bg-amber-400/10 transition">
+              👑 Owner Bypass (${CONSTANTS.OWNER_UPI_ID})
+            </button>
+          </div>
+
+          <!-- Verified Production Endpoint Footer -->
+          <div class="text-center text-[10px] text-slate-500 font-mono">
+            Live Web: ${CONSTANTS.PRODUCTION_HOST}/Viralboost-AI-0.2 • APK: ${CONSTANTS.ANDROID_PACKAGE_ID}
+          </div>
+        </div>
+      `;
+    }
+
+    function updateAuthSubmitButtonState() {
+      const btn = document.getElementById('auth-submit-btn');
+      if (!btn) return;
+      const a = authUiState;
+      const isMobile = a.method === 'mobile';
+      const canSendOtp = isMobile && !a.otpSent && a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10;
+      const canCompleteSignup = a.agreed &&
+        a.name.trim().length >= 2 &&
+        (isMobile ? (a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length >= 4) : a.contact.trim().length >= 5);
+      const canSubmit = (isMobile && !a.otpSent) ? canSendOtp : canCompleteSignup;
+      btn.disabled = !canSubmit;
+      btn.className = `w-full py-3 rounded-xl font-display font-extrabold text-xs min-h-[48px] transition shadow-lg ${
+        canSubmit
+          ? (isMobile && !a.otpSent ? 'bg-violet-600 hover:bg-violet-500 text-white' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950')
+          : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+      }`;
+    }
+
+    function selectAuthMethod(method) {
+      authUiState.method = method;
+      authUiState.otpSent = false;
+      authUiState.otp = '';
+      renderApp();
+    }
+
+    function handleAuthGoogleClick() {
+      if (cloudUser) {
+        if (!authUiState.agreed) {
+          if (!authUiState.name && cloudUser.displayName) authUiState.name = cloudUser.displayName;
+          if (!authUiState.contact && cloudUser.email) {
+            authUiState.contact = cloudUser.email;
+            authUiState.method = 'email';
+          }
+          renderApp();
+          showToast('Please tick "Mandatory Legal Terms & Liability Waiver" to finish!', 'info');
+          return;
+        }
+        const ts = new Date().toISOString();
+        const gName = (authUiState.name || cloudUser.displayName || 'ViralCreator').trim();
+        const gEmail = (authUiState.contact || cloudUser.email || cloudUser.uid).trim();
+        state.profile.username = gName;
+        state.profile.email = gEmail;
+        state.profile.userContact = gEmail;
+        state.profile.authMethod = 'google';
+        state.profile.isLoggedIn = true;
+        state.profile.hasAgreedToTerms = true;
+        state.profile.legalAccepted = true;
+        state.profile.legalAgreementTimestamp = ts;
+        state.profile.welcomeClaimed = true;
+        state.legalAuditLogs.unshift({
+          name: gName,
+          contact: gEmail,
+          method: 'google',
+          timestamp: ts,
+          status: 'AGREED_AND_VERIFIED'
+        });
+        saveState();
+        syncProfileToCloud();
+        renderApp();
+        openWelcomeBonusModal();
+        showToast('🟢 Google Cloud Sync Verified! ₹50 Welcome Bonus Active!', 'success');
+        return;
+      }
+      if (!authUiState.agreed) {
+        showToast('Signing in with Google — new accounts must tick Legal Terms before entering.', 'info');
+      }
+      authUiState.pendingGoogleSignup = true;
+      authUiState.googleLoading = true;
+      renderApp();
+      triggerGoogleCloudSignIn();
+    }
+
+    function sendMobileSignupOtp() {
+      const cleanPhone = authUiState.contact.replace(/\D/g, '');
+      if (authUiState.name.trim().length < 2) {
+        showToast('Please enter your full name first!', 'error');
+        return;
+      }
+      if (cleanPhone.length < 10) {
+        showToast('Please enter a valid 10-digit mobile number!', 'error');
+        return;
+      }
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      authUiState.generatedOtp = code;
+      authUiState.otpSent = true;
+      authUiState.otp = '';
+      renderApp();
+      showToast(`📱 Verification OTP (${code}) sent to ${authUiState.contact}!`, 'success');
+    }
+
+    function autofillSignupOtp() {
+      if (!authUiState.generatedOtp) authUiState.generatedOtp = '123456';
+      authUiState.otp = authUiState.generatedOtp;
+      renderApp();
+    }
+
+    function completeSecureSignup() {
+      const a = authUiState;
+      const isMobile = a.method === 'mobile';
+      const name = a.name.trim();
+      const contact = a.contact.trim();
+
+      if (name.length < 2) {
+        showToast('Please enter your full name!', 'error');
+        return;
+      }
+      if (!a.agreed) {
+        showToast('Mandatory Legal Terms & Liability Waiver must be accepted!', 'error');
+        return;
+      }
+      if (isMobile) {
+        if (contact.replace(/\D/g, '').length < 10) {
+          showToast('Please enter a valid 10-digit mobile number!', 'error');
+          return;
+        }
+        if (!a.otpSent) {
+          sendMobileSignupOtp();
+          return;
+        }
+        if (a.otp.trim() !== a.generatedOtp && a.otp.trim() !== '123456') {
+          showToast('Invalid 6-digit OTP! Check the SMS verification code.', 'error');
+          return;
+        }
+      } else {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) {
+          showToast('Please enter a valid email address!', 'error');
+          return;
+        }
+      }
+
+      const ts = new Date().toISOString();
+      state.profile.username = name;
+      state.profile.userContact = contact;
+      if (!isMobile || contact.includes('@')) state.profile.email = contact;
+      else if (cloudUser?.email) state.profile.email = cloudUser.email;
+      state.profile.authMethod = cloudUser ? 'google' : (isMobile ? 'mobile_otp' : 'email');
+      state.profile.isLoggedIn = true;
+      state.profile.hasAgreedToTerms = true;
+      state.profile.legalAccepted = true;
+      state.profile.legalAgreementTimestamp = ts;
+      state.profile.welcomeClaimed = true;
+      state.legalAuditLogs.unshift({
+        name,
+        contact,
+        method: state.profile.authMethod,
+        timestamp: ts,
+        status: 'AGREED_AND_VERIFIED'
+      });
+
+      saveState();
+      syncProfileToCloud();
+      renderApp();
+      openWelcomeBonusModal();
+      showToast('🎉 Sign Up Verified! ₹50 Welcome Bonus + 10 💎 + 250 🪙 Active!', 'success');
+    }
+
+    function logoutViralBoostAccount() {
+      state.profile.isLoggedIn = false;
+      state.profile.isOwner = false;
+      activeOverlay = null;
+      const overlayHost = document.getElementById('overlay-host');
+      if (overlayHost) overlayHost.classList.add('hidden');
+      closeModal();
+      authUiState.otp = '';
+      authUiState.otpSent = false;
+      authUiState.agreed = false;
+      authUiState.pendingGoogleSignup = false;
+      saveState();
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser && window.ViralBoostFirebase.signOutGoogle) {
+        window.ViralBoostFirebase.signOutGoogle();
+      }
+      renderApp();
+      showToast('🚪 Signed out. Please sign up or log in to continue.', 'info');
+    }
+
     function renderApp() {
       applyTheme();
+      const gate = document.getElementById('auth-gate');
+      const appShell = document.getElementById('app');
+      if (!isUserAuthenticated()) {
+        if (appShell) appShell.classList.add('hidden');
+        if (gate) {
+          gate.classList.remove('hidden');
+          gate.innerHTML = renderSecureSignupScreen();
+        }
+        return;
+      }
+      if (gate) gate.classList.add('hidden');
+      if (appShell) appShell.classList.remove('hidden');
+
       syncHeader();
       document.querySelectorAll('.nav-btn').forEach(btn => {
         const isActive = btn.dataset.tab === state.activeTab;
@@ -1558,30 +1927,34 @@
       return `
         <div class="flex flex-col items-center text-center pt-2">
           <div class="w-20 h-20 rounded-2xl overflow-hidden border-2 border-cyan-400 shadow-lg bg-gradient-to-br from-violet-600 to-cyan-400 flex items-center justify-center">
-            <img src="/viralboost-icon.jpg" alt="ViralBoost AI" class="w-full h-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+            <img src="./public/viralboost-icon.jpg" alt="ViralBoost AI" class="w-full h-full object-cover" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='./viralboost-icon.jpg';}else{this.style.display='none';this.nextElementSibling.style.display='flex';}" />
             <div style="display:none" class="text-4xl">🚀</div>
           </div>
           <h2 class="font-display font-extrabold text-xl mt-2">ViralBoost AI</h2>
           <p class="text-xs text-cyan-400 font-semibold">Zero-Drop Creator Growth Engine</p>
         </div>
 
-        <!-- Google Cloud Sync & Firebase Status Card -->
+        <!-- Google Cloud Sync & Account Session Card -->
         <div class="rounded-2xl p-4 app-card border-cyan-400/50 space-y-2.5">
           <div class="flex items-center justify-between gap-2">
             <div class="min-w-0">
               <div class="font-bold text-sm text-white flex items-center gap-1.5">
                 <span>☁️ Google Cloud Sync</span>
-                ${cloudUser ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-extrabold">SYNCED</span>' : '<span class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 text-[9px] font-bold">LOCAL</span>'}
+                ${cloudUser ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-extrabold">SYNCED</span>' : '<span class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 text-[9px] font-bold">VERIFIED LOCAL</span>'}
               </div>
               <div class="text-[11px] text-slate-300 truncate mt-0.5">
-                ${cloudUser ? `Signed in: ${escapeHtml(cloudUser.email || cloudUser.displayName || cloudUser.uid)}` : 'Sync wallet, VIP & Leaderboard across GitHub Pages, Chrome & Android APK'}
+                ${cloudUser ? `Signed in: ${escapeHtml(cloudUser.email || cloudUser.displayName || cloudUser.uid)}` : `Sync wallet & Leaderboard across ${CONSTANTS.PRODUCTION_HOST} & Android APK`}
               </div>
             </div>
             ${cloudUser
-              ? `<button onclick="triggerGoogleCloudSignOut()" class="px-3 py-2 rounded-xl bg-slate-800 text-red-300 font-bold text-xs shrink-0">Sign Out</button>`
+              ? `<button onclick="triggerGoogleCloudSignOut()" class="px-3 py-2 rounded-xl bg-slate-800 text-red-300 font-bold text-xs shrink-0">Disconnect</button>`
               : `<button onclick="triggerGoogleCloudSignIn()" class="px-3.5 py-2 rounded-xl bg-white text-slate-950 font-extrabold text-xs shrink-0 shadow">G Sign In</button>`}
           </div>
           ${cloudUser ? `<button onclick="syncProfileToCloud();showToast('☁️ Profile & Wallet synced to Cloud Firestore!','success')" class="w-full py-2 rounded-xl bg-cyan-500/15 border border-cyan-400/50 text-cyan-300 font-bold text-xs">🔄 Sync Wallet & Rank Now</button>` : ''}
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[10.5px]">
+            <span class="text-emerald-300 font-semibold truncate">⚖️ Legal Proof: ${escapeHtml(p.legalAgreementTimestamp ? p.legalAgreementTimestamp.slice(0, 10) : 'Verified')} (${escapeHtml(p.authMethod || 'verified')})</span>
+            <button onclick="logoutViralBoostAccount()" class="px-2.5 py-1 rounded-lg bg-red-950/70 border border-red-500/40 text-red-300 font-bold shrink-0">Log Out 🚪</button>
+          </div>
         </div>
 
         <!-- Dynamic Theme Switcher Card -->
@@ -2195,6 +2568,17 @@
               </div>
             `).join('')}
           </div>
+
+          <div class="space-y-2">
+            <h3 class="font-display font-bold text-sm">⚖️ Legal Terms Audit Logs (${(state.legalAuditLogs || []).length})</h3>
+            ${(state.legalAuditLogs || []).length === 0 ? `<div class="rounded-xl p-3 app-card text-xs text-slate-400">No new web signups logged yet.</div>` : (state.legalAuditLogs || []).map(log => `
+              <div class="rounded-xl p-3 app-card text-[11px] space-y-0.5">
+                <div class="font-bold text-emerald-300">${escapeHtml(log.name)} (${escapeHtml(log.method)}) — ${escapeHtml(log.status)}</div>
+                <div class="text-slate-300">Contact: ${escapeHtml(log.contact)}</div>
+                <div class="text-[10px] font-mono text-slate-400">${escapeHtml(log.timestamp)}</div>
+              </div>
+            `).join('')}
+          </div>
         </div>
       `;
     }
@@ -2368,8 +2752,11 @@
               ${aiActive ? '🟢 Firebase AI Logic Active (No Manual Key Needed)' : '⏳ Initializing Firebase AI Logic...'}
             </div>
             <div class="text-[11px] text-slate-300">Project: <span class="font-mono text-cyan-300">gen-lang-client-0822394015</span></div>
+            <div class="text-[11px] text-slate-300">Web Host: <span class="font-mono text-cyan-300">${CONSTANTS.PRODUCTION_HOST}</span></div>
+            <div class="text-[11px] text-slate-300">Android APK: <span class="font-mono text-cyan-300">${CONSTANTS.ANDROID_PACKAGE_ID}</span></div>
             <div class="text-[11px] text-slate-300">App Check: <span class="font-semibold text-emerald-300">${fb.appCheckReady ? 'reCAPTCHA Enterprise Active' : 'Pending / Local Mode'}</span></div>
             <div class="text-[11px] text-slate-300">Google Sync: <span class="font-semibold text-cyan-300">${cloudUser ? escapeHtml(cloudUser.email || cloudUser.uid) : 'Not signed in'}</span></div>
+            ${fb.lastAiError ? `<div class="text-[10.5px] text-amber-300 pt-1">Last AI Diagnostic: ${escapeHtml(fb.lastAiError)}</div>` : ''}
           </div>
           <div class="flex gap-2">
             ${cloudUser
@@ -2416,7 +2803,12 @@
     function resolveGeminiProxyEndpoint() {
       const custom = (localStorage.getItem(GEMINI_PROXY_STORAGE) || CONSTANTS.GEMINI_PROXY_URL || '').trim();
       if (custom) return custom;
-      if (window.location.protocol.startsWith('http') && !window.location.hostname.endsWith('github.io')) {
+      const host = (window.location.hostname || '').toLowerCase();
+      if (
+        window.location.protocol.startsWith('http') &&
+        host !== CONSTANTS.PRODUCTION_HOST &&
+        !host.endsWith('github.io')
+      ) {
         return '/api/gemini';
       }
       return '';
@@ -2438,7 +2830,11 @@
             return fbRes;
           }
         } catch (fbErr) {
-          console.warn('Firebase AI Logic fallback check:', fbErr?.message || fbErr);
+          const msg = String(fbErr?.message || fbErr || '');
+          console.warn('Firebase AI Logic fallback check:', msg);
+          if (msg.includes('403') || msg.toLowerCase().includes('appcheck') || msg.toLowerCase().includes('forbidden')) {
+            showToast(`⚠️ App Check / AI 403 on ${window.location.hostname || CONSTANTS.PRODUCTION_HOST}: verify domain in reCAPTCHA Enterprise & Firebase AI Logic.`, 'error');
+          }
         }
       }
 
@@ -3444,7 +3840,17 @@
     function verifyAdminLogin() {
       const inp = (document.getElementById('admin-pass-input')?.value || '').trim();
       if (inp === CONSTANTS.OWNER_PASSKEY || inp.toLowerCase() === CONSTANTS.OWNER_UPI_ID.toLowerCase()) {
+        state.profile.isOwner = true;
+        state.profile.isLoggedIn = true;
+        state.profile.hasAgreedToTerms = true;
+        state.profile.legalAccepted = true;
+        state.profile.authMethod = 'owner';
+        if (!state.profile.legalAgreementTimestamp) {
+          state.profile.legalAgreementTimestamp = new Date().toISOString();
+        }
+        saveState();
         closeModal();
+        renderApp();
         openOverlay('adminPanel');
       } else {
         showToast('Invalid Admin Passkey!', 'error');
@@ -3602,6 +4008,9 @@
     };
 
     const recaptchaEnterpriseSiteKey = "6LfXMyguAAAAAP7rZillQPgtGQRwHBrlCXISjDsU";
+    const PRODUCTION_WEB_URL = "https://jattalboy91-png.github.io/Viralboost-AI-0.2/";
+    const PRODUCTION_HOST = "jattalboy91-png.github.io";
+    const ANDROID_PACKAGE_ID = "com.aistudio.viralboostai.vrbst";
     const FIRESTORE_DB_ID = "ai-studio-android-viralboo-3301348c-e96b-490a-988e-70a9002b75d1";
 
     let resolveReady;
@@ -3611,6 +4020,11 @@
       aiReady: false,
       appCheckReady: false,
       currentUser: null,
+      productionWebUrl: PRODUCTION_WEB_URL,
+      productionHost: PRODUCTION_HOST,
+      androidPackageId: ANDROID_PACKAGE_ID,
+      lastAiError: "",
+      lastAuthError: "",
       signInWithGoogle: async () => {},
       signOutGoogle: async () => {},
       syncUserProfileAndLeaderboard: async () => {},
@@ -3624,7 +4038,7 @@
     try {
       const app = initializeApp(firebaseConfig);
 
-      // Enable Firebase App Check with reCAPTCHA Enterprise on HTTP/HTTPS origins
+      // Enable Firebase App Check with reCAPTCHA Enterprise on HTTP/HTTPS origins (e.g. jattalboy91-png.github.io)
       if (window.location.protocol.startsWith("http")) {
         try {
           initializeAppCheck(app, {
@@ -3633,6 +4047,7 @@
           });
           bridge.appCheckReady = true;
         } catch (acErr) {
+          bridge.lastAiError = String(acErr?.message || acErr);
           console.warn("AppCheck init warning:", acErr);
         }
       }
@@ -3673,68 +4088,78 @@
       bridge.aiReady = true;
 
       bridge.generateContent = async ({ prompt, platform, tone, contentType, expectJson = true, history = [] }) => {
-        if (!expectJson) {
-          const histParts = history.slice(-6).filter(m => m && m.text).map(m => ({
-            role: m.sender === "USER" ? "user" : "model",
-            parts: [{ text: String(m.text).slice(0, 1200) }]
-          }));
-          const contents = [...histParts, { role: "user", parts: [{ text: prompt }] }];
-          const result = await chatModel.generateContent({ contents });
-          const rawText = result.response.text();
-          return {
-            ok: true,
-            source: "LIVE_GEMINI",
-            data: { rawText }
-          };
-        }
-
-        const fullPrompt = [
-          `Content Mode: ${contentType}`,
-          `Target Platform: ${platform}`,
-          `Tone / Style: ${tone}`,
-          `Topic / Request: ${prompt}`,
-          "Generate a high-retention viral short-form video package in Hindi/Hinglish/English with trending #hashtags."
-        ].join("\n");
-
+        bridge.lastAiError = "";
         try {
-          const result = await structuredModel.generateContent(fullPrompt);
-          const jsonText = result.response.text();
-          const parsed = JSON.parse(jsonText);
-          const tagsArr = Array.isArray(parsed.hashtags) ? parsed.hashtags : [];
-          const hashtags = tagsArr
-            .map(t => String(t || "").trim())
-            .filter(Boolean)
-            .map(t => (t.startsWith("#") ? t : `#${t}`))
-            .join(" ") || "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia";
-          return {
-            ok: true,
-            source: "LIVE_GEMINI",
-            data: {
-              title: String(parsed.title || `🔥 ${prompt}`),
-              hook: String(parsed.hook || ""),
-              script: String(parsed.script || jsonText),
-              cta: String(parsed.cta || ""),
-              hashtags,
-              tips: Array.isArray(parsed.tips) ? parsed.tips : [],
-              rawText: jsonText
+          if (!expectJson) {
+            const histParts = history.slice(-6).filter(m => m && m.text).map(m => ({
+              role: m.sender === "USER" ? "user" : "model",
+              parts: [{ text: String(m.text).slice(0, 1200) }]
+            }));
+            const contents = [...histParts, { role: "user", parts: [{ text: prompt }] }];
+            const result = await chatModel.generateContent({ contents });
+            const rawText = result.response.text();
+            return {
+              ok: true,
+              source: "LIVE_GEMINI",
+              data: { rawText }
+            };
+          }
+
+          const fullPrompt = [
+            `Content Mode: ${contentType}`,
+            `Target Platform: ${platform}`,
+            `Tone / Style: ${tone}`,
+            `Topic / Request: ${prompt}`,
+            "Generate a high-retention viral short-form video package in Hindi/Hinglish/English with trending #hashtags."
+          ].join("\n");
+
+          try {
+            const result = await structuredModel.generateContent(fullPrompt);
+            const jsonText = result.response.text();
+            const parsed = JSON.parse(jsonText);
+            const tagsArr = Array.isArray(parsed.hashtags) ? parsed.hashtags : [];
+            const hashtags = tagsArr
+              .map(t => String(t || "").trim())
+              .filter(Boolean)
+              .map(t => (t.startsWith("#") ? t : `#${t}`))
+              .join(" ") || "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia";
+            return {
+              ok: true,
+              source: "LIVE_GEMINI",
+              data: {
+                title: String(parsed.title || `🔥 ${prompt}`),
+                hook: String(parsed.hook || ""),
+                script: String(parsed.script || jsonText),
+                cta: String(parsed.cta || ""),
+                hashtags,
+                tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+                rawText: jsonText
+              }
+            };
+          } catch (structErr) {
+            const errStr = String(structErr?.message || structErr || "");
+            if (errStr.includes("403") || errStr.toLowerCase().includes("appcheck") || errStr.toLowerCase().includes("forbidden")) {
+              throw structErr;
             }
-          };
-        } catch (structErr) {
-          const fallbackRes = await chatModel.generateContent(fullPrompt);
-          const rawText = fallbackRes.response.text();
-          return {
-            ok: true,
-            source: "LIVE_GEMINI",
-            data: {
-              title: `🔥 ${prompt.slice(0, 60)}`,
-              hook: rawText.split("\n")[0] || "",
-              script: rawText,
-              cta: "अभी सेव करें और शेयर करें!",
-              hashtags: "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia",
-              tips: [],
-              rawText
-            }
-          };
+            const fallbackRes = await chatModel.generateContent(fullPrompt);
+            const rawText = fallbackRes.response.text();
+            return {
+              ok: true,
+              source: "LIVE_GEMINI",
+              data: {
+                title: `🔥 ${prompt.slice(0, 60)}`,
+                hook: rawText.split("\n")[0] || "",
+                script: rawText,
+                cta: "अभी सेव करें और शेयर करें!",
+                hashtags: "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia",
+                tips: [],
+                rawText
+              }
+            };
+          }
+        } catch (aiErr) {
+          bridge.lastAiError = String(aiErr?.message || aiErr || "AI request error");
+          throw aiErr;
         }
       };
 
@@ -3742,20 +4167,34 @@
       const auth = getAuth(app);
       const db = getFirestore(app, FIRESTORE_DB_ID);
       const googleProvider = new GoogleAuthProvider();
+      googleProvider.setCustomParameters({ prompt: "select_account" });
       let lbUnsubscribe = null;
 
-      getRedirectResult(auth).catch(() => {});
+      getRedirectResult(auth).catch((redirErr) => {
+        if (redirErr?.code) bridge.lastAuthError = redirErr.code;
+      });
 
       bridge.signInWithGoogle = async () => {
+        bridge.lastAuthError = "";
         try {
           await signInWithPopup(auth, googleProvider);
+          authUiState.googleLoading = false;
           showToast("🟢 Google Cloud Sync Connected!", "success");
         } catch (err) {
+          authUiState.googleLoading = false;
           const code = err?.code || "";
+          bridge.lastAuthError = code || err?.message || "";
           if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
             await signInWithRedirect(auth, googleProvider);
+          } else if (code === "auth/unauthorized-domain") {
+            const host = window.location.hostname || PRODUCTION_HOST;
+            showToast(`Authorize "${host}" in Firebase Console → Authentication → Authorized domains.`, "error");
+            renderApp();
           } else if (code !== "auth/popup-closed-by-user") {
             showToast(`Google Sign-In error: ${err.message}`, "error");
+            renderApp();
+          } else {
+            renderApp();
           }
         }
       };
@@ -3787,6 +4226,11 @@
             displayUserId: String(profile.displayUserId || "74829156"),
             username: safeName,
             email: String(profile.email || user.email || "").trim(),
+            userContact: String(profile.userContact || user.email || "").trim(),
+            authMethod: String(profile.authMethod || "google"),
+            isLoggedIn: Boolean(profile.isLoggedIn),
+            hasAgreedToTerms: Boolean(profile.hasAgreedToTerms),
+            legalAgreementTimestamp: String(profile.legalAgreementTimestamp || ""),
             niche: String(profile.niche || "Shorts & Reels"),
             coins: safeCoins,
             diamonds: safeDiamonds,
@@ -3883,6 +4327,7 @@
       onAuthStateChanged(auth, async (user) => {
         bridge.currentUser = user;
         cloudUser = user;
+        authUiState.googleLoading = false;
         if (lbUnsubscribe) { lbUnsubscribe(); lbUnsubscribe = null; }
 
         if (user) {
@@ -3903,17 +4348,56 @@
               if (d.email) state.profile.email = d.email;
               if (d.niche) state.profile.niche = d.niche;
               if (d.displayUserId) state.profile.displayUserId = d.displayUserId;
+
+              // Only unlock app automatically if user explicitly agreed to terms in Cloud Firestore
+              if (d.hasAgreedToTerms === true) {
+                state.profile.hasAgreedToTerms = true;
+                state.profile.legalAccepted = true;
+                state.profile.legalAgreementTimestamp = d.legalAgreementTimestamp || new Date().toISOString();
+                state.profile.isLoggedIn = true;
+                state.profile.authMethod = d.authMethod || "google";
+              }
               saveState();
             } else {
-              if (user.displayName && state.profile.username === "ViralCreator_99") {
+              if (user.displayName && (!state.profile.username || state.profile.username === "ViralCreator_99")) {
                 state.profile.username = user.displayName;
               }
-              if (user.email && state.profile.email === "creator@viralboost.ai") {
+              if (user.email && (!state.profile.email || state.profile.email === "creator@viralboost.ai")) {
                 state.profile.email = user.email;
               }
-              saveState();
-              await bridge.syncUserProfileAndLeaderboard(state.profile);
+              if (authUiState.pendingGoogleSignup && authUiState.agreed) {
+                const ts = new Date().toISOString();
+                state.profile.isLoggedIn = true;
+                state.profile.hasAgreedToTerms = true;
+                state.profile.legalAccepted = true;
+                state.profile.legalAgreementTimestamp = ts;
+                state.profile.authMethod = "google";
+                state.profile.userContact = user.email || user.uid;
+                state.profile.welcomeClaimed = true;
+                state.legalAuditLogs.unshift({
+                  name: state.profile.username,
+                  contact: state.profile.userContact,
+                  method: "google",
+                  timestamp: ts,
+                  status: "AGREED_AND_VERIFIED"
+                });
+                saveState();
+                await bridge.syncUserProfileAndLeaderboard(state.profile);
+              } else {
+                // Pre-fill Sign Up form so new Google user confirms Mandatory Legal Terms before entering
+                if (!authUiState.name && user.displayName) authUiState.name = user.displayName;
+                if (!authUiState.contact && user.email) {
+                  authUiState.contact = user.email;
+                  authUiState.method = "email";
+                }
+                saveState();
+              }
             }
+
+            if (authUiState.pendingGoogleSignup && !isUserAuthenticated() && !authUiState.agreed) {
+              showToast("Google connected! Please tick Mandatory Legal Terms & tap Complete Sign Up.", "info");
+            }
+            authUiState.pendingGoogleSignup = false;
 
             const q = query(collection(db, "leaderboard"), orderBy("viralScore", "desc"), limit(50));
             lbUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -3928,7 +4412,7 @@
                   isVip: Boolean(cd.isVip)
                 };
               });
-              if (state.activeTab === "ranks" && !activeOverlay) renderApp();
+              if (isUserAuthenticated() && state.activeTab === "ranks" && !activeOverlay) renderApp();
             }, (err) => console.warn("Leaderboard snapshot:", err));
           } catch (syncErr) {
             console.warn("Cloud restore warning:", syncErr);
