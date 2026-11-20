@@ -20,10 +20,14 @@ import com.example.data.model.AffiliateProduct
 import com.example.data.repository.StreakResult
 import com.example.data.repository.TrialStatus
 import com.example.data.repository.ViralBoostRepository
+import com.example.data.service.FirestoreSyncRepository
+import com.example.data.service.GeminiSocialContentService
+import com.example.data.service.GoogleAuthManager
 import com.example.monetization.AdManager
 import com.example.monetization.MonetizationConstants
 import com.example.ui.components.DiamondRewardParticleController
 import com.example.util.ReferralNotificationHelper
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -31,9 +35,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class PlanOption(
     val id: String,
@@ -46,6 +52,8 @@ data class PlanOption(
 
 class ViralBoostViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application, viewModelScope)
+    private val cloudSync = FirestoreSyncRepository(application)
+    private val geminiService = GeminiSocialContentService()
     private val repository = ViralBoostRepository(
         database.userDao(),
         database.paymentDao(),
@@ -59,7 +67,8 @@ class ViralBoostViewModel(application: Application) : AndroidViewModel(applicati
         database.communityVideoPostDao(),
         database.legalDao(),
         database.savedContentHistoryDao(),
-        database.userStreakDiamondLedgerDao()
+        database.userStreakDiamondLedgerDao(),
+        cloudSync
     )
 
     val userProfile: StateFlow<UserProfile?> = repository.userProfile
@@ -325,8 +334,61 @@ class ViralBoostViewModel(application: Application) : AndroidViewModel(applicati
     init {
         viewModelScope.launch {
             repository.getProfileOnce()
+            repository.syncLeaderboardAndCloud()
+            if (cloudSync.isSignedIn()) {
+                repository.restoreFromCloudIfAvailable()
+            }
             val savedConfig = repository.getAppConfigOnce()
             AdManager.syncCredentialsFromConfig(savedConfig, getApplication())
+        }
+    }
+
+    private val _isGoogleSigningIn = MutableStateFlow(false)
+    val isGoogleSigningIn = _isGoogleSigningIn.asStateFlow()
+
+    fun signInWithGoogle(activityContext: Context, onComplete: () -> Unit = {}) {
+        if (_isGoogleSigningIn.value) return
+        viewModelScope.launch {
+            _isGoogleSigningIn.value = true
+            val result = GoogleAuthManager.signInWithGoogle(activityContext)
+            _isGoogleSigningIn.value = false
+            result.onSuccess { firebaseUser ->
+                val name = firebaseUser.displayName?.takeIf { it.isNotBlank() }
+                    ?: firebaseUser.email?.substringBefore("@")
+                    ?: "ViralCreator"
+                val email = firebaseUser.email ?: "creator@viralboost.ai"
+                val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                    .format(java.util.Date())
+                repository.completeOnboarding(name, email, "email", timestamp)
+                repository.restoreFromCloudIfAvailable()
+                repository.syncLeaderboardAndCloud()
+                DiamondRewardParticleController.triggerDiamondRewardBurst(
+                    diamondsEarned = 10,
+                    coinsEarned = 250,
+                    taskLabel = "Google Sign-In Verified!"
+                )
+                _toastEvent.emit("✅ Signed in with Google ($email)! Cloud sync active.")
+                onComplete()
+            }.onFailure { err ->
+                _toastEvent.emit("⚠️ ${err.localizedMessage ?: "Google Sign-In cancelled or failed."}")
+            }
+        }
+    }
+
+    fun convertCoinsToDiamonds(coinsToSpend: Int = 100) {
+        viewModelScope.launch {
+            val ok = repository.convertCoinsToDiamonds(coinsToSpend)
+            if (ok) {
+                val earned = coinsToSpend / 20
+                DiamondRewardParticleController.triggerDiamondRewardBurst(
+                    diamondsEarned = earned,
+                    coinsEarned = 0,
+                    taskLabel = "Swapped $coinsToSpend Coins!"
+                )
+                _toastEvent.emit("🔄 Swapped $coinsToSpend 🪙 Coins for +$earned 💎 Diamonds!")
+            } else {
+                _toastEvent.emit("⚠️ Need at least $coinsToSpend Coins to swap for Diamonds!")
+            }
         }
     }
 
@@ -453,213 +515,74 @@ class ViralBoostViewModel(application: Application) : AndroidViewModel(applicati
             }
 
             _isGeneratingAi.value = true
-            // Generate high-retention creator content tailored to type
-            val generatedText = produceViralContent(type, topic, niche)
-            repository.recordAiGeneration(type, topic, niche, generatedText)
-            _isGeneratingAi.value = false
-            _toastEvent.emit("✨ Generated viral $type! (-20 Coins)")
+            val safeTopic = topic.trim().ifBlank { "How to grow 100k followers fast with AI Reels" }
+            val (platformLabel, toneLabel, contentTypeLabel) = when (type) {
+                "VIDEO", "TEXT_TO_VIDEO" -> Triple("Instagram Reels & YouTube Shorts", "Cinematic 9:16 Video Scene Plan", "AI Text-to-Video Scene Breakdown")
+                "PHOTO_TO_VIDEO" -> Triple("Instagram Reels & Shorts", "Dynamic Motion Animation", "Photo-to-Video Animation Blueprint")
+                "IMAGE", "THUMBNAIL" -> Triple("YouTube & Instagram Cover", "High-CTR Visual Drama", "Thumbnail & Cover Prompt Pack")
+                "TAGS", "SEO_TAGS" -> Triple("YouTube, Instagram & Shorts", "Search & Algorithm SEO", "Viral Titles, Keywords & Hashtags")
+                "BULK" -> Triple("Multi-Platform 5-Part Series", "Zero-Drop Retention Series", "5-Episode Bulk Script Pack")
+                "PUBLISHER" -> Triple("Instagram + YouTube + TikTok", "Auto-Publish Caption Suite", "Multi-Platform Schedule & Captions")
+                "AFFILIATE" -> Triple("Meesho, Flipkart & Amazon Deals", "High-Converting Deal Pitch", "Affiliate Product Pitch & Hooks")
+                else -> Triple("Instagram Reels & YouTube Shorts", "High-Energy Viral", "3-Sec Hooks & 60-Sec Script")
+            }
+
+            try {
+                val aiResult = geminiService.generateSocialContent(
+                    prompt = safeTopic,
+                    platform = platformLabel,
+                    tone = "$toneLabel • Niche: $niche",
+                    contentType = contentTypeLabel,
+                    targetAudience = "$niche Creators & Audience"
+                )
+                val formattedOutput = if (aiResult.isRealApiCall) {
+                    "⚡ Powered by Live Google Gemini AI (3.8 Flash)\n\n${aiResult.fullResponse}"
+                } else {
+                    if (!aiResult.errorMessage.isNullOrBlank()) {
+                        _toastEvent.emit("⚠️ Gemini API note: ${aiResult.errorMessage}")
+                    }
+                    aiResult.fullResponse
+                }
+                repository.recordAiGeneration(type, safeTopic, niche, formattedOutput)
+                _toastEvent.emit(
+                    if (aiResult.isRealApiCall) "✨ Live Gemini AI generated viral $type! (-20 Coins)"
+                    else "✨ Generated viral $type! (-20 Coins)"
+                )
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _toastEvent.emit("❌ Gemini generation failed: ${e.localizedMessage ?: "Check internet connection"}")
+            } finally {
+                _isGeneratingAi.value = false
+            }
         }
     }
 
     fun generate1ClickAiReel(topic: String, onResult: (String) -> Unit) {
         viewModelScope.launch {
             val safeTopic = topic.trim().ifBlank { "Viral Growth Secret" }
-            val script = produceViralContent("HOOKS_SCRIPTS", safeTopic, "Shorts & Reels")
-            val tags = produceViralContent("SEO_TAGS", safeTopic, "Shorts & Reels")
-            val fullResult = "✨ Success! AI Script & Hashtags generated for: '$safeTopic'. Ready for Instagram/YouTube!\n\n$script\n\n$tags"
-            repository.recordAiGeneration("1_CLICK_AI_REEL", safeTopic, "Shorts & Reels", fullResult)
-            onResult(fullResult)
-            _toastEvent.emit("🎬 AI Reel Package generated for '$safeTopic'!")
-        }
-    }
-
-    private fun produceViralContent(type: String, topic: String, niche: String): String {
-        val safeTopic = if (topic.isNotBlank()) topic.trim() else "How to grow 100k followers fast"
-        return when (type) {
-            "HOOK", "HOOKS_SCRIPTS" -> """
-🎯 ZERO-DROP HOOKS & 60-SEC RETENTION SCRIPT for: "$safeTopic"
-Niche: $niche • Retention Score: 98.6%
-
-1. [Pattern Interrupt Hook (0:00 - 0:03)]
-"Stop scrolling if you want to double your reach! 99% of creators are doing '$safeTopic' completely backward..."
-
-2. [Curiosity Gap & Bridge (0:03 - 0:15)]
-"I tested this secret algorithm hack for 30 days and the analytics exploded. Most creators make content that dies at 200 views because they ignore 3-second retention."
-
-3. [The 3-Step Value Climax (0:15 - 0:45)]
-• Step 1: Front-load the climax in frame 1.
-• Step 2: Cut every filler breath using 1.2x pacing.
-• Step 3: Insert an open loop at second 25 answered at second 55.
-
-4. [The Seamless Loop Call-to-Action (0:45 - 0:60)]
-"Save this Reel for later, comment 'BOOST' for my full checklist, and that is why..."
-            """.trimIndent()
-
-            "SCRIPT" -> """
-🎬 60-SEC RETENTION SCRIPT: "$safeTopic"
-
-[00:00 - 00:03] THE HOOK
-"This single trick changed my entire growth trajectory with '$safeTopic'..."
-(Visual: Fast jump-cut, hold up phone showing upward viral analytics curve)
-
-[00:03 - 00:15] THE RETENTION BRIDGE
-"Most creators spend hours making content that dies at 200 views. Why? Because the algorithm only cares about 2 metrics: 3-second retention and re-watches."
-
-[00:15 - 00:45] THE VALUE DROP (Step 1, 2, 3)
-"Step 1: Front-load the climax. Show the result in frame one.
-Step 2: Cut every breath, pause, and filler word. Use 1.2x pacing.
-Step 3: Drop an open loop at second 25 that gets answered only at second 55."
-
-[00:45 - 00:58] THE ZERO-DROP CALL TO ACTION
-"Save this Reel so you don't lose it when posting later, and drop 'BOOST' in comments for my full viral checklist!"
-
-[00:58 - 01:00] THE SEAMLESS LOOP
-"...and that is why..."
-            """.trimIndent()
-
-            "TAGS", "SEO_TAGS" -> """
-🏷️ VIRAL TITLES, HASHTAGS & SEO OPTIMIZER: "$safeTopic"
-Niche: $niche
-
-🏆 3 Viral High-CTR Video Titles:
-1. "The $safeTopic Secret 99% of Creators Ignore (Do This Now!)"
-2. "How I Scaled $safeTopic to 500k Views in 14 Days"
-3. "Stop Making This 1 Mistake With $safeTopic in 2026"
-
-[High-Volume Discovery Tags (30%)]
-#viralreels #growthhack #creatoreconomy #shortsfeed #explorepage
-
-[Niche Specific Targeting (50%)]
-#${niche.replace(" ", "").lowercase()} #${safeTopic.take(15).replace(" ", "").lowercase()} #creatorgrowth #contenttips #viralcontent
-
-[Low Competition Rank Boosters (20%)]
-#viralboostai #zerodrop #algorithmhacks #growthmindset2026
-
-🔥 SEO Keyword Description:
-"Looking to master $safeTopic in $niche? In this breakdown, discover zero-drop creator strategies, retention pacing, and algorithm tricks for Reels and Shorts. Watch till end for the bonus hack!"
-            """.trimIndent()
-
-            "VIDEO", "TEXT_TO_VIDEO" -> """
-🎬 TEXT-TO-VIDEO ENGINE (Veo Fast 9:16 Cinematic Preview)
-Topic: "$safeTopic" • Niche: $niche
-Render Specs: 1080x1920 Vertical HD • 60 FPS • 98.8% Retention Score
-
-🎥 Scene 1 [00:00 - 00:03]: Dynamic Dolly Zoom & Pattern Interrupt
-Cinematic 9:16 vertical shot, dramatic lighting, high saturation neon bokeh.
-Visual Prompt: "Extreme close-up of a modern digital creator holding smartphone, screen displaying viral analytics hockey-stick growth curve, neon purple and gold rim lighting, 8k resolution, cinematic 60fps."
-
-🎥 Scene 2 [00:03 - 00:08]: 360° Orbit Shot & Visual Bridge
-Camera smoothly revolves around subject with holographic floating metrics.
-Visual Prompt: "High-tech creator studio, floating glowing engagement badges, sleek audio gear, futuristic workspace, photorealistic."
-
-🎥 Scene 3 [00:08 - 00:15]: Seamless Glitch Transition & Golden Climax
-Fast jump-cut with kinetic typography and audio crescendo.
-Visual Prompt: "Glowing neon text overlay 'VIRAL REACH UNLOCKED' exploding into golden sparks, cinematic lens flare, high-energy viral Reel aesthetic."
-
-⚡ Engine: Veo AI Mobile Fast Renderer • Watermark: Free Tier [Upgrade VIP for clean export]
-            """.trimIndent()
-
-            "PHOTO_TO_VIDEO" -> """
-📸 PHOTO-TO-VIDEO & IMAGE AI ANIMATOR
-Topic: "$safeTopic" • Niche: $niche
-Specs: 9:16 Vertical Video Motion • 24 FPS Interpolation • Dynamic Depth Mapping
-
-✨ Motion Animation Sequence:
-- Frame 0-2s: 3D Parallax push-in on subject with volumetric neon light shafts
-- Frame 2-5s: Kinetic particles and camera roll motion following viral focal point
-- Frame 5-8s: High-speed particle explosion loop with retention-engineered motion blur
-
-🎨 AI Image Generation Prompt:
-"Cinematic photorealistic 9:16 portrait of a creator mastering $safeTopic in $niche, vivid neon rim light, sharp eye focus, high-contrast studio background, 8k render, Unreal Engine 5 render style."
-            """.trimIndent()
-
-            "IMAGE", "THUMBNAIL" -> """
-🖼️ AI VIRAL THUMBNAIL & COVER ART BLUEPRINT
-Topic: "$safeTopic" • Niche: $niche
-Predicted CTR: 97.4% • Focal Rating: A+ (Viral Certified)
-
-🎨 Visual Composition Guide:
-- Aspect Ratio: 9:16 Reel Cover & 16:9 YouTube Thumbnail
-- Emotion Anchor: High-Intensity Shocked Expression (Left Third)
-- Focal Magnet: Giant Glowing Hockey-Stick Viral Graph (Center)
-- Impact Text: Bold 3-Word Sans ("DON'T DO THIS", "10X VIEWS") in Neon Yellow & Black Stroke
-- Background: Dark vignette with electric purple backlight (#8B5CF6)
-
-🖌️ Midjourney & SDXL Generation Prompt:
-"Award-winning viral YouTube and Reel thumbnail for $safeTopic, shocked creator face expression with dynamic neon lighting, dramatic depth of field, bold typography space, 8k resolution, ArtStation trending composition."
-            """.trimIndent()
-
-            "GEMINI_CHAT" -> """
-🤖 GEMINI AI CREATOR ASSISTANT BLUEPRINT
-Topic: "$safeTopic" • Niche: $niche
-
-Here is my direct creator strategy recommendation for "$safeTopic":
-
-1. ⚡ Hook Angle: Your initial 3 seconds must challenge a common belief in $niche. Use a pattern interrupt: "Everything you've been told about $safeTopic is 100% wrong."
-2. 📊 Retention Strategy: Keep each visual shot under 1.8 seconds. Use b-roll zooms every time you switch talking points.
-3. 💰 Monetization: Drop your affiliate link (Tag: ${MonetizationConstants.AFFILIATE_TAG}) or digital guide in the first pinned comment.
-4. ⏰ Optimal Posting: Post between 11:30 AM or 7:00 PM for maximum algorithm distribution.
-            """.trimIndent()
-
-            "BULK" -> """
-📦 5X BATCH BULK REEL GENERATOR (Zero-Drop Series)
-Series Theme: "$safeTopic" • Niche: $niche
-
-[Episode 1 / 5]: The Problem
-- Hook: "If you're still doing '$safeTopic' like this in 2026, stop immediately..."
-- Pacing: 0-15s Quick cuts, 15-30s The Fix, 30-45s Call to Action
-- Sound: Trending synth wave build-up
-
-[Episode 2 / 5]: The Secret Hack
-- Hook: "The one setting top accounts toggle on before posting '$safeTopic'..."
-- Pacing: 0-3s Screen record zoom, 3-20s Step-by-step tutorial, 20-30s Result reveal
-
-[Episode 3 / 5]: Myth Buster
-- Hook: "Stop believing this myth about '$safeTopic'..."
-- Pacing: Contrarian take, breakdown of metrics
-
-[Episode 4 / 5]: Behind the Scenes
-- Hook: "Here is the exact workflow I use to produce 10 Reels a day on '$safeTopic'..."
-- Pacing: High energy time-lapse & B-roll
-
-[Episode 5 / 5]: The Ultimate Masterclass
-- Hook: "The complete 60-second roadmap to dominating '$safeTopic'..."
-- Pacing: Rapid-fire 3-point summary + comment lead magnet
-            """.trimIndent()
-
-            "PUBLISHER" -> """
-🚀 1-CLICK MULTI-PLATFORM AUTO-PUBLISHER BLUEPRINT
-Target: Instagram Reels • YouTube Shorts • TikTok
-Asset: "$safeTopic"
-
-📅 Automated Optimal Posting Schedule:
-- Primary Slot: 11:30 AM IST (Peak lunch mobile consumption)
-- Secondary Slot: 06:45 PM IST (Evening algorithmic surge)
-
-📝 Platform Metatags & Captions:
-[Instagram Reels]
-"Save this for your next video! 📈 Tested this with $safeTopic and engagement jumped 300%. Drop 'BOOST' for the blueprint 👇 #creator #reelsgrowth #explore"
-
-[YouTube Shorts]
-"How to scale $safeTopic in 60 seconds (Algorithm Breakdown) #shorts #viral #growth"
-
-[TikTok]
-"Wait till second 25... Secret trick for $safeTopic ⚡ #fyp #trending #algorithm"
-
-⚡ Auto-Sync Status: Queued for multi-channel distribution.
-            """.trimIndent()
-
-            else -> """
-💡 AFFILIATE GROWTH BLUEPRINT: "$safeTopic"
-Affiliate Tag: ${MonetizationConstants.AFFILIATE_TAG}
-
-Recommended high-converting product categories for $niche:
-- Creator Microphones & Ring Lights (8-12% commission)
-- Video Editing Subscriptions & AI tools (30% recurring monthly affiliate share)
-- Digital Growth E-books & Notion Creator Hubs (50% direct margin)
-
-Pitch Formula: "The exact tool I used to create this video is linked in my bio with an exclusive creator discount!"
-            """.trimIndent()
+            _isGeneratingAi.value = true
+            try {
+                val aiResult = geminiService.generateSocialContent(
+                    prompt = safeTopic,
+                    platform = "Instagram Reels & YouTube Shorts",
+                    tone = "High-Energy Bilingual Viral Reel",
+                    contentType = "1-Click Video Scene + 60s Script + Viral Hashtags"
+                )
+                val statusTag = if (aiResult.isRealApiCall) "⚡ Live Gemini 3.8 Flash" else "⚡ Smart Offline Engine"
+                val fullResult = "$statusTag • Ready for Instagram & YouTube!\n\n${aiResult.fullResponse}"
+                repository.recordAiGeneration("1_CLICK_AI_REEL", safeTopic, "Shorts & Reels", fullResult)
+                onResult(fullResult)
+                _toastEvent.emit("🎬 AI Reel Package generated for '$safeTopic'!")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val errMsg = "❌ AI Reel generation failed: ${e.localizedMessage ?: "Network unavailable"}"
+                onResult(errMsg)
+                _toastEvent.emit(errMsg)
+            } finally {
+                _isGeneratingAi.value = false
+            }
         }
     }
 
@@ -725,7 +648,10 @@ Pitch Formula: "The exact tool I used to create this video is linked in my bio w
      */
     fun logoutUser(onComplete: () -> Unit = {}) {
         viewModelScope.launch {
-            repository.logoutUser()
+            withContext(NonCancellable) {
+                GoogleAuthManager.signOut(getApplication())
+                repository.logoutUser()
+            }
             _toastEvent.emit("Logged out of ViralBoost AI. See you soon!")
             onComplete()
         }

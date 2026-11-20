@@ -69,7 +69,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -793,23 +795,87 @@ fun AiGeneratorScreen(
                             }
 
                             "GEMINI_CHAT" -> {
-                                // Interactive Gemini Chat Assistant
+                                // Live Interactive Gemini AI Chat Assistant (Firebase AI Logic)
+                                val chatCoroutineScope = rememberCoroutineScope()
+                                val liveGeminiService = remember { com.example.data.service.GeminiSocialContentService() }
                                 InteractiveGeminiChatView(
                                     messages = chatMessages,
                                     inputText = chatInputText,
                                     onInputChange = { chatInputText = it },
                                     onSendMessage = { userMsg ->
-                                        if (userMsg.isNotBlank()) {
-                                            chatMessages.add(ChatMessage("USER", userMsg))
+                                        val clean = userMsg.trim()
+                                        if (clean.isNotBlank()) {
+                                            chatMessages.add(ChatMessage("USER", clean))
                                             chatInputText = ""
-                                            val aiReply = generateGeminiChatReply(userMsg, selectedNiche)
-                                            chatMessages.add(ChatMessage("GEMINI", aiReply))
+                                            chatMessages.add(ChatMessage("GEMINI", "⏳ Gemini 3.8 Flash thinking..."))
+                                            val replyIdx = chatMessages.lastIndex
+                                            chatCoroutineScope.launch {
+                                                try {
+                                                    var streamedAny = false
+                                                    liveGeminiService.generateSocialContentStream(
+                                                        prompt = clean,
+                                                        platform = "Instagram Reels & YouTube Shorts",
+                                                        tone = "Actionable Creator Strategist",
+                                                        contentType = "Creator Growth Advice",
+                                                        targetAudience = "$selectedNiche Creators"
+                                                    ).collect { partial ->
+                                                        streamedAny = true
+                                                        if (replyIdx in chatMessages.indices) {
+                                                            chatMessages[replyIdx] = ChatMessage("GEMINI", partial)
+                                                        }
+                                                    }
+                                                    if (!streamedAny) {
+                                                        val fallback = liveGeminiService.generateSocialContent(
+                                                            prompt = clean,
+                                                            platform = "Instagram Reels & YouTube Shorts",
+                                                            tone = "Actionable Creator Strategist",
+                                                            contentType = "Creator Growth Advice"
+                                                        )
+                                                        if (replyIdx in chatMessages.indices) {
+                                                            chatMessages[replyIdx] = ChatMessage("GEMINI", fallback.fullResponse)
+                                                        }
+                                                    }
+                                                } catch (e: kotlinx.coroutines.CancellationException) {
+                                                    throw e
+                                                } catch (e: Exception) {
+                                                    if (replyIdx in chatMessages.indices) {
+                                                        chatMessages[replyIdx] = ChatMessage(
+                                                            "GEMINI",
+                                                            "⚠️ Gemini AI error: ${e.localizedMessage ?: "Network unavailable. Please try again."}"
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
                                     },
                                     onQuickPrompt = { prompt ->
                                         chatMessages.add(ChatMessage("USER", prompt))
-                                        val aiReply = generateGeminiChatReply(prompt, selectedNiche)
-                                        chatMessages.add(ChatMessage("GEMINI", aiReply))
+                                        chatMessages.add(ChatMessage("GEMINI", "⏳ Gemini 3.8 Flash thinking..."))
+                                        val replyIdx = chatMessages.lastIndex
+                                        chatCoroutineScope.launch {
+                                            try {
+                                                liveGeminiService.generateSocialContentStream(
+                                                    prompt = prompt,
+                                                    platform = "Instagram Reels & YouTube Shorts",
+                                                    tone = "Actionable Creator Strategist",
+                                                    contentType = "Creator Growth Advice",
+                                                    targetAudience = "$selectedNiche Creators"
+                                                ).collect { partial ->
+                                                    if (replyIdx in chatMessages.indices) {
+                                                        chatMessages[replyIdx] = ChatMessage("GEMINI", partial)
+                                                    }
+                                                }
+                                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                                throw e
+                                            } catch (e: Exception) {
+                                                if (replyIdx in chatMessages.indices) {
+                                                    chatMessages[replyIdx] = ChatMessage(
+                                                        "GEMINI",
+                                                        "⚠️ Gemini AI error: ${e.localizedMessage ?: "Network unavailable."}"
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
                                 )
                             }
@@ -1583,17 +1649,6 @@ private fun InteractiveGeminiChatView(
                 Icon(Icons.Default.Send, contentDescription = "Send", tint = Color.White, modifier = Modifier.size(20.dp))
             }
         }
-    }
-}
-
-private fun generateGeminiChatReply(question: String, niche: String): String {
-    val q = question.lowercase()
-    return when {
-        q.contains("hook") -> "For $niche, the highest-converting hook right now is a Pattern Interrupt: 'Stop scrolling if you want to double your reach! 99% of creators are doing this backward...' Use 1.2x pacing in the first 3 seconds!"
-        q.contains("time") -> "In $niche, peak algorithmic distribution happens at 11:30 AM IST (lunch mobile scroll) and 06:45 PM IST (evening relaxation peak). Post 15 minutes before peak!"
-        q.contains("idea") || q.contains("viral") -> "Here are 3 viral ideas for $niche:\n1. 'The one tool top 1% creators never talk about'\n2. 'How I grew 50k views in 7 days with this algorithm tweak'\n3. 'Don't post another video until you fix this audio mistake!'"
-        q.contains("tag") || q.contains("seo") -> "Use a 30-50-20 ratio:\n• 30% discovery tags: #viralreels #growthhack\n• 50% niche tags: #${niche.replace(" ", "").lowercase()} #creatorgrowth\n• 20% low competition tags: #viralboostai #zerodrop"
-        else -> "Great question regarding '$question'! In $niche, remember that the algorithm values 3-second retention and re-watches above all else. Front-load your climax in frame 1, and add a seamless loop CTA at second 58!"
     }
 }
 

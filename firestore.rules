@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          ('email' in request.auth.token
+            && request.auth.token.email == 'jattalboy91@gmail.com'
+            && 'email_verified' in request.auth.token
+            && request.auth.token.email_verified == true)
+        );
+    }
+
+    function isValidUserPayload(data, uidParam) {
+      return data.keys().hasAll(['uid', 'username', 'coins', 'diamonds', 'role'])
+        && data.uid is string && data.uid == uidParam
+        && data.username is string && data.username.size() > 0 && data.username.size() <= 80
+        && data.coins is int && data.coins >= 0
+        && data.diamonds is int && data.diamonds >= 0
+        && data.role in ['user', 'admin'];
+    }
+
+    function isValidLeaderboardPayload(data, uidParam) {
+      return data.keys().hasAll(['uid', 'name', 'coins', 'diamonds', 'viralScore'])
+        && data.uid is string && data.uid == uidParam
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+        && data.coins is int && data.coins >= 0
+        && data.diamonds is int && data.diamonds >= 0
+        && data.viralScore is int && data.viralScore >= 0;
+    }
+
+    function isValidPaymentPayload(data) {
+      return data.keys().hasAll(['userId', 'planName', 'amountRupees', 'utrNumber', 'status', 'timestamp'])
+        && data.userId is string && data.userId.size() > 0
+        && data.planName is string && data.planName.size() > 0 && data.planName.size() <= 140
+        && data.amountRupees is int && data.amountRupees >= 0
+        && data.utrNumber is string && data.utrNumber.size() >= 6 && data.utrNumber.size() <= 40
+        && data.status in ['PENDING', 'APPROVED', 'REJECTED']
+        && data.timestamp is int;
+    }
+
+    function isValidTicketPayload(data) {
+      return data.keys().hasAll(['userId', 'subject', 'message', 'status', 'createdAt'])
+        && data.userId is string && data.userId.size() > 0
+        && data.subject is string && data.subject.size() > 0 && data.subject.size() <= 160
+        && data.message is string && data.message.size() > 0 && data.message.size() <= 2000
+        && data.status in ['OPEN', 'RESOLVED']
+        && data.createdAt is int;
+    }
+
+    function isValidAffiliateOrderPayload(data) {
+      return data.keys().hasAll(['userId', 'productId', 'productTitle', 'affiliateTag', 'timestamp'])
+        && data.userId is string && data.userId.size() > 0
+        && data.productId is string && data.productId.size() > 0
+        && data.productTitle is string && data.productTitle.size() > 0 && data.productTitle.size() <= 160
+        && data.affiliateTag is string && data.affiliateTag.size() > 0
+        && data.timestamp is int;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if (isOwner(userId) && request.resource.data.role == 'user' && isValidUserPayload(request.resource.data, userId))
+                    || (isAdmin() && isValidUserPayload(request.resource.data, userId));
+      allow update: if (isOwner(userId)
+                      && (!('role' in resource.data) || request.resource.data.role == resource.data.role)
+                      && isValidUserPayload(request.resource.data, userId))
+                    || (isAdmin() && isValidUserPayload(request.resource.data, userId));
+      allow delete: if isAdmin();
+    }
+
+    match /leaderboard/{creatorUid} {
+      allow read: if isAuthenticated();
+      allow create, update: if (isOwner(creatorUid) || isAdmin())
+        && isValidLeaderboardPayload(request.resource.data, creatorUid);
+      allow delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'PENDING'
+        && isValidPaymentPayload(request.resource.data);
+      allow update: if isAdmin() && isValidPaymentPayload(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /tickets/{ticketId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'OPEN'
+        && isValidTicketPayload(request.resource.data);
+      allow update: if isAdmin() && isValidTicketPayload(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /affiliate_orders/{orderId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && isValidAffiliateOrderPayload(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /ai_generations/{genId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /app_config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

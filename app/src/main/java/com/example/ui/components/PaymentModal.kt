@@ -107,13 +107,28 @@ fun PaymentModal(
     var utrInput by remember { mutableStateOf("") }
     var utrError by remember { mutableStateOf<String?>(null) }
     var applyDiamondsDiscount by remember { mutableStateOf(false) }
+    var useDynamicAmountQr by remember { mutableStateOf(true) }
 
-    // Diamond discount power calculation (~5 diamonds = ₹1-₹2 discount)
+    // Diamond discount power calculation (~5 diamonds = ₹1 discount), minimum ₹10 payable
     val maxDiamondsApplicable = (userDiamonds / 10) * 10
     val discountRupees = if (applyDiamondsDiscount && maxDiamondsApplicable >= 50) {
-        (maxDiamondsApplicable / MonetizationConstants.DIAMONDS_PER_RUPEE_DISCOUNT).toInt().coerceAtMost(plan.priceRupees - 49)
+        (maxDiamondsApplicable / MonetizationConstants.DIAMONDS_PER_RUPEE_DISCOUNT)
+            .toInt()
+            .coerceAtMost((plan.priceRupees - 10).coerceAtLeast(0))
     } else 0
-    val finalPriceRupees = plan.priceRupees - discountRupees
+    val finalPriceRupees = (plan.priceRupees - discountRupees).coerceAtLeast(10)
+    val dynamicUpiUri = remember(finalPriceRupees, plan.name, ownerUpiId, ownerName) {
+        PaymentManager.createUpiPaymentUri(
+            amountRupees = finalPriceRupees,
+            planName = plan.name,
+            ownerUpiId = ownerUpiId,
+            ownerName = ownerName
+        )
+    }
+    val dynamicQrImageUrl = remember(dynamicUpiUri) {
+        val encoded = java.net.URLEncoder.encode(dynamicUpiUri, "UTF-8")
+        "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=$encoded"
+    }
 
     Dialog(
         onDismissRequest = safeDismiss,
@@ -350,12 +365,53 @@ fun PaymentModal(
                             textAlign = TextAlign.Center
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Toggle between Amount-Locked Dynamic UPI QR and Owner Static QR
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { useDynamicAmountQr = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (useDynamicAmountQr) NeonCyan else DarkSurfaceBorder
+                                )
+                            ) {
+                                Text(
+                                    text = "₹$finalPriceRupees Smart QR",
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (useDynamicAmountQr) NeonCyan else Color.Gray
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = { useDynamicAmountQr = false },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (!useDynamicAmountQr) GoldAccent else DarkSurfaceBorder
+                                )
+                            ) {
+                                Text(
+                                    text = "Owner Static QR",
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (!useDynamicAmountQr) GoldAccent else Color.Gray
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         // QR Code Image
                         Box(
                             modifier = Modifier
-                                .size(170.dp)
+                                .size(180.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color.White)
                                 .border(2.dp, BrandPurple, RoundedCornerShape(12.dp))
@@ -363,19 +419,27 @@ fun PaymentModal(
                             contentAlignment = Alignment.Center
                         ) {
                             SubcomposeAsyncImage(
-                                model = ownerQrUrl,
+                                model = if (useDynamicAmountQr) dynamicQrImageUrl else ownerQrUrl,
                                 contentDescription = "Owner Payment QR Code",
-                                modifier = Modifier.size(154.dp),
+                                modifier = Modifier.size(164.dp),
                                 contentScale = ContentScale.Fit,
                                 loading = {
                                     CircularProgressIndicator(modifier = Modifier.size(32.dp), color = BrandPurple)
                                 },
                                 error = {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(Icons.Default.QrCode, contentDescription = null, tint = Color.Black, modifier = Modifier.size(48.dp))
-                                        Text("Scan to Pay", fontSize = 11.sp, color = Color.Black, fontWeight = FontWeight.Bold)
-                                        Text(ownerUpiId, fontSize = 9.sp, color = Color.DarkGray)
-                                    }
+                                    SubcomposeAsyncImage(
+                                        model = ownerQrUrl,
+                                        contentDescription = "Owner Static QR Code",
+                                        modifier = Modifier.size(164.dp),
+                                        contentScale = ContentScale.Fit,
+                                        error = {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(Icons.Default.QrCode, contentDescription = null, tint = Color.Black, modifier = Modifier.size(48.dp))
+                                                Text("Pay ₹$finalPriceRupees", fontSize = 11.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+                                                Text(ownerUpiId, fontSize = 9.sp, color = Color.DarkGray)
+                                            }
+                                        }
+                                    )
                                 }
                             )
                         }

@@ -27,6 +27,7 @@ import com.example.data.local.UserStreakDiamondLedgerEntity
 import com.example.data.local.VideoCrossPostDao
 import com.example.data.local.VideoCrossPostRecord
 import com.example.data.model.AffiliateProduct
+import com.example.data.service.FirestoreSyncRepository
 import com.example.monetization.MonetizationConstants
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -73,7 +74,8 @@ class ViralBoostRepository(
     private val communityVideoPostDao: CommunityVideoPostDao? = null,
     private val legalDao: LegalDao? = null,
     private val savedContentHistoryDao: SavedContentHistoryDao? = null,
-    private val userStreakDiamondLedgerDao: UserStreakDiamondLedgerDao? = null
+    private val userStreakDiamondLedgerDao: UserStreakDiamondLedgerDao? = null,
+    private val cloudSync: FirestoreSyncRepository? = null
 ) {
     val userProfile: Flow<UserProfile?> = userDao.getUserProfile()
     val streakCountFlow: Flow<Int?> = userDao.getStreakCountFlow()
@@ -188,6 +190,7 @@ class ViralBoostRepository(
                 note = "Daily Streak Day $newStreak Claimed (+$totalAwarded Diamonds)"
             )
         )
+        syncLeaderboardAndCloud()
 
         return StreakResult.Success(newStreak, totalAwarded, milestoneBonus)
     }
@@ -208,6 +211,7 @@ class ViralBoostRepository(
         userDao.addDiamonds(bonusDiamonds)
         userDao.addCoins(bonusCoins)
         userDao.updateStreak(newStreak, today, System.currentTimeMillis())
+        syncLeaderboardAndCloud()
 
         return StreakResult.Success(newStreak, bonusDiamonds, 0)
     }
@@ -227,7 +231,30 @@ class ViralBoostRepository(
                 note = "Watched Rewarded Ad (+$reward Diamonds)"
             )
         )
+        syncLeaderboardAndCloud()
         return reward
+    }
+
+    suspend fun convertCoinsToDiamonds(coinsToSpend: Int = 100): Boolean {
+        if (coinsToSpend < 20 || coinsToSpend % 20 != 0) return false
+        val profile = getProfileOnce()
+        if (profile.coins < coinsToSpend) return false
+        val diamondsEarned = coinsToSpend / 20 // 100 Coins = 5 Diamonds
+        userDao.addCoins(-coinsToSpend)
+        userDao.addDiamonds(diamondsEarned)
+        val newBalance = userDao.getDiamondBalanceOnce() ?: (profile.diamonds + diamondsEarned)
+        userStreakDiamondLedgerDao?.insertLedgerEntry(
+            UserStreakDiamondLedgerEntity(
+                userId = profile.id,
+                eventType = "BONUS",
+                streakCountSnapshot = profile.streakDays,
+                diamondDelta = diamondsEarned,
+                diamondBalanceSnapshot = newBalance,
+                note = "Converted $coinsToSpend Coins to +$diamondsEarned Diamonds"
+            )
+        )
+        syncLeaderboardAndCloud()
+        return true
     }
 
     suspend fun redeemDiamondsForVip(diamondsToRedeem: Int): Boolean {
@@ -254,6 +281,7 @@ class ViralBoostRepository(
                     adminNote = "Unlocked via $diamondsToRedeem Diamonds"
                 )
             )
+            syncLeaderboardAndCloud()
             return true
         }
         return false
@@ -417,6 +445,7 @@ class ViralBoostRepository(
                 createdAt = record.createdAt
             )
         )
+        syncLeaderboardAndCloud()
         return record.copy(id = insertedId)
     }
 
@@ -506,7 +535,9 @@ class ViralBoostRepository(
             status = "PENDING",
             timestamp = System.currentTimeMillis()
         )
-        return paymentDao.insertPayment(record)
+        val localId = paymentDao.insertPayment(record)
+        cloudSync?.submitPayment(record)
+        return localId
     }
 
     suspend fun submitSupportTicket(
@@ -525,7 +556,9 @@ class ViralBoostRepository(
             status = "OPEN",
             createdAt = System.currentTimeMillis()
         )
-        return supportDao.insertTicket(ticket)
+        val localId = supportDao.insertTicket(ticket)
+        cloudSync?.submitSupportTicket(ticket)
+        return localId
     }
 
     suspend fun adminVerifyPayment(paymentId: Long, approve: Boolean, note: String) {
@@ -535,13 +568,14 @@ class ViralBoostRepository(
         if (approve) {
             val payment = paymentDao.getPaymentById(paymentId)
             val (days, planTier) = when {
-                payment?.planName?.contains("10-Day") == true || payment?.amountRupees == 49 -> Pair(10L, "PASS_10_DAYS")
-                payment?.planName?.contains("15-Day") == true || payment?.amountRupees == 99 -> Pair(15L, "PASS_15_DAYS")
-                payment?.planName?.contains("1-Month") == true || payment?.amountRupees == 149 -> Pair(30L, "VIP_MONTHLY")
+                payment?.planName?.contains("10-Day") == true || payment?.amountRupees == MonetizationConstants.PRICE_PASS_10_DAYS -> Pair(10L, "PASS_10_DAYS")
+                payment?.planName?.contains("15-Day") == true || payment?.amountRupees == MonetizationConstants.PRICE_PASS_15_DAYS || payment?.amountRupees == 99 -> Pair(15L, "PASS_15_DAYS")
+                payment?.planName?.contains("1 Month") == true || payment?.planName?.contains("1-Month") == true || payment?.amountRupees == MonetizationConstants.PRICE_VIP_MONTHLY || payment?.amountRupees == 149 -> Pair(30L, "VIP_MONTHLY")
                 else -> Pair(90L, "PRO_3_MONTHS")
             }
             val newExpiry = System.currentTimeMillis() + days * 24 * 60 * 60 * 1000
             userDao.updateVipStatusWithPlan(isVip = true, expiryDate = newExpiry, planTier = planTier)
+            syncLeaderboardAndCloud()
         }
     }
 
@@ -562,6 +596,7 @@ class ViralBoostRepository(
                 trialStartTimestamp = trialStart
             )
         )
+        syncLeaderboardAndCloud()
     }
 
     fun logLegalAgreementToAdminPanel(name: String, contact: String, timestamp: String) {
@@ -659,10 +694,12 @@ class ViralBoostRepository(
 
     suspend fun addCoins(amount: Int) {
         userDao.addCoins(amount)
+        syncLeaderboardAndCloud()
     }
 
     suspend fun addDiamonds(amount: Int) {
         userDao.addDiamonds(amount)
+        syncLeaderboardAndCloud()
     }
 
     suspend fun placeProductOrder(
@@ -688,17 +725,21 @@ class ViralBoostRepository(
         val orderId = productOrderDao?.insertOrder(order) ?: System.currentTimeMillis()
         // User Purchase Reward: +3 Diamonds credited directly to wallet
         userDao.addDiamonds(MonetizationConstants.AFFILIATE_PRODUCT_PURCHASE_DIAMONDS_REWARD)
+        cloudSync?.recordAffiliateOrder(order)
+        syncLeaderboardAndCloud()
         return orderId
     }
 
     suspend fun rewardProductShare(product: AffiliateProduct) {
         // Social Media Sharing Reward: +10 Coins instantly
         userDao.addCoins(MonetizationConstants.AFFILIATE_PRODUCT_SHARE_COINS_REWARD)
+        syncLeaderboardAndCloud()
     }
 
     suspend fun rewardProductPurchase(product: AffiliateProduct) {
         // Product Purchase Reward: +3 Diamonds credited directly
         userDao.addDiamonds(MonetizationConstants.AFFILIATE_PRODUCT_PURCHASE_DIAMONDS_REWARD)
+        syncLeaderboardAndCloud()
     }
 
     suspend fun recordVideoCrossPost(
@@ -860,7 +901,72 @@ class ViralBoostRepository(
                 adminNote = "Unlocked 24-hr Full-App Free Subscription: $friendName explored app for 1-2 mins"
             )
         )
+        syncLeaderboardAndCloud()
         return true
+    }
+
+    suspend fun syncLeaderboardAndCloud() {
+        try {
+            val profile = getProfileOnce()
+            val safeName = profile.username.ifBlank { "ViralCreator_99" }
+            val handle = "@${safeName.lowercase().replace(Regex("[^a-z0-9_]"), "_").take(20).ifBlank { "creator" }}"
+            val score = (profile.coins.coerceAtLeast(0)) + (profile.diamonds.coerceAtLeast(0) * 10)
+            val existing = leaderboardDao.getAllCreatorsOnce()
+            val others = existing.filter { it.id != 9 && !it.name.endsWith("(You)") }
+            val myEntry = LeaderboardCreator(
+                id = 9,
+                name = "$safeName (You)",
+                handle = handle,
+                niche = profile.niche.ifBlank { "Shorts & Reels" },
+                diamonds = profile.diamonds.coerceAtLeast(0),
+                streakDays = profile.streakDays.coerceAtLeast(1),
+                viralScore = score,
+                isVip = profile.isVip,
+                rank = 9,
+                coins = profile.coins.coerceAtLeast(0)
+            )
+            val combined = (others + myEntry)
+                .sortedByDescending { it.coins + (it.diamonds * 10) }
+                .mapIndexed { idx, creator -> creator.copy(rank = idx + 1) }
+            if (combined.isNotEmpty()) {
+                leaderboardDao.insertCreators(combined)
+            }
+            cloudSync?.syncUserProfileAndLeaderboard(profile)
+        } catch (_: Throwable) {
+            // Keep offline/test callers resilient
+        }
+    }
+
+    suspend fun restoreFromCloudIfAvailable() {
+        try {
+            val cloudData = cloudSync?.fetchCloudUserProfile()?.getOrNull() ?: return
+            val local = getProfileOnce()
+            val cloudCoins = (cloudData["coins"] as? Number)?.toInt() ?: local.coins
+            val cloudDiamonds = (cloudData["diamonds"] as? Number)?.toInt() ?: local.diamonds
+            val cloudStreak = (cloudData["streakDays"] as? Number)?.toInt() ?: local.streakDays
+            val cloudVip = cloudData["isVip"] as? Boolean ?: local.isVip
+            val cloudTier = cloudData["planTier"] as? String ?: local.currentPlanTier
+            val cloudExpiry = (cloudData["vipExpiryDate"] as? Number)?.toLong() ?: local.vipExpiryDate
+            val cloudUsername = (cloudData["username"] as? String)?.takeIf { it.isNotBlank() } ?: local.username
+            val cloudEmail = (cloudData["email"] as? String)?.takeIf { it.isNotBlank() } ?: local.email
+            userDao.insertOrUpdateProfile(
+                local.copy(
+                    username = cloudUsername,
+                    email = cloudEmail,
+                    coins = maxOf(local.coins, cloudCoins),
+                    diamonds = maxOf(local.diamonds, cloudDiamonds),
+                    streakDays = maxOf(local.streakDays, cloudStreak),
+                    isVip = local.isVip || cloudVip,
+                    currentPlanTier = if (cloudVip) cloudTier else local.currentPlanTier,
+                    vipExpiryDate = maxOf(local.vipExpiryDate, cloudExpiry),
+                    isLoggedIn = true,
+                    hasAgreedToTerms = true
+                )
+            )
+            syncLeaderboardAndCloud()
+        } catch (_: Throwable) {
+            // Offline resilience
+        }
     }
 }
 

@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Authenticated ViralBoost AI creator profile, wallet balances, VIP subscription status, and role.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "displayUserId": { "type": "string", "description": "8-digit creator code" },
+        "username": { "type": "string", "description": "Creator display name" },
+        "email": { "type": "string", "format": "email", "description": "User email" },
+        "niche": { "type": "string", "description": "Primary content niche" },
+        "coins": { "type": "integer", "description": "Current wallet coins" },
+        "diamonds": { "type": "integer", "description": "Current wallet diamonds" },
+        "lifetimeDiamonds": { "type": "integer", "description": "Total lifetime diamonds earned" },
+        "bonusRupees": { "type": "number", "description": "Welcome bonus rupees" },
+        "streakDays": { "type": "integer", "description": "Daily streak days" },
+        "isVip": { "type": "boolean", "description": "VIP status" },
+        "planTier": { "type": "string", "description": "Current subscription tier" },
+        "vipExpiryDate": { "type": "integer", "description": "VIP expiration epoch millis" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "RBAC role" },
+        "updatedAt": { "type": "integer", "description": "Last sync epoch millis" }
+      },
+      "required": ["uid", "username", "coins", "diamonds", "role"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public creator leaderboard entry ranked by coins and diamonds.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Creator name" },
+        "handle": { "type": "string", "description": "Creator handle" },
+        "niche": { "type": "string", "description": "Creator niche" },
+        "coins": { "type": "integer", "description": "Coins score" },
+        "diamonds": { "type": "integer", "description": "Diamonds score" },
+        "streakDays": { "type": "integer", "description": "Streak count" },
+        "viralScore": { "type": "integer", "description": "Computed overall score" },
+        "isVip": { "type": "boolean", "description": "VIP badge flag" },
+        "updatedAt": { "type": "integer", "description": "Last update timestamp" }
+      },
+      "required": ["uid", "name", "coins", "diamonds", "viralScore"]
+    },
+    "PaymentSubmission": {
+      "title": "PaymentSubmission",
+      "description": "12-digit UTR payment verification record submitted for VIP subscription.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "userName": { "type": "string", "description": "Submitting creator name" },
+        "planName": { "type": "string", "description": "VIP plan name" },
+        "amountRupees": { "type": "integer", "description": "Amount paid in INR" },
+        "utrNumber": { "type": "string", "description": "12-digit UPI UTR reference" },
+        "paymentMethod": { "type": "string", "description": "Payment channel used" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"], "description": "Verification status" },
+        "ownerUpiId": { "type": "string", "description": "Owner UPI ID paid to" },
+        "timestamp": { "type": "integer", "description": "Submission epoch millis" },
+        "adminNote": { "type": "string", "description": "Admin verification note" }
+      },
+      "required": ["userId", "planName", "amountRupees", "utrNumber", "status", "timestamp"]
+    },
+    "SupportTicketDoc": {
+      "title": "SupportTicketDoc",
+      "description": "User help desk support ticket.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "userName": { "type": "string", "description": "Creator name" },
+        "userEmail": { "type": "string", "description": "Creator email" },
+        "subject": { "type": "string", "description": "Ticket subject" },
+        "category": { "type": "string", "description": "Ticket category" },
+        "message": { "type": "string", "description": "Ticket description" },
+        "status": { "type": "string", "enum": ["OPEN", "RESOLVED"], "description": "Ticket status" },
+        "adminReply": { "type": "string", "description": "Reply from support admin" },
+        "createdAt": { "type": "integer", "description": "Creation epoch millis" }
+      },
+      "required": ["userId", "subject", "message", "status", "createdAt"]
+    },
+    "AffiliateOrderDoc": {
+      "title": "AffiliateOrderDoc",
+      "description": "Tracked affiliate product order and diamond reward record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "productId": { "type": "string", "description": "Product identifier" },
+        "productTitle": { "type": "string", "description": "Product name" },
+        "platform": { "type": "string", "description": "E-commerce store name" },
+        "priceRupees": { "type": "integer", "description": "Product price in INR" },
+        "affiliateTag": { "type": "string", "description": "Affiliate referral tag" },
+        "diamondsRewarded": { "type": "integer", "description": "Diamonds awarded" },
+        "status": { "type": "string", "description": "Order confirmation state" },
+        "timestamp": { "type": "integer", "description": "Order timestamp" }
+      },
+      "required": ["userId", "productId", "productTitle", "affiliateTag", "timestamp"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "databaseId": "ai-studio-android-viralboo-3301348c-e96b-490a-988e-70a9002b75d1",
+    "collections": [
+      {
+        "path": "/users/{userId}",
+        "entity": "User",
+        "description": "User profile, wallet coins & diamonds, and VIP entitlement document."
+      },
+      {
+        "path": "/leaderboard/{creatorUid}",
+        "entity": "LeaderboardEntry",
+        "description": "Live ranked creator leaderboard entries."
+      },
+      {
+        "path": "/payments/{paymentId}",
+        "entity": "PaymentSubmission",
+        "description": "UPI UTR submissions awaiting or granted admin approval."
+      },
+      {
+        "path": "/tickets/{ticketId}",
+        "entity": "SupportTicketDoc",
+        "description": "User support tickets scoped per userId."
+      },
+      {
+        "path": "/affiliate_orders/{orderId}",
+        "entity": "AffiliateOrderDoc",
+        "description": "Affiliate product orders and diamond rewards scoped per userId."
+      }
+    ]
+  }
+}

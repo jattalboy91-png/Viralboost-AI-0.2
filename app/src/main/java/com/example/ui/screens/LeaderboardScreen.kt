@@ -214,8 +214,27 @@ fun LeaderboardScreen(
                 }
             }
 
-            // User's Own Standing Card
+            // User's Own Standing Card with live rank computation
             item {
+                val myScore = when (selectedTab) {
+                    0 -> profile.coins + (profile.diamonds * 10)
+                    1 -> profile.coins
+                    else -> profile.diamonds
+                }
+                val myIdx = sortedCreators.indexOfFirst { it.id == 9 || it.name.contains("(You)") }
+                val computedRank = if (myIdx >= 0) {
+                    myIdx + 1
+                } else {
+                    sortedCreators.count { creator ->
+                        val cScore = when (selectedTab) {
+                            0 -> creator.coins + (creator.diamonds * 10)
+                            1 -> creator.coins
+                            else -> creator.diamonds
+                        }
+                        cScore > myScore
+                    } + 1
+                }
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -239,7 +258,7 @@ fun LeaderboardScreen(
                                     .background(BrandPurple),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("#9", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("#$computedRank", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
@@ -255,7 +274,7 @@ fun LeaderboardScreen(
                                         Icon(Icons.Default.WorkspacePremium, contentDescription = null, tint = VipGold, modifier = Modifier.size(14.dp))
                                     }
                                 }
-                                Text(text = "${profile.niche} • Standing", fontSize = 10.sp, color = NeonCyan)
+                                Text(text = "${profile.niche} • Live Standing #$computedRank", fontSize = 10.sp, color = NeonCyan)
                             }
                         }
 

@@ -310,6 +310,8 @@ fun ViralBoostApp(
 
     // Auto-Login & Mandatory Legal Onboarding Gate
     // If user is not yet logged in or has not agreed to terms, require Onboarding
+    val isGoogleSigningIn by viewModel.isGoogleSigningIn.collectAsStateWithLifecycle()
+
     if (!isUserLoggedIn && !isOwnerActive) {
         OnboardingScreen(
             onSignupComplete = { name, contact, method ->
@@ -323,7 +325,14 @@ fun ViralBoostApp(
             onOwnerLoginSuccess = {
                 viewModel.setOwnerStatus(true)
                 currentScreen = ScreenTab.ADMIN_PANEL
-            }
+            },
+            onGoogleSignIn = {
+                viewModel.signInWithGoogle(activity) {
+                    currentScreen = ScreenTab.HOME
+                    viewModel.triggerWelcomePopup()
+                }
+            },
+            isGoogleSigningIn = isGoogleSigningIn
         )
         return
     }

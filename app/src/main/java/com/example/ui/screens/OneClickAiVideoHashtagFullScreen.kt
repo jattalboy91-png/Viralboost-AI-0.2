@@ -331,31 +331,30 @@ fun OneClickAiVideoHashtagFullScreen(
     val executeOneClickGenerate: () -> Unit = {
         if (!isGenerating) {
             isGenerating = true
-            generationProgress = 0.15f
-            generationStageText = "🎬 AI 9:16 वीडियो सीन और बीट सिंक तैयार हो रहा है..."
+            generationProgress = 0.20f
+            generationStageText = "✨ Google Gemini AI (3.8 Flash) से वायरल स्क्रिप्ट, वीडियो सीन और हैशटैग जनरेट हो रहे हैं..."
             statusBannerMessage = null
 
             coroutineScope.launch {
-                delay(450)
-                generationProgress = 0.55f
-                generationStageText = "✨ Gemini AI वायरल टाइटल, स्क्रिप्ट और हुक लिख रहा है..."
                 val effectivePrompt = customTopicInput.trim().ifEmpty {
                     "${selectedCategory.defaultPrompt} (${selectedCategory.titleHindi})"
                 }
+                generationProgress = 0.55f
                 val result = geminiService.generateSocialContent(
                     prompt = effectivePrompt,
                     platform = "Instagram Reels & YouTube Shorts",
                     tone = "High-Energy Viral (${selectedCategory.titleEnglish})",
                     contentType = "Reel Script + Viral Hashtags"
                 )
-                delay(400)
-                generationProgress = 0.90f
-                generationStageText = "🏷️ टॉप ट्रेंडिंग वायरल हैशटैग्स लोड हो रहे हैं..."
-                delay(300)
+                generationProgress = 1.0f
                 generatedResult = result
                 isGenerating = false
                 isVideoPlaying = true
-                statusBannerMessage = "🎉 1-Click AI वीडियो और वायरल हैशटैग्स तैयार हैं! नीचे कॉपी या ऑटो-शेयर करें।"
+                statusBannerMessage = if (result.isRealApiCall) {
+                    "⚡ Live Gemini 3.8 Flash ने 1-Click AI वीडियो और वायरल हैशटैग्स तैयार कर दिए हैं!"
+                } else {
+                    "⚠️ Offline Fallback सक्रिय (${result.errorMessage ?: "Network issue"}) — नीचे कॉपी या ऑटो-शेयर करें।"
+                }
             }
         }
     }

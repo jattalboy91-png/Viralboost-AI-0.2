@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -85,6 +86,8 @@ import com.example.ui.theme.SuccessGreen
 fun OnboardingScreen(
     onSignupComplete: (name: String, contact: String, method: String) -> Unit,
     onOwnerLoginSuccess: () -> Unit = {},
+    onGoogleSignIn: (() -> Unit)? = null,
+    isGoogleSigningIn: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -198,6 +201,36 @@ fun OnboardingScreen(
             border = androidx.compose.foundation.BorderStroke(1.dp, DarkSurfaceBorder)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
+                if (onGoogleSignIn != null) {
+                    Button(
+                        onClick = onGoogleSignIn,
+                        enabled = !isGoogleSigningIn,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("google_signin_button"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VerifiedUser,
+                            contentDescription = "Google Sign-In",
+                            tint = Color(0xFF4285F4),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isGoogleSigningIn) "Signing in with Google..." else "Continue with Google (Cloud Sync)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Text(
                     text = "Select Registration Method",
                     fontSize = 12.sp,

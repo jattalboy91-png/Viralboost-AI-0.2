@@ -209,8 +209,14 @@ interface LeaderboardDao {
     @Query("SELECT * FROM leaderboard_creators ORDER BY rank ASC")
     fun getAllCreators(): Flow<List<LeaderboardCreator>>
 
+    @Query("SELECT * FROM leaderboard_creators ORDER BY viralScore DESC")
+    suspend fun getAllCreatorsOnce(): List<LeaderboardCreator>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCreators(creators: List<LeaderboardCreator>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCreator(creator: LeaderboardCreator)
 
     @Query("DELETE FROM leaderboard_creators")
     suspend fun clearLeaderboard()

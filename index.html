@@ -115,10 +115,13 @@
       </div>
 
       <div class="flex items-center gap-1.5 shrink-0">
-        <button onclick="openOverlay('diamondDashboard')" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-sky-400/40 text-xs font-extrabold text-sky-300 hover:border-sky-400 transition">
+        <button id="hdr-ai-key-btn" onclick="openGeminiKeyModal()" title="Firebase AI Logic & Cloud Sync Status" class="px-2 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-400/60 text-[11px] font-extrabold text-emerald-300 hover:border-cyan-400 transition">
+          ✨ AI Live
+        </button>
+        <button onclick="openOverlay('diamondDashboard')" class="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-900 border border-sky-400/40 text-xs font-extrabold text-sky-300 hover:border-sky-400 transition">
           <span>💎</span><span id="hdr-diamonds">10</span>
         </button>
-        <button onclick="openOverlay('diamondDashboard')" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-amber-400/40 text-xs font-extrabold text-amber-300 hover:border-amber-400 transition">
+        <button onclick="openOverlay('diamondDashboard')" class="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-900 border border-amber-400/40 text-xs font-extrabold text-amber-300 hover:border-amber-400 transition">
           <span>🪙</span><span id="hdr-coins">250</span>
         </button>
         <button onclick="switchTab('vip')" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-extrabold text-[11px] shadow hover:brightness-105 transition">
@@ -203,6 +206,7 @@
       REEL_WATCH_DIAMONDS: 3,
       VIP_REDEEM_15D: 150,
       VIP_REDEEM_1M: 500,
+      GEMINI_PROXY_URL: '',
       APP_URL: window.location.origin
     };
 
@@ -414,6 +418,8 @@
           lastStreakClaimDate: '',
           isVip: false,
           planTier: 'FREE_TRIAL',
+          vipExpiresAt: 0,
+          trialStartDate: today,
           trialDay: 1,
           trialExpired: false,
           videosUsed: 0,
@@ -423,6 +429,12 @@
           personalAffiliateLink: '',
           reminderTime: '09:00',
           reminderEnabled: true
+        },
+        affiliateStats: {
+          clicks: 0,
+          shares: 0,
+          ordersLogged: 0,
+          estimatedCommissionRupees: 0
         },
         channels: {
           instagram: { connected: true, handle: '@creator_pro' },
@@ -465,6 +477,7 @@
         affiliateTab: 0,
         affiliateCat: 'All Items',
         affiliatePlatform: 'All Stores',
+        affiliateLastConvertedUrl: '',
         shopsyCat: 'All',
         poolPlatform: 'All',
         reelsPlatform: 'All',
@@ -473,6 +486,7 @@
           customTopic: '',
           coverDataUrl: '',
           isPlaying: true,
+          aiSource: 'READY',
           title: '🔥 देसी छोरा आया मार्केट में — 1-Click Viral Reel!',
           script: 'HOOK (0-3s): सिस्टम हिलाने वाला ओपनिंग शॉट + स्लो-मो ज़ूम!\nSCENE (3-20s): हाई-एनर्जी 808 बीट ड्रॉप के साथ लिरिक्स कैप्शन सिंक!\nCTA (20-30s): अभी शेयर करें और कमेंट में 🔥 लिखें!',
           hashtags: '#HaryanviSwag #DesiRap #ViralReels #ShortsIndia #ViralBoostAI #TrendingAudio'
@@ -501,6 +515,7 @@
           ...def,
           ...parsed,
           profile: { ...def.profile, ...(parsed.profile || {}) },
+          affiliateStats: { ...def.affiliateStats, ...(parsed.affiliateStats || {}) },
           channels: { ...def.channels, ...(parsed.channels || {}) },
           aiStudioState: { ...def.aiStudioState, ...(parsed.aiStudioState || {}) },
           crossPoster: { ...def.crossPoster, ...(parsed.crossPoster || {}) }
@@ -510,6 +525,8 @@
       }
     }
 
+    const GEMINI_KEY_STORAGE = 'vb_gemini_api_key';
+    const GEMINI_PROXY_STORAGE = 'vb_gemini_proxy_url';
     let state = loadState();
     let activeOverlay = null;
     let tickerIdx = 0;
@@ -517,6 +534,43 @@
     let beatTimer = null;
     let isAudioPlaying = false;
     let canvasRaf = null;
+    let isExportingVideo = false;
+    let exportProgressPct = 0;
+    let exportedReelUrl = '';
+    let exportedReelBlob = null;
+    let isStudioGenerating = false;
+
+    function updateTrialAndVipLifecycle() {
+      const p = state.profile;
+      const today = new Date().toISOString().slice(0, 10);
+      if (state.todayDate !== today) {
+        state.todayDate = today;
+        p.videosUsed = 0;
+        p.imagesUsed = 0;
+        p.textUsed = 0;
+      }
+      if (!p.trialStartDate) p.trialStartDate = today;
+      const startMs = Date.parse(p.trialStartDate) || Date.now();
+      const daysElapsed = Math.max(0, Math.floor((Date.now() - startMs) / 86400000)) + 1;
+      p.trialDay = Math.min(3, daysElapsed);
+      p.trialExpired = !p.isVip && daysElapsed > 3;
+
+      if (p.isVip && p.vipExpiresAt && Date.now() > p.vipExpiresAt) {
+        p.isVip = false;
+        p.planTier = 'FREE_TRIAL';
+        p.vipExpiresAt = 0;
+      }
+    }
+    updateTrialAndVipLifecycle();
+
+    let cloudUser = null;
+    let cloudLeaderboard = [];
+
+    function syncProfileToCloud() {
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser) {
+        window.ViralBoostFirebase.syncUserProfileAndLeaderboard(state.profile);
+      }
+    }
 
     function saveState() {
       try {
@@ -531,8 +585,22 @@
       const cEl = document.getElementById('hdr-coins');
       const vipEl = document.getElementById('hdr-vip-badge');
       const triEl = document.getElementById('hdr-trial-badge');
+      const keyBtn = document.getElementById('hdr-ai-key-btn');
       if (dEl) dEl.textContent = p.diamonds;
       if (cEl) cEl.textContent = p.coins;
+      if (keyBtn) {
+        const hasFirebaseAi = Boolean(window.ViralBoostFirebase && window.ViralBoostFirebase.aiReady);
+        const hasExtra = Boolean(
+          hasFirebaseAi ||
+          (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim() ||
+          (localStorage.getItem(GEMINI_PROXY_STORAGE) || '').trim() ||
+          (CONSTANTS.GEMINI_PROXY_URL || '').trim()
+        );
+        keyBtn.textContent = hasFirebaseAi ? '✨ AI Live' : (hasExtra ? '🔑 AI ✓' : '✨ AI');
+        keyBtn.className = hasExtra
+          ? 'px-2 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-400/60 text-[11px] font-extrabold text-emerald-300 transition'
+          : 'px-2 py-1.5 rounded-xl bg-slate-900 border border-violet-400/40 text-[11px] font-extrabold text-violet-200 hover:border-cyan-400 transition';
+      }
       if (vipEl && triEl) {
         if (p.isVip) {
           vipEl.classList.remove('hidden');
@@ -634,6 +702,7 @@
         time: Date.now()
       });
       saveState();
+      syncProfileToCloud();
       if (activeOverlay) renderOverlay();
     }
 
@@ -825,7 +894,7 @@
                 <span class="truncate">${cp.videoName ? escapeHtml(cp.videoName) : 'Upload Video Clip (MP4)'}</span>
                 <input type="file" accept="video/*" class="hidden" onchange="handleHeroVideoUpload(event)" />
               </label>
-              <button onclick="runHeroAiAnalyzer()" class="flex-1 min-w-[140px] py-2.5 px-3 rounded-xl bg-violet-600/30 border border-violet-400/60 hover:bg-violet-600/50 text-xs font-extrabold text-amber-300 transition">
+              <button id="hero-ai-analyze-btn" onclick="runHeroAiAnalyzer()" class="flex-1 min-w-[140px] py-2.5 px-3 rounded-xl bg-violet-600/30 border border-violet-400/60 hover:bg-violet-600/50 text-xs font-extrabold text-amber-300 transition">
                 ✨ AI Auto Title & Tags
               </button>
             </div>
@@ -1035,11 +1104,14 @@
         <section class="rounded-2xl p-4 app-card border-violet-500/40">
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-display font-bold text-sm text-white">⚡ Quick Gemini Keyword Generator</h3>
-            <button onclick="openOverlay('geminiStudio')" class="text-[11px] font-bold text-cyan-400">Open Full Studio →</button>
+            <div class="flex items-center gap-2">
+              <button onclick="openGeminiKeyModal()" class="text-[10.5px] font-bold text-amber-300 underline">🔑 API Key</button>
+              <button onclick="openOverlay('geminiStudio')" class="text-[11px] font-bold text-cyan-400">Open Full Studio →</button>
+            </div>
           </div>
           <div class="flex gap-2">
-            <input id="home-gemini-kw" type="text" placeholder="Enter topic (e.g. Street Food, AI Tools, Fitness)..." class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" />
-            <button onclick="quickHomeGeminiGenerate()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs shrink-0">Generate ✨</button>
+            <input id="home-gemini-kw" type="text" placeholder="Enter topic (e.g. Street Food, AI Tools, Fitness)..." class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') quickHomeGeminiGenerate()" />
+            <button id="home-gemini-btn" onclick="quickHomeGeminiGenerate()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs shrink-0">Generate ✨</button>
           </div>
           <div id="home-gemini-output" class="hidden mt-3 rounded-xl bg-slate-950/90 border border-cyan-500/40 p-3 text-xs space-y-1.5"></div>
         </section>
@@ -1229,21 +1301,27 @@
 
         <!-- Live Gemini Creator Generator & Chat -->
         <section class="rounded-2xl p-4 app-card border-violet-500/40 space-y-3">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <h3 class="font-display font-bold text-sm">🤖 Gemini Creator Chat & Script Studio</h3>
-            <button onclick="openOverlay('geminiStudio')" class="text-xs font-bold text-cyan-400">Expand Studio ↗</button>
+            <div class="flex items-center gap-2">
+              <button onclick="openGeminiKeyModal()" class="text-[10.5px] font-bold text-amber-300 underline">🔑 AI Key</button>
+              <button onclick="openOverlay('geminiStudio')" class="text-xs font-bold text-cyan-400">Expand Studio ↗</button>
+            </div>
           </div>
           <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
             ${state.geminiChat.map(m => `
               <div class="p-2.5 rounded-xl text-xs whitespace-pre-line ${m.sender === 'USER' ? 'bg-violet-600/30 border border-violet-500/40 ml-8 text-white' : 'bg-slate-950/90 border border-slate-800 mr-4 text-slate-200'}">
-                <div class="text-[9.5px] font-extrabold ${m.sender === 'USER' ? 'text-amber-300' : 'text-cyan-400'} mb-0.5">${m.sender === 'USER' ? 'YOU' : 'GEMINI AI ✨'}</div>
+                <div class="flex items-center justify-between text-[9.5px] font-extrabold ${m.sender === 'USER' ? 'text-amber-300' : 'text-cyan-400'} mb-0.5">
+                  <span>${m.sender === 'USER' ? 'YOU' : 'GEMINI AI ✨'}</span>
+                  <span class="text-[9px] text-slate-400">${escapeHtml(m.source || '')}</span>
+                </div>
                 ${escapeHtml(m.text)}
               </div>
             `).join('')}
           </div>
           <div class="flex gap-2">
             <input id="ai-tab-chat-input" type="text" placeholder="Ask Gemini: e.g. 'Comedy reel script on exam tension'..." class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') sendGeminiChat()" />
-            <button onclick="sendGeminiChat()" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs">Send 🚀</button>
+            <button id="ai-tab-chat-btn" onclick="sendGeminiChat()" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs">Send 🚀</button>
           </div>
         </section>
 
@@ -1345,22 +1423,33 @@
     // -------------------------------------------------------------------------
     function renderRanksTab() {
       const p = state.profile;
-      const all = [
-        ...INITIAL_LEADERBOARD,
-        { id: 'self', name: `${p.username} (You)`, niche: p.niche, coins: p.coins, diamonds: p.diamonds, isVip: p.isVip, isSelf: true }
-      ];
+      const myScore = p.coins + p.diamonds * 10;
+      const myEntry = { id: 'self', name: `${p.username} (You)`, niche: p.niche, coins: p.coins, diamonds: p.diamonds, isVip: p.isVip, isSelf: true };
+      const cloudOthers = (cloudLeaderboard || []).filter(c => !cloudUser || c.uid !== cloudUser.uid);
+      const existingNames = new Set(cloudOthers.map(c => c.name.toLowerCase()));
+      const mergedSeeds = INITIAL_LEADERBOARD.filter(c => !existingNames.has(c.name.toLowerCase()));
+      const all = [...cloudOthers, ...mergedSeeds, myEntry];
       all.sort((a, b) => {
         if (state.leaderboardTab === 0) return (b.coins + b.diamonds * 10) - (a.coins + a.diamonds * 10);
         if (state.leaderboardTab === 1) return b.coins - a.coins;
         return b.diamonds - a.diamonds;
       });
-      const myRank = all.findIndex(x => x.isSelf) + 1;
+      const myIdx = all.findIndex(x => x.isSelf);
+      const myRank = myIdx + 1;
+      const nextAbove = myIdx > 0 ? all[myIdx - 1] : null;
+      const gapText = nextAbove
+        ? state.leaderboardTab === 0
+          ? `Need ${Math.max(1, (nextAbove.coins + nextAbove.diamonds * 10) - myScore + 1)} pts to overtake ${nextAbove.name}`
+          : state.leaderboardTab === 1
+            ? `Need ${Math.max(1, nextAbove.coins - p.coins + 1)} 🪙 to overtake ${nextAbove.name}`
+            : `Need ${Math.max(1, nextAbove.diamonds - p.diamonds + 1)} 💎 to overtake ${nextAbove.name}`
+        : '👑 You are #1 Creator on the Leaderboard!';
 
       return `
         <div class="flex items-center justify-between">
           <div>
             <h2 class="font-display font-extrabold text-lg">Top Creators Leaderboard</h2>
-            <p class="text-[11px] text-cyan-400 font-semibold">Ranked by Total Coins 🪙 & Diamonds 💎 Collected</p>
+            <p class="text-[11px] text-cyan-400 font-semibold">Live Score = Coins 🪙 + (Diamonds 💎 × 10)</p>
           </div>
           <span class="text-3xl">🏆</span>
         </div>
@@ -1368,7 +1457,7 @@
         <div class="rounded-xl bg-[#1E1635] border border-amber-400/50 p-2.5 flex items-center justify-between text-[11px] font-bold">
           <span class="text-amber-300">🪙 +10 Coins/Share</span>
           <span class="text-sky-300">💎 +3 Diamonds/Sale</span>
-          <span class="text-yellow-200">Weekly Drops 🎁</span>
+          <span class="text-yellow-200">100 🪙 = 5 💎</span>
         </div>
 
         <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl app-card">
@@ -1378,18 +1467,21 @@
         </div>
 
         <!-- User's Own Standing -->
-        <div class="rounded-2xl p-3.5 bg-[#1E1B4B] border border-violet-500 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center font-extrabold text-sm text-white">#${myRank}</div>
-            <div>
-              <div class="font-bold text-sm text-white">${escapeHtml(p.username)} (You)</div>
-              <div class="text-[10.5px] text-cyan-300">${escapeHtml(p.niche)}</div>
+        <div class="rounded-2xl p-3.5 bg-[#1E1B4B] border border-violet-500 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center font-extrabold text-sm text-white">#${myRank}</div>
+              <div>
+                <div class="font-bold text-sm text-white">${escapeHtml(p.username)} (You)</div>
+                <div class="text-[10.5px] text-cyan-300">${escapeHtml(p.niche)} • Score: ${myScore} pts</div>
+              </div>
+            </div>
+            <div class="text-right text-xs font-extrabold">
+              <div class="text-amber-300">${p.coins} 🪙</div>
+              <div class="text-sky-300">${p.diamonds} 💎</div>
             </div>
           </div>
-          <div class="text-right text-xs font-extrabold">
-            <div class="text-amber-300">${p.coins} 🪙</div>
-            <div class="text-sky-300">${p.diamonds} 💎</div>
-          </div>
+          <div class="text-[10.5px] text-emerald-300 font-semibold bg-slate-950/60 px-2.5 py-1.5 rounded-lg">${escapeHtml(gapText)}</div>
         </div>
 
         <div class="space-y-2">
@@ -1471,6 +1563,25 @@
           </div>
           <h2 class="font-display font-extrabold text-xl mt-2">ViralBoost AI</h2>
           <p class="text-xs text-cyan-400 font-semibold">Zero-Drop Creator Growth Engine</p>
+        </div>
+
+        <!-- Google Cloud Sync & Firebase Status Card -->
+        <div class="rounded-2xl p-4 app-card border-cyan-400/50 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div class="font-bold text-sm text-white flex items-center gap-1.5">
+                <span>☁️ Google Cloud Sync</span>
+                ${cloudUser ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-extrabold">SYNCED</span>' : '<span class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 text-[9px] font-bold">LOCAL</span>'}
+              </div>
+              <div class="text-[11px] text-slate-300 truncate mt-0.5">
+                ${cloudUser ? `Signed in: ${escapeHtml(cloudUser.email || cloudUser.displayName || cloudUser.uid)}` : 'Sync wallet, VIP & Leaderboard across GitHub Pages, Chrome & Android APK'}
+              </div>
+            </div>
+            ${cloudUser
+              ? `<button onclick="triggerGoogleCloudSignOut()" class="px-3 py-2 rounded-xl bg-slate-800 text-red-300 font-bold text-xs shrink-0">Sign Out</button>`
+              : `<button onclick="triggerGoogleCloudSignIn()" class="px-3.5 py-2 rounded-xl bg-white text-slate-950 font-extrabold text-xs shrink-0 shadow">G Sign In</button>`}
+          </div>
+          ${cloudUser ? `<button onclick="syncProfileToCloud();showToast('☁️ Profile & Wallet synced to Cloud Firestore!','success')" class="w-full py-2 rounded-xl bg-cyan-500/15 border border-cyan-400/50 text-cyan-300 font-bold text-xs">🔄 Sync Wallet & Rank Now</button>` : ''}
         </div>
 
         <!-- Dynamic Theme Switcher Card -->
@@ -1613,16 +1724,31 @@
                   </label>
                   ${s.coverDataUrl ? `<button onclick="state.aiStudioState.coverDataUrl='';saveState();renderOverlay()" class="px-3 py-2 rounded-xl bg-red-900/50 text-red-200 text-xs font-bold">Clear</button>` : ''}
                 </div>
-                <button onclick="executeOneClickAiGenerate()" class="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-violet-600 text-white font-display font-extrabold text-sm shadow-lg">
-                  ⚡ 1-Click Generate Video & Hashtags
+                <button onclick="executeOneClickAiGenerate()" ${isStudioGenerating ? 'disabled' : ''} class="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-violet-600 text-white font-display font-extrabold text-sm shadow-lg disabled:opacity-60">
+                  ${isStudioGenerating ? '⏳ Generating via Gemini AI...' : '⚡ 1-Click Generate Video & Hashtags'}
                 </button>
+                <button onclick="exportOneClickReelVideo()" ${isExportingVideo ? 'disabled' : ''} class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow disabled:opacity-60">
+                  ${isExportingVideo ? `🎬 Rendering 9:16 Video (${exportProgressPct}%)...` : '🎥 Render & Download Real 9:16 Video (.webm)'}
+                </button>
+                ${exportedReelUrl ? `
+                  <div class="rounded-xl bg-slate-950 border border-emerald-500/60 p-2.5 space-y-2">
+                    <div class="text-[11px] font-bold text-emerald-300">✅ Real 9:16 Video File Rendered!</div>
+                    <video src="${exportedReelUrl}" controls playsinline class="w-full max-h-56 rounded-lg bg-black"></video>
+                    <div class="grid grid-cols-2 gap-2">
+                      <a href="${exportedReelUrl}" download="viralboost-reel-${Date.now()}.webm" class="py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs text-center">⬇ Download Video</a>
+                      <button onclick="shareExportedReelFile()" class="py-2 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-xs">📤 Share File</button>
+                    </div>
+                  </div>` : ''}
               </div>
 
               <!-- Generated Output Blueprint -->
               <div class="rounded-2xl p-3.5 app-card border-emerald-500/40 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-extrabold text-emerald-300">✅ Viral Title & Script</span>
-                  <button onclick="saveStudioToHistory()" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10.5px] font-bold">Save 💾</button>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="text-xs font-extrabold text-emerald-300">✅ Viral Title & Script</span>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${s.aiSource === 'LIVE_GEMINI' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-cyan-300'}">${s.aiSource === 'LIVE_GEMINI' ? '🟢 Gemini Live' : 'Studio Kit'}</span>
+                  </div>
+                  <button onclick="saveStudioToHistory()" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10.5px] font-bold shrink-0">Save 💾</button>
                 </div>
                 <div class="text-xs font-bold text-white">${escapeHtml(s.title)}</div>
                 <pre class="text-[11px] text-slate-300 whitespace-pre-wrap font-sans bg-slate-950/70 p-2.5 rounded-xl">${escapeHtml(s.script)}</pre>
@@ -1670,6 +1796,14 @@
             <div class="flex gap-2">
               <button onclick="redeemDiamondsForVip(150)" class="flex-1 py-2.5 rounded-xl bg-sky-400 text-slate-950 font-extrabold text-xs">Redeem 150 💎 → 15-Day VIP</button>
               <button onclick="redeemDiamondsForVip(500)" class="flex-1 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs">Redeem 500 💎 → 1-Mo VIP</button>
+            </div>
+            <!-- Live Coins-to-Diamonds Converter -->
+            <div class="rounded-xl bg-slate-950/80 border border-amber-400/40 p-2.5 flex items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold text-amber-300">🔄 Convert Coins → Diamonds</div>
+                <div class="text-[10px] text-slate-400">Exchange 100 🪙 Coins for +5 💎 Diamonds anytime</div>
+              </div>
+              <button onclick="convertCoinsToDiamonds(100, 5)" class="px-3 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-sky-400 text-slate-950 font-extrabold text-xs shrink-0">100 🪙 → 5 💎</button>
             </div>
           </div>
 
@@ -1818,19 +1952,53 @@
         (state.affiliateCat === 'All Items' || p.category === state.affiliateCat) &&
         (state.affiliatePlatform === 'All Stores' || p.platform === state.affiliatePlatform)
       );
+      const ast = state.affiliateStats || { clicks: 0, shares: 0, ordersLogged: 0, estimatedCommissionRupees: 0 };
       return `
         ${overlayHeader('🏷️ Affiliate Hub & Rewards', `EarnKaro Tag: ${CONSTANTS.AFFILIATE_TAG} • Bitli Fallback Active`)}
         <div class="p-3.5 space-y-3.5">
+          <!-- Live Affiliate Tracking Metrics -->
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-xl p-2.5 app-card border-cyan-400/40">
+              <div class="text-[10px] text-slate-400">Link Clicks</div>
+              <div class="font-display font-extrabold text-base text-cyan-300">${ast.clicks}</div>
+            </div>
+            <div class="rounded-xl p-2.5 app-card border-violet-400/40">
+              <div class="text-[10px] text-slate-400">Deals Shared</div>
+              <div class="font-display font-extrabold text-base text-violet-300">${ast.shares}</div>
+            </div>
+            <div class="rounded-xl p-2.5 app-card border-emerald-400/40">
+              <div class="text-[10px] text-slate-400">Orders Logged</div>
+              <div class="font-display font-extrabold text-base text-emerald-300">${ast.ordersLogged}</div>
+            </div>
+          </div>
+
           <!-- Personal Affiliate Link Config -->
           <div class="rounded-2xl p-3.5 app-card border-amber-400/50 space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-amber-300">🔗 Your Affiliate Link (Defaults to Master ${CONSTANTS.AFFILIATE_TAG})</span>
-              <a href="${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}" target="_blank" rel="noopener" class="text-[11px] font-bold text-cyan-400 underline">Test Bitli ↗</a>
+              <span class="text-xs font-extrabold text-amber-300">🔗 Your Affiliate Link (Master ID: ${CONSTANTS.AFFILIATE_TAG})</span>
+              <a href="${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}" target="_blank" rel="noopener" onclick="trackAffiliateClick()" class="text-[11px] font-bold text-cyan-400 underline">Open Bitli ↗</a>
             </div>
             <div class="flex gap-2">
               <input id="aff-personal-input" type="url" value="${escapeHtml(state.profile.personalAffiliateLink)}" placeholder="${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}" class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
               <button onclick="savePersonalAffiliateLink()" class="px-3 py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs">Save</button>
             </div>
+          </div>
+
+          <!-- Smart E-Commerce Affiliate Link Converter -->
+          <div class="rounded-2xl p-3.5 app-card border-cyan-400/40 space-y-2">
+            <div class="text-xs font-extrabold text-cyan-300">⚡ Smart Store Link Tagger (Amazon / Flipkart / Meesho / Shopsy)</div>
+            <div class="flex gap-2">
+              <input id="aff-raw-url-input" type="url" placeholder="Paste any Amazon/Flipkart/Meesho product link..." class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
+              <button onclick="convertAnyAffiliateUrl()" class="px-3 py-2 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs shrink-0">Tag URL 🔗</button>
+            </div>
+            ${state.affiliateLastConvertedUrl ? `
+              <div class="rounded-xl bg-slate-950 border border-emerald-500/40 p-2.5 text-[11px] space-y-1.5">
+                <div class="text-emerald-300 font-bold break-all">${escapeHtml(state.affiliateLastConvertedUrl)}</div>
+                <div class="flex gap-2">
+                  <button onclick="copyReg('${regCopy(state.affiliateLastConvertedUrl, 'Tagged Affiliate Link Copied!')}')" class="flex-1 py-1.5 rounded-lg bg-slate-800 text-white font-bold">Copy Link 📋</button>
+                  <button onclick="shareTaggedLink('${regCopy(state.affiliateLastConvertedUrl, '')}')" class="flex-1 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-extrabold">Share (+10 🪙)</button>
+                </div>
+              </div>` : ''}
           </div>
 
           <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
@@ -2005,8 +2173,11 @@
                   <div class="text-[11px] text-cyan-300 font-mono">UTR: ${escapeHtml(pay.utr)} • ${pay.status}</div>
                 </div>
                 ${pay.status === 'PENDING' ? `
-                  <button onclick="approveAdminUpi(${idx})" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs">Approve ✅</button>
-                ` : '<span class="text-xs text-emerald-400 font-bold">VERIFIED</span>'}
+                  <div class="flex gap-1.5">
+                    <button onclick="approveAdminUpi(${idx})" class="px-2.5 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs">Approve ✅</button>
+                    <button onclick="rejectAdminUpi(${idx})" class="px-2.5 py-1.5 rounded-lg bg-red-600 text-white font-extrabold text-xs">Reject ❌</button>
+                  </div>
+                ` : `<span class="text-xs ${pay.status==='VERIFIED' ? 'text-emerald-400' : 'text-red-400'} font-bold">${pay.status}</span>`}
               </div>
             `).join('')}
           </div>
@@ -2167,6 +2338,304 @@
       if (beatTimer) { clearInterval(beatTimer); beatTimer = null; }
     }
 
+    function triggerGoogleCloudSignIn() {
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.signInWithGoogle) {
+        window.ViralBoostFirebase.signInWithGoogle();
+      } else {
+        showToast('Firebase Auth is loading — try again in 1 second.', 'info');
+      }
+    }
+
+    function triggerGoogleCloudSignOut() {
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.signOutGoogle) {
+        window.ViralBoostFirebase.signOutGoogle();
+      }
+    }
+
+    function openGeminiKeyModal() {
+      const current = localStorage.getItem(GEMINI_KEY_STORAGE) || '';
+      const currentProxy = localStorage.getItem(GEMINI_PROXY_STORAGE) || CONSTANTS.GEMINI_PROXY_URL || '';
+      const fb = window.ViralBoostFirebase || {};
+      const aiActive = Boolean(fb.aiReady);
+      openModal(`
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-display font-extrabold text-base text-white">✨ Firebase AI Logic & Cloud Status</h3>
+            <button onclick="closeModal()" class="text-slate-400 font-bold">✕</button>
+          </div>
+          <div class="rounded-xl p-3 border ${aiActive ? 'bg-emerald-950/50 border-emerald-400/50' : 'bg-slate-950 border-slate-700'} space-y-1 text-xs">
+            <div class="font-extrabold ${aiActive ? 'text-emerald-300' : 'text-amber-300'}">
+              ${aiActive ? '🟢 Firebase AI Logic Active (No Manual Key Needed)' : '⏳ Initializing Firebase AI Logic...'}
+            </div>
+            <div class="text-[11px] text-slate-300">Project: <span class="font-mono text-cyan-300">gen-lang-client-0822394015</span></div>
+            <div class="text-[11px] text-slate-300">App Check: <span class="font-semibold text-emerald-300">${fb.appCheckReady ? 'reCAPTCHA Enterprise Active' : 'Pending / Local Mode'}</span></div>
+            <div class="text-[11px] text-slate-300">Google Sync: <span class="font-semibold text-cyan-300">${cloudUser ? escapeHtml(cloudUser.email || cloudUser.uid) : 'Not signed in'}</span></div>
+          </div>
+          <div class="flex gap-2">
+            ${cloudUser
+              ? `<button onclick="triggerGoogleCloudSignOut();closeModal()" class="flex-1 py-2 rounded-xl bg-slate-800 text-red-300 font-bold text-xs">Sign Out Google</button>`
+              : `<button onclick="triggerGoogleCloudSignIn();closeModal()" class="flex-1 py-2 rounded-xl bg-white text-slate-950 font-extrabold text-xs">Continue with Google Sync</button>`}
+          </div>
+          <details class="rounded-xl bg-slate-950/70 border border-slate-800 p-2.5 text-xs">
+            <summary class="cursor-pointer font-bold text-slate-300">Optional Offline/Proxy Fallback Settings</summary>
+            <div class="space-y-2 mt-2">
+              <input id="gemini-proxy-input" type="url" value="${escapeHtml(currentProxy)}" placeholder="Optional Proxy URL (e.g. /api/gemini)" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono" />
+              <input id="gemini-key-input" type="password" value="${escapeHtml(current)}" placeholder="Optional local file:// fallback key (AIzaSy...)" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono" />
+              <div class="flex gap-2">
+                <button onclick="saveGeminiKey()" class="flex-1 py-2 rounded-xl bg-violet-600 text-white font-extrabold text-xs">Save Fallback</button>
+                ${(current || currentProxy) ? `<button onclick="clearGeminiKey()" class="px-3 py-2 rounded-xl bg-red-900/60 text-red-200 font-bold text-xs">Clear</button>` : ''}
+              </div>
+            </div>
+          </details>
+        </div>
+      `);
+    }
+
+    function saveGeminiKey() {
+      const val = (document.getElementById('gemini-key-input')?.value || '').trim();
+      const proxyVal = (document.getElementById('gemini-proxy-input')?.value || '').trim();
+      if (!val && !proxyVal) {
+        showToast('Enter either a Backend Proxy URL or a fallback Key!', 'error');
+        return;
+      }
+      if (val) localStorage.setItem(GEMINI_KEY_STORAGE, val); else localStorage.removeItem(GEMINI_KEY_STORAGE);
+      if (proxyVal) localStorage.setItem(GEMINI_PROXY_STORAGE, proxyVal); else localStorage.removeItem(GEMINI_PROXY_STORAGE);
+      closeModal();
+      syncHeader();
+      showToast('🟢 Fallback settings saved!', 'success');
+    }
+
+    function clearGeminiKey() {
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+      localStorage.removeItem(GEMINI_PROXY_STORAGE);
+      closeModal();
+      syncHeader();
+      showToast('Fallback settings cleared.', 'info');
+    }
+
+    function resolveGeminiProxyEndpoint() {
+      const custom = (localStorage.getItem(GEMINI_PROXY_STORAGE) || CONSTANTS.GEMINI_PROXY_URL || '').trim();
+      if (custom) return custom;
+      if (window.location.protocol.startsWith('http') && !window.location.hostname.endsWith('github.io')) {
+        return '/api/gemini';
+      }
+      return '';
+    }
+
+    async function callGeminiBackend({ prompt, platform = 'Instagram Reels & YouTube Shorts', tone = 'High-Energy Viral (Hinglish)', contentType = 'REEL_KIT', expectJson = true, history = [] }) {
+      const cleanPrompt = String(prompt || '').trim();
+
+      // Wait briefly for ES Module Firebase SDK initialization on very first click
+      if (window.ViralBoostFirebaseReady) {
+        try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 2500))]); } catch (_) {}
+      }
+
+      // 1) Primary Production Engine: Official Firebase AI Logic Web SDK + App Check (Zero API Key Exposure)
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.aiReady) {
+        try {
+          const fbRes = await window.ViralBoostFirebase.generateContent({ prompt: cleanPrompt, platform, tone, contentType, expectJson, history });
+          if (fbRes && fbRes.ok && fbRes.data) {
+            return fbRes;
+          }
+        } catch (fbErr) {
+          console.warn('Firebase AI Logic fallback check:', fbErr?.message || fbErr);
+        }
+      }
+
+      // 2) Secondary Engine: Serverless Proxy (/api/gemini on Vercel/Node)
+      const proxyEndpoint = resolveGeminiProxyEndpoint();
+      if (proxyEndpoint) {
+        try {
+          const resp = await fetch(proxyEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: cleanPrompt, platform, tone, contentType, expectJson, history })
+          });
+          if (resp.ok) {
+            const payload = await resp.json();
+            if (payload && payload.ok && payload.data) {
+              return { ok: true, source: 'LIVE_GEMINI', data: payload.data };
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3) Tertiary Engine: Optional Personal Key for local offline file:// Chrome usage
+      const userKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+      if (userKey) {
+        try {
+          const sysText = 'You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators.';
+          const promptBody = expectJson
+            ? `Mode: ${contentType}\nPlatform: ${platform}\nTone: ${tone}\nTopic: ${cleanPrompt}\nReturn ONLY valid JSON with keys: {"title":"...","hook":"...","script":"[0-3s HOOK] ...\\n[3-20s BODY] ...\\n[20-30s CTA] ...","cta":"...","hashtags":"#... #...","tips":["..."]}`
+            : cleanPrompt;
+          const contents = history.slice(-6).map(m => ({
+            role: m.sender === 'USER' ? 'user' : 'model',
+            parts: [{ text: String(m.text || '').slice(0, 1200) }]
+          }));
+          contents.push({ role: 'user', parts: [{ text: promptBody }] });
+
+          const cfg = { temperature: 0.85, topP: 0.95, maxOutputTokens: 1200 };
+          if (expectJson) cfg.responseMimeType = 'application/json';
+
+          const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(userKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: sysText }] },
+              contents,
+              generationConfig: cfg
+            })
+          });
+          const raw = await r.json();
+          if (!r.ok) {
+            throw new Error(raw?.error?.message || 'Gemini API Key Error');
+          }
+          const txt = raw?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (txt) {
+            if (!expectJson) {
+              return { ok: true, source: 'LIVE_GEMINI', data: { rawText: txt } };
+            }
+            let parsed;
+            try {
+              parsed = JSON.parse(txt.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim());
+            } catch (_) {
+              parsed = { title: `🔥 ${cleanPrompt}`, hook: txt.split('\n')[0] || '', script: txt, cta: 'Share & Comment 🔥', hashtags: '#ViralReels #TrendingShorts #ViralBoostAI' };
+            }
+            return {
+              ok: true,
+              source: 'LIVE_GEMINI',
+              data: {
+                title: String(parsed.title || `🔥 ${cleanPrompt}`),
+                hook: String(parsed.hook || ''),
+                script: String(parsed.script || txt),
+                cta: String(parsed.cta || ''),
+                hashtags: String(parsed.hashtags || '#ViralReels #TrendingShorts #ViralBoostAI'),
+                tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+                rawText: txt
+              }
+            };
+          }
+        } catch (err) {
+          showToast(`⚠️ Gemini Error: ${err.message}`, 'error');
+        }
+      }
+
+      // 4) Offline Smart Blueprint Fallback
+      return {
+        ok: false,
+        source: 'OFFLINE_BLUEPRINT',
+        data: generateBilingualBlueprint(cleanPrompt, platform, tone)
+      };
+    }
+
+    async function exportOneClickReelVideo() {
+      const canvas = document.getElementById('reel-studio-canvas');
+      if (!canvas) {
+        showToast('Canvas not ready — open AI Video Studio first!', 'error');
+        return;
+      }
+      if (typeof MediaRecorder === 'undefined' || !canvas.captureStream) {
+        showToast('Your browser does not support in-browser video recording.', 'error');
+        return;
+      }
+      if (isExportingVideo) return;
+
+      isExportingVideo = true;
+      exportProgressPct = 5;
+      state.aiStudioState.isPlaying = true;
+      renderOverlay();
+
+      try {
+        const cat = AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx];
+        const videoStream = canvas.captureStream(30);
+        const tracks = [...videoStream.getVideoTracks()];
+
+        // Route synthesized WebAudio beat into MediaRecorder audio track
+        let beatInterval = null;
+        try {
+          audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') await audioCtx.resume();
+          const dest = audioCtx.createMediaStreamDestination();
+          let step = 0;
+          const pulseMs = (60 / (cat.bpm || 128)) * 1000;
+          const triggerPulse = () => {
+            if (!isExportingVideo) return;
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = step % 2 === 0 ? 'sine' : 'triangle';
+            osc.frequency.setValueAtTime(step % 4 === 0 ? 135 : 210, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(44, audioCtx.currentTime + 0.14);
+            g.gain.setValueAtTime(0.24, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
+            osc.connect(g);
+            g.connect(dest);
+            g.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.16);
+            step++;
+          };
+          triggerPulse();
+          beatInterval = setInterval(triggerPulse, pulseMs);
+          tracks.push(...dest.stream.getAudioTracks());
+        } catch (_) {}
+
+        const combined = new MediaStream(tracks);
+        const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+          ? 'video/webm;codecs=vp9,opus'
+          : MediaRecorder.isTypeSupported('video/webm')
+            ? 'video/webm'
+            : '';
+        const recorder = mime ? new MediaRecorder(combined, { mimeType: mime }) : new MediaRecorder(combined);
+        const chunks = [];
+        recorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
+
+        const durationMs = 5000;
+        const startT = Date.now();
+        const progTimer = setInterval(() => {
+          exportProgressPct = Math.min(96, Math.round(((Date.now() - startT) / durationMs) * 100));
+        }, 250);
+
+        recorder.onstop = () => {
+          clearInterval(progTimer);
+          if (beatInterval) clearInterval(beatInterval);
+          isExportingVideo = false;
+          exportProgressPct = 100;
+          const blob = new Blob(chunks, { type: mime || 'video/webm' });
+          exportedReelBlob = blob;
+          if (exportedReelUrl) {
+            try { URL.revokeObjectURL(exportedReelUrl); } catch (_) {}
+          }
+          exportedReelUrl = URL.createObjectURL(blob);
+          renderOverlay();
+          showToast('🎬 Real 9:16 Video Rendered! Ready to Download & Share!', 'success');
+        };
+
+        recorder.start(200);
+        setTimeout(() => {
+          if (recorder.state !== 'inactive') recorder.stop();
+        }, durationMs);
+      } catch (e) {
+        isExportingVideo = false;
+        renderOverlay();
+        showToast('Video export failed: ' + (e.message || 'Unknown error'), 'error');
+      }
+    }
+
+    async function shareExportedReelFile() {
+      if (!exportedReelBlob) return;
+      const s = state.aiStudioState;
+      const caption = buildSmartAffiliateCaption(s.title, s.hashtags, s.script);
+      try {
+        const file = new File([exportedReelBlob], `viralboost-reel-${Date.now()}.webm`, { type: 'video/webm' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ title: s.title, text: caption, files: [file] });
+          creditRewards(0, CONSTANTS.AFFILIATE_SHARE_COINS, 'Shared Rendered Video File', s.title, 'SHARE');
+          return;
+        }
+      } catch (_) {}
+      shareStudioReel();
+    }
+
     function selectAiStudioCategory(idx) {
       const cat = AI_VIDEO_CATEGORIES[idx];
       state.aiStudioState.catIdx = idx;
@@ -2197,7 +2666,8 @@
       reader.readAsDataURL(file);
     }
 
-    function executeOneClickAiGenerate() {
+    async function executeOneClickAiGenerate() {
+      if (isStudioGenerating) return;
       const q = getTrialQuotas();
       if (!state.profile.isVip && q.videosLeft <= 0) {
         showToast('Daily AI Video quota reached! Upgrade VIP for unlimited access.', 'error');
@@ -2206,14 +2676,41 @@
       }
       const cat = AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx];
       const topic = (state.aiStudioState.customTopic || '').trim() || cat.titleHindi;
+      isStudioGenerating = true;
+      renderOverlay();
+
+      const res = await callGeminiBackend({
+        prompt: `Create a high-retention 30-second viral short video package in Hindi/Hinglish for category "${cat.id}" (${cat.titleHindi}) on topic "${topic}" synced to ${cat.beatTrackName}.`,
+        platform: 'Instagram Reels & YouTube Shorts',
+        tone: cat.titleEnglish,
+        contentType: '1_CLICK_AI_REEL'
+      });
+
+      isStudioGenerating = false;
       state.profile.videosUsed += 1;
       state.aiStudioState.isPlaying = true;
-      state.aiStudioState.title = `🔥 ${topic}: 10X Viral Blueprint (Watch Till End!)`;
-      state.aiStudioState.script = `🎬 SCENE 1 (0-3s Hook): "${cat.sampleHook}"\n⚡ SCENE 2 (3-18s): ${topic} का सबसे बड़ा सीक्रेट — तेज कट्स + ${cat.beatTrackName}\n🚀 SCENE 3 (18-30s CTA): कमेंट में 🔥 लिखें और अभी सेव करें!\n\n🛍️ Shop Deals (ID ${CONSTANTS.AFFILIATE_TAG}): ${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}`;
-      state.aiStudioState.hashtags = `#${topic.replace(/[^A-Za-z0-9\u0900-\u097F]/g, '')} #ViralReels #TrendingShorts #ReelsIndia #ViralBoostAI #CreatorGrowth`;
+      state.aiStudioState.aiSource = res.source;
+      state.aiStudioState.title = res.data.title;
+      state.aiStudioState.script = `${res.data.script}\n\n🛍️ Shop Deals (ID ${CONSTANTS.AFFILIATE_TAG}): ${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}`;
+      state.aiStudioState.hashtags = res.data.hashtags;
+      state.aiHistory.unshift({
+        id: 'ai_' + Date.now(),
+        type: 'TEXT_TO_VIDEO',
+        topic: state.aiStudioState.title,
+        platform: 'Instagram Reels & Shorts',
+        content: state.aiStudioState.script,
+        hashtags: state.aiStudioState.hashtags,
+        bookmarked: false,
+        time: Date.now()
+      });
       saveState();
       renderOverlay();
-      showToast('🎉 1-Click AI Video, Script & Viral Hashtags Ready!', 'success');
+      showToast(
+        res.source === 'LIVE_GEMINI'
+          ? '🟢 Live Gemini AI Video Script & Hashtags Ready!'
+          : '✨ Studio Reel Kit Ready! (Add 🔑 AI Key for Live Gemini Cloud)',
+        'success'
+      );
     }
 
     function saveStudioToHistory() {
@@ -2260,19 +2757,24 @@
       showToast(`🎬 Video loaded: ${file.name}`, 'success');
     }
 
-    function runHeroAiAnalyzer() {
-      const hooks = [
-        '🔥 3 Secret Tricks to 10X Your Reach in 24 Hours! (Watch Till End)',
-        '🚀 Stop Posting Like This! Use The Zero-Drop Viral Strategy',
-        '⚡ How This 1 Simple Reel Generated 500K Views Overnight',
-        '💰 Viral Growth Formula: Turn 1 Reel Into 10,000 Real Followers'
-      ];
-      state.crossPoster.title = hooks[Math.floor(Math.random() * hooks.length)];
-      state.crossPoster.tags = '#ViralReels #AlgorithmHack #GrowthHacks #InstaReels #ReelsIndia #ViralBoostAI';
-      state.crossPoster.desc = 'Algorithmic retention hook with automated multi-platform syndication across Instagram, Facebook, YouTube, Telegram & WhatsApp!';
+    async function runHeroAiAnalyzer() {
+      const btn = document.getElementById('hero-ai-analyze-btn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Analyzing with Gemini...'; }
+      const connectedNames = SOCIAL_CHANNELS.filter(c => state.channels[c.id]?.connected).map(c => c.name).join(', ') || 'Instagram Reels, YouTube Shorts';
+      const topicHint = (state.crossPoster.title || state.crossPoster.videoName || 'Viral Creator Video').replace(/\.[a-z0-9]+$/i, '');
+      const res = await callGeminiBackend({
+        prompt: `Generate a clickable viral title, high-CTR description, and 10 trending hashtags for a video about "${topicHint}" targeting ${connectedNames}.`,
+        platform: connectedNames,
+        tone: 'High-Retention Hinglish',
+        contentType: 'CROSS_POSTER_SEO'
+      });
+      if (btn) { btn.disabled = false; btn.textContent = '✨ AI Auto Title & Tags'; }
+      state.crossPoster.title = res.data.title;
+      state.crossPoster.tags = res.data.hashtags;
+      state.crossPoster.desc = res.data.hook ? `${res.data.hook}\n${res.data.cta || ''}` : res.data.script.slice(0, 180);
       saveState();
       if (activeOverlay) renderOverlay(); else renderApp();
-      showToast('✨ AI Viral Title, Tags & Description Embedded!', 'success');
+      showToast(res.source === 'LIVE_GEMINI' ? '🟢 Gemini AI Embedded Viral Title & Tags!' : '✨ AI Viral Title, Tags & Description Embedded!', 'success');
     }
 
     function openChannelModal(channelId) {
@@ -2365,29 +2867,48 @@
       }, 1250);
     }
 
-    function quickHomeGeminiGenerate() {
+    async function quickHomeGeminiGenerate() {
       const kw = (document.getElementById('home-gemini-kw')?.value || '').trim() || 'Viral Shorts Strategy';
       const box = document.getElementById('home-gemini-output');
-      const out = generateBilingualBlueprint(kw, 'Instagram Reels & YouTube Shorts', 'High-Energy Viral');
+      const btn = document.getElementById('home-gemini-btn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+      if (box) {
+        box.classList.remove('hidden');
+        box.innerHTML = `<div class="text-cyan-300 font-bold">⏳ Generating real AI script & hashtags for "${escapeHtml(kw)}"...</div>`;
+      }
+      const res = await callGeminiBackend({
+        prompt: kw,
+        platform: 'Instagram Reels & YouTube Shorts',
+        tone: 'High-Energy Viral (Hinglish)',
+        contentType: 'GEMINI_QUICK'
+      });
+      if (btn) { btn.disabled = false; btn.textContent = 'Generate ✨'; }
+      const out = res.data;
       state.profile.textUsed += 1;
       state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: 'GEMINI_QUICK', topic: kw, platform: 'Multi-Platform', content: out.script, hashtags: out.hashtags, bookmarked: false, time: Date.now() });
       saveState();
       if (box) {
         box.classList.remove('hidden');
         box.innerHTML = `
-          <div class="font-bold text-cyan-300">✨ ${escapeHtml(out.title)}</div>
+          <div class="flex items-center justify-between gap-2">
+            <div class="font-bold text-cyan-300">✨ ${escapeHtml(out.title)}</div>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${res.source === 'LIVE_GEMINI' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-amber-300'}">${res.source === 'LIVE_GEMINI' ? '🟢 Gemini Live' : 'Local Kit'}</span>
+          </div>
           <div class="text-slate-200 whitespace-pre-line">${escapeHtml(out.script)}</div>
           <div class="text-amber-300 font-semibold">${escapeHtml(out.hashtags)}</div>
           <button onclick="copyReg('${regCopy(out.title + '\n\n' + out.script + '\n\n' + out.hashtags, 'Gemini Script Copied!')}')" class="mt-1 px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-[11px]">Copy Kit 📋</button>`;
       }
-      showToast('✨ Viral Script & Hashtags Ready!', 'success');
+      showToast(res.source === 'LIVE_GEMINI' ? '🟢 Live Gemini Script & Hashtags Ready!' : '✨ Viral Script & Hashtags Ready!', 'success');
     }
 
     function generateBilingualBlueprint(topic, platform, tone) {
       return {
         title: `🔥 ${topic}: 3 गुप्त तरीके जो व्यूज 10X कर देंगे!`,
+        hook: `रुको! अगर आप भी "${topic}" पर वीडियो बनाते हो तो ये गलती बंद करो!`,
         script: `🎬 [0-3s HOOK]: रुको! अगर आप भी "${topic}" पर वीडियो बनाते हो तो ये गलती बंद करो!\n⚡ [3-22s VALUE]: 1) पहले 2 सेकंड में Bold Text लगाएं। 2) ट्रेंडिंग बीट पर कट्स सिंक करें।\n🎯 [22-30s CTA]: अभी "${platform}" पर शेयर करें और कमेंट में YES लिखें!\n\nTone: ${tone}`,
-        hashtags: `#${topic.replace(/[^A-Za-z0-9]/g, '') || 'ViralReels'} #ViralBoostAI #TrendingShorts #ReelsIndia #CreatorGrowth #ExplorePage`
+        cta: 'अभी सेव करें और 3 दोस्तों को शेयर करें!',
+        hashtags: `#${topic.replace(/[^A-Za-z0-9]/g, '') || 'ViralReels'} #ViralBoostAI #TrendingShorts #ReelsIndia #CreatorGrowth #ExplorePage`,
+        tips: ['Add 🔑 AI Key in header for personalized Gemini 2.5 Flash scripts']
       };
     }
 
@@ -2405,39 +2926,75 @@
             <h3 class="font-display font-extrabold text-base text-white">⚡ ${toolId.replace(/_/g, ' ')} Engine</h3>
             <button onclick="closeModal()" class="text-slate-400 font-bold">✕</button>
           </div>
-          <input id="modal-ai-topic" type="text" placeholder="Enter your video topic or product name..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white" />
-          <button onclick="runModalAiTool('${toolId}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs">Generate Now ✨</button>
+          <input id="modal-ai-topic" type="text" placeholder="Enter your video topic or product name..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white" onkeydown="if(event.key==='Enter') runModalAiTool('${toolId}')" />
+          <button id="modal-ai-run-btn" onclick="runModalAiTool('${toolId}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs">Generate Now ✨</button>
           <div id="modal-ai-out" class="hidden space-y-2"></div>
         </div>
       `);
     }
 
-    function runModalAiTool(toolId) {
+    async function runModalAiTool(toolId) {
       const topic = (document.getElementById('modal-ai-topic')?.value || '').trim() || 'Desi Creator Growth';
-      const bp = generateBilingualBlueprint(topic, 'YouTube Shorts & Reels', toolId);
+      const btn = document.getElementById('modal-ai-run-btn');
+      const out = document.getElementById('modal-ai-out');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Generating with Gemini...'; }
+      if (out) { out.classList.remove('hidden'); out.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-xs text-cyan-300 font-bold">⏳ Thinking via Gemini AI...</div>`; }
+
+      const res = await callGeminiBackend({
+        prompt: `Tool Mode: ${toolId}. Generate viral content for topic "${topic}".`,
+        platform: 'YouTube Shorts & Instagram Reels',
+        tone: toolId,
+        contentType: toolId
+      });
+      if (btn) { btn.disabled = false; btn.textContent = 'Generate Now ✨'; }
+      const bp = res.data;
       state.profile.textUsed += 1;
       if (toolId === 'THUMBNAIL' || toolId === 'PHOTO_TO_VIDEO') state.profile.imagesUsed += 1;
       state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: toolId, topic, platform: 'Multi-Platform', content: bp.script, hashtags: bp.hashtags, bookmarked: false, time: Date.now() });
       saveState();
-      const out = document.getElementById('modal-ai-out');
-      out.classList.remove('hidden');
-      out.innerHTML = `
-        <div class="rounded-xl bg-slate-950 border border-emerald-400/50 p-3 text-xs space-y-1.5">
-          <div class="font-bold text-amber-300">${escapeHtml(bp.title)}</div>
-          <div class="text-slate-200 whitespace-pre-line">${escapeHtml(bp.script)}</div>
-          <div class="text-cyan-300">${escapeHtml(bp.hashtags)}</div>
-          <button onclick="copyReg('${regCopy(bp.title + '\n' + bp.script + '\n' + bp.hashtags, 'Copied!')}')" class="w-full py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold">Copy Result 📋</button>
-        </div>`;
+      if (out) {
+        out.classList.remove('hidden');
+        out.innerHTML = `
+          <div class="rounded-xl bg-slate-950 border border-emerald-400/50 p-3 text-xs space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="font-bold text-amber-300">${escapeHtml(bp.title)}</div>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${res.source === 'LIVE_GEMINI' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-cyan-300'}">${res.source === 'LIVE_GEMINI' ? '🟢 Gemini' : 'Studio'}</span>
+            </div>
+            <div class="text-slate-200 whitespace-pre-line">${escapeHtml(bp.script)}</div>
+            <div class="text-cyan-300">${escapeHtml(bp.hashtags)}</div>
+            <button onclick="copyReg('${regCopy(bp.title + '\n' + bp.script + '\n' + bp.hashtags, 'Copied!')}')" class="w-full py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold">Copy Result 📋</button>
+          </div>`;
+      }
       if (state.activeTab === 'ai') renderApp();
     }
 
-    function sendGeminiChat() {
+    async function sendGeminiChat() {
       const inp = document.getElementById('ai-tab-chat-input');
+      const btn = document.getElementById('ai-tab-chat-btn');
       const msg = (inp?.value || '').trim();
       if (!msg) return;
       state.geminiChat.push({ sender: 'USER', text: msg, time: 'Now' });
-      const bp = generateBilingualBlueprint(msg, 'Instagram Reels & Shorts', 'Viral AI Strategy');
-      state.geminiChat.push({ sender: 'GEMINI', text: `${bp.title}\n\n${bp.script}\n\n${bp.hashtags}`, time: 'Now' });
+      saveState();
+      renderApp();
+
+      const sendBtn = document.getElementById('ai-tab-chat-btn');
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '⏳...'; }
+
+      const res = await callGeminiBackend({
+        prompt: msg,
+        platform: 'Instagram Reels & YouTube Shorts',
+        tone: 'Helpful Bilingual Hindi/English Creator Coach',
+        contentType: 'CREATOR_CHAT',
+        expectJson: false,
+        history: state.geminiChat.slice(-6)
+      });
+      const replyText = res.data.rawText || `${res.data.title}\n\n${res.data.script}\n\n${res.data.hashtags}`;
+      state.geminiChat.push({
+        sender: 'GEMINI',
+        text: replyText,
+        source: res.source === 'LIVE_GEMINI' ? '🟢 Live Gemini 2.5 Flash' : 'Local AI',
+        time: 'Now'
+      });
       saveState();
       renderApp();
     }
@@ -2447,76 +3004,201 @@
       if (it) { it.bookmarked = !it.bookmarked; saveState(); renderApp(); }
     }
 
-    function runFullGeminiStudioGenerate() {
+    async function runFullGeminiStudioGenerate() {
       const topic = (document.getElementById('gem-prompt')?.value || '').trim() || 'Viral Growth Secret';
       const pf = document.getElementById('gem-platform').value;
       const tone = document.getElementById('gem-tone').value;
-      const bp = generateBilingualBlueprint(topic, pf, tone);
+      const resEl = document.getElementById('gem-studio-result');
+      if (resEl) {
+        resEl.innerHTML = `<div class="rounded-2xl p-4 app-card border-cyan-400/50 text-xs text-cyan-300 font-bold">⏳ Contacting Google Gemini 2.5 Flash for ${escapeHtml(pf)}...</div>`;
+      }
+      const res = await callGeminiBackend({ prompt: topic, platform: pf, tone, contentType: 'GEMINI_STUDIO' });
+      const bp = res.data;
       state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: 'GEMINI_STUDIO', topic, platform: pf, content: bp.script, hashtags: bp.hashtags, bookmarked: true, time: Date.now() });
       saveState();
-      document.getElementById('gem-studio-result').innerHTML = `
-        <div class="rounded-2xl p-4 app-card border-cyan-400 space-y-2">
-          <div class="font-bold text-sm text-amber-300">${escapeHtml(bp.title)}</div>
-          <pre class="text-xs text-slate-200 whitespace-pre-wrap font-sans bg-slate-950/70 p-3 rounded-xl">${escapeHtml(bp.script)}</pre>
-          <div class="text-xs text-cyan-300 font-semibold">${escapeHtml(bp.hashtags)}</div>
-          <button onclick="copyReg('${regCopy(bp.title + '\n\n' + bp.script + '\n\n' + bp.hashtags, 'Studio Kit Copied!')}')" class="w-full py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">Copy Complete Package 📋</button>
-        </div>`;
-      showToast('🤖 Gemini Content Generated & Saved!', 'success');
+      if (resEl) {
+        resEl.innerHTML = `
+          <div class="rounded-2xl p-4 app-card border-cyan-400 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="font-bold text-sm text-amber-300">${escapeHtml(bp.title)}</div>
+              <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${res.source === 'LIVE_GEMINI' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-amber-300'}">${res.source === 'LIVE_GEMINI' ? '🟢 Gemini Live' : 'Studio Kit'}</span>
+            </div>
+            <pre class="text-xs text-slate-200 whitespace-pre-wrap font-sans bg-slate-950/70 p-3 rounded-xl">${escapeHtml(bp.script)}</pre>
+            <div class="text-xs text-cyan-300 font-semibold">${escapeHtml(bp.hashtags)}</div>
+            <button onclick="copyReg('${regCopy(bp.title + '\n\n' + bp.script + '\n\n' + bp.hashtags, 'Studio Kit Copied!')}')" class="w-full py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">Copy Complete Package 📋</button>
+          </div>`;
+      }
+      showToast(res.source === 'LIVE_GEMINI' ? '🟢 Gemini AI Content Generated & Saved!' : '🤖 Studio Content Generated & Saved!', 'success');
     }
 
     function openUpiPaymentModal(planId) {
       const plan = PLANS.find(x => x.id === planId);
-      const upiUri = `upi://pay?pa=${encodeURIComponent(CONSTANTS.OWNER_UPI_ID)}&pn=ViralBoostAI&am=${plan.priceRupees}&cu=INR&tn=${encodeURIComponent(plan.name)}`;
+      const maxDiamondDiscount = Math.min(10, Math.floor(state.profile.diamonds / 5));
       openModal(`
-        <div class="space-y-3">
+        <div class="space-y-3" data-plan-id="${plan.id}">
           <div class="flex items-center justify-between">
-            <h3 class="font-display font-extrabold text-base text-white">Pay ₹${plan.priceRupees} via Direct UPI</h3>
+            <h3 class="font-display font-extrabold text-base text-white">Pay ₹<span id="upi-final-amt">${plan.priceRupees}</span> via Direct UPI</h3>
             <button onclick="closeModal()" class="text-slate-400 font-bold">✕</button>
+          </div>
+          ${maxDiamondDiscount > 0 ? `
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-sky-950/50 border border-sky-400/50 text-xs cursor-pointer">
+              <span class="font-bold text-sky-200">💎 Use ${maxDiamondDiscount * 5} Diamonds for ₹${maxDiamondDiscount} Instant Discount</span>
+              <input id="upi-diamond-disc" type="checkbox" onchange="updateUpiCheckoutAmount('${plan.id}', ${plan.priceRupees}, ${maxDiamondDiscount})" class="w-4 h-4 accent-sky-400" />
+            </label>` : ''}
+          <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button id="qr-tab-smart" onclick="switchPaymentQrMode('${plan.id}', 'SMART')" class="py-1.5 rounded-lg bg-cyan-400 text-slate-950 text-[11px] font-extrabold">📱 Smart Amount QR</button>
+            <button id="qr-tab-static" onclick="switchPaymentQrMode('${plan.id}', 'STATIC')" class="py-1.5 rounded-lg text-slate-300 text-[11px] font-bold">🖼️ Owner Static QR</button>
           </div>
           <div class="rounded-xl bg-slate-950 border border-amber-400/50 p-3 text-center space-y-2">
             <div class="text-xs font-bold text-amber-300">${plan.name}</div>
-            <img src="${CONSTANTS.OWNER_QR_IMAGE_URL}" alt="Owner UPI QR" class="w-44 h-44 mx-auto rounded-xl border border-slate-700 object-cover" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUri)}'" />
+            <img id="upi-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=${CONSTANTS.OWNER_UPI_ID}&pn=ViralBoostAI&am=${plan.priceRupees}&cu=INR&tn=${plan.name}`)}" alt="Owner UPI QR" class="w-44 h-44 mx-auto rounded-xl border border-slate-700 object-cover bg-white p-1" />
             <div class="text-xs font-mono text-cyan-300 font-bold">${CONSTANTS.OWNER_UPI_ID}</div>
+            <div class="text-[10.5px] text-slate-400">GPay Backup: <span class="font-mono text-slate-200">${CONSTANTS.OWNER_UPI_GPAY}</span></div>
             <div class="flex gap-2">
               <button onclick="copyText('${CONSTANTS.OWNER_UPI_ID}', 'UPI ID ${CONSTANTS.OWNER_UPI_ID} Copied!')" class="flex-1 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold">Copy UPI 📋</button>
-              <a href="${upiUri}" class="flex-1 py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs text-center">Open UPI App ⚡</a>
+              <a id="upi-deep-link" href="upi://pay?pa=${encodeURIComponent(CONSTANTS.OWNER_UPI_ID)}&pn=ViralBoostAI&am=${plan.priceRupees}&cu=INR&tn=${encodeURIComponent(plan.name)}" class="flex-1 py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs text-center">Open UPI App ⚡</a>
             </div>
           </div>
           <div>
-            <label class="text-[11px] text-slate-300 font-semibold">Enter 12-Digit UTR / Transaction Ref No:</label>
-            <input id="upi-utr-input" type="text" maxlength="16" placeholder="e.g. 428910548291" class="w-full mt-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white font-mono" />
+            <label class="text-[11px] text-slate-300 font-semibold">Enter Exact 12-Digit UTR / Transaction Ref No:</label>
+            <input id="upi-utr-input" type="tel" maxlength="12" inputmode="numeric" placeholder="e.g. 428910548291 (12 digits)" class="w-full mt-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white font-mono" />
           </div>
-          <button onclick="submitUtrPayment('${plan.id}')" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-extrabold text-xs">Submit UTR & Activate VIP Request ✅</button>
+          <button onclick="submitUtrPayment('${plan.id}')" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-extrabold text-xs">Submit 12-Digit UTR for Verification ✅</button>
         </div>
       `);
     }
 
+    function updateUpiCheckoutAmount(planId, basePrice, discAmount) {
+      const plan = PLANS.find(x => x.id === planId);
+      const checked = document.getElementById('upi-diamond-disc')?.checked;
+      const finalAmt = Math.max(1, checked ? basePrice - discAmount : basePrice);
+      const amtEl = document.getElementById('upi-final-amt');
+      if (amtEl) amtEl.textContent = finalAmt;
+      const uri = `upi://pay?pa=${encodeURIComponent(CONSTANTS.OWNER_UPI_ID)}&pn=ViralBoostAI&am=${finalAmt}&cu=INR&tn=${encodeURIComponent(plan.name)}`;
+      const dl = document.getElementById('upi-deep-link');
+      if (dl) dl.href = uri;
+      const qrImg = document.getElementById('upi-qr-img');
+      const smartBtn = document.getElementById('qr-tab-smart');
+      if (qrImg && smartBtn && smartBtn.classList.contains('bg-cyan-400')) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(uri)}`;
+      }
+    }
+
+    function switchPaymentQrMode(planId, mode) {
+      const plan = PLANS.find(x => x.id === planId);
+      const finalAmt = Number(document.getElementById('upi-final-amt')?.textContent || plan.priceRupees);
+      const uri = `upi://pay?pa=${encodeURIComponent(CONSTANTS.OWNER_UPI_ID)}&pn=ViralBoostAI&am=${finalAmt}&cu=INR&tn=${encodeURIComponent(plan.name)}`;
+      const qrImg = document.getElementById('upi-qr-img');
+      const smartBtn = document.getElementById('qr-tab-smart');
+      const staticBtn = document.getElementById('qr-tab-static');
+      if (mode === 'STATIC') {
+        if (qrImg) qrImg.src = CONSTANTS.OWNER_QR_IMAGE_URL;
+        if (staticBtn) staticBtn.className = 'py-1.5 rounded-lg bg-cyan-400 text-slate-950 text-[11px] font-extrabold';
+        if (smartBtn) smartBtn.className = 'py-1.5 rounded-lg text-slate-300 text-[11px] font-bold';
+      } else {
+        if (qrImg) qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(uri)}`;
+        if (smartBtn) smartBtn.className = 'py-1.5 rounded-lg bg-cyan-400 text-slate-950 text-[11px] font-extrabold';
+        if (staticBtn) staticBtn.className = 'py-1.5 rounded-lg text-slate-300 text-[11px] font-bold';
+      }
+    }
+
     function submitUtrPayment(planId) {
-      const utr = (document.getElementById('upi-utr-input')?.value || '').trim();
-      if (utr.length < 8) {
-        showToast('Please enter a valid 12-digit UTR number!', 'error');
+      const utr = (document.getElementById('upi-utr-input')?.value || '').trim().replace(/\s+/g, '');
+      if (!/^\d{12}$/.test(utr)) {
+        showToast('Please enter a valid 12-digit numeric UTR number!', 'error');
+        return;
+      }
+      if (state.payments.some(p => p.utr === utr)) {
+        showToast('This UTR has already been submitted!', 'error');
         return;
       }
       const plan = PLANS.find(x => x.id === planId);
-      state.payments.unshift({ id: 'pay_' + Date.now(), planId: plan.id, planName: plan.name, amount: plan.priceRupees, utr, status: 'PENDING', time: Date.now() });
-      state.profile.isVip = true;
-      state.profile.planTier = plan.id;
+      const discChecked = Boolean(document.getElementById('upi-diamond-disc')?.checked);
+      const maxDisc = discChecked ? Math.min(10, Math.floor(state.profile.diamonds / 5)) : 0;
+      const diamondsUsed = maxDisc * 5;
+      const finalAmt = Math.max(1, plan.priceRupees - maxDisc);
+
+      if (diamondsUsed > 0) {
+        state.profile.diamonds -= diamondsUsed;
+        state.transactions.unshift({
+          id: 'tx_' + Date.now(),
+          title: `UPI Checkout Discount (${plan.name})`,
+          subtitle: `Applied ${diamondsUsed} 💎 for ₹${maxDisc} off`,
+          diamonds: diamondsUsed,
+          coins: 0,
+          earned: false,
+          tag: 'CHECKOUT',
+          time: Date.now()
+        });
+      }
+
+      const payRec = {
+        id: 'pay_' + Date.now(),
+        planId: plan.id,
+        planName: plan.name,
+        amount: finalAmt,
+        utr,
+        status: 'PENDING',
+        time: Date.now()
+      };
+      state.payments.unshift(payRec);
+      const tktRec = {
+        id: 'TKT-' + Math.floor(1000 + Math.random() * 9000),
+        category: 'Payment & 12-Digit UTR',
+        subject: `UTR ${utr} Verification (${plan.name} - ₹${finalAmt})`,
+        message: `Submitted UTR ${utr} to ${CONSTANTS.OWNER_UPI_ID} for ${plan.name}. Awaiting Owner Admin verification.`,
+        status: 'OPEN',
+        reply: '',
+        time: Date.now()
+      };
+      state.tickets.unshift(tktRec);
       saveState();
+      syncProfileToCloud();
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser) {
+        window.ViralBoostFirebase.submitPayment(payRec);
+        window.ViralBoostFirebase.submitTicket(tktRec);
+      }
       closeModal();
       renderApp();
-      showToast(`🎉 UTR ${utr} Submitted! ${plan.name} VIP Activated!`, 'success');
+      showToast(`⏳ UTR ${utr} Submitted! Pending Owner Admin Approval.`, 'info');
+    }
+
+    function convertCoinsToDiamonds(coinsCost = 100, diamondsGain = 5) {
+      if (state.profile.coins < coinsCost) {
+        showToast(`Need ${coinsCost} 🪙 Coins (You have ${state.profile.coins} 🪙)`, 'error');
+        return;
+      }
+      state.profile.coins -= coinsCost;
+      state.profile.diamonds += diamondsGain;
+      state.profile.lifetimeDiamonds += diamondsGain;
+      state.transactions.unshift({
+        id: 'tx_' + Date.now(),
+        title: `Converted ${coinsCost} 🪙 → +${diamondsGain} 💎`,
+        subtitle: 'Instant Wallet Coin Swap',
+        diamonds: diamondsGain,
+        coins: 0,
+        earned: true,
+        tag: 'SWAP',
+        time: Date.now()
+      });
+      saveState();
+      syncProfileToCloud();
+      if (activeOverlay) renderOverlay(); else renderApp();
+      showToast(`💎 Swapped ${coinsCost} 🪙 for +${diamondsGain} 💎 Diamonds!`, 'success');
     }
 
     function redeemDiamondsForVip(cost) {
       if (state.profile.diamonds < cost) {
-        showToast(`Need ${cost} 💎 Diamonds (You have ${state.profile.diamonds} 💎). Watch Reels or Claim Streak!`, 'error');
+        showToast(`Need ${cost} 💎 Diamonds (You have ${state.profile.diamonds} 💎). Watch Reels or Convert Coins!`, 'error');
         return;
       }
       state.profile.diamonds -= cost;
       state.profile.isVip = true;
       state.profile.planTier = cost >= 500 ? 'DIAMOND_VIP_1M' : 'DIAMOND_VIP_15D';
+      state.profile.vipExpiresAt = Date.now() + (cost >= 500 ? 30 : 15) * 86400000;
       state.transactions.unshift({ id: 'tx_' + Date.now(), title: `VIP Pro Unlocked (${cost} 💎)`, subtitle: 'Ad-Free AI Studio Activated via Diamonds', diamonds: cost, coins: 0, earned: false, tag: 'REDEEM', time: Date.now() });
       saveState();
+      syncProfileToCloud();
       if (activeOverlay) renderOverlay(); else renderApp();
       showToast('👑 Congratulations! VIP Pro Unlocked via Diamonds!', 'success');
     }
@@ -2556,10 +3238,70 @@
 
     function completeShopsyOrder(title) {
       const name = (document.getElementById('ord-name')?.value || '').trim() || state.profile.username;
+      state.affiliateStats.ordersLogged = (state.affiliateStats.ordersLogged || 0) + 1;
+      state.affiliateStats.clicks = (state.affiliateStats.clicks || 0) + 1;
       creditRewards(CONSTANTS.SHOPSY_ORDER_DIAMONDS, CONSTANTS.SHOPSY_ORDER_COINS, `Shopsy Order: ${title}`, `Customer: ${name} • Tag ${CONSTANTS.AFFILIATE_TAG}`, 'SHOPSY');
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser) {
+        window.ViralBoostFirebase.recordAffiliateOrder({
+          productId: 'SHOPSY_EXPRESS_' + Date.now(),
+          productTitle: title || 'Shopsy Express Deal',
+          platform: 'Shopsy',
+          priceRupees: 0,
+          diamondsRewarded: CONSTANTS.SHOPSY_ORDER_DIAMONDS
+        });
+      }
       closeModal();
       window.open(CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK, '_blank', 'noopener');
       showToast(`🛍️ Order Logged! +10 💎 & +15 🪙 Credited!`, 'success');
+    }
+
+    function trackAffiliateClick() {
+      state.affiliateStats.clicks = (state.affiliateStats.clicks || 0) + 1;
+      saveState();
+      if (activeOverlay === 'affiliateHub') renderOverlay();
+    }
+
+    function buildTaggedAffiliateUrl(rawUrl, product) {
+      const personal = (state.profile.personalAffiliateLink || '').trim();
+      let base = (rawUrl || '').trim();
+      if (!base && product) {
+        const q = encodeURIComponent(product.title);
+        if (product.platform === 'Amazon') base = `https://www.amazon.in/s?k=${q}`;
+        else if (product.platform === 'Flipkart') base = `https://www.flipkart.com/search?q=${q}`;
+        else if (product.platform === 'Meesho') base = `https://www.meesho.com/search?q=${q}`;
+      }
+      if (!base) return personal || CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK;
+      try {
+        const u = new URL(base);
+        const host = u.hostname.toLowerCase();
+        if (host.includes('amazon')) u.searchParams.set('tag', `vb${CONSTANTS.AFFILIATE_TAG}-21`);
+        else if (host.includes('flipkart') || host.includes('shopsy')) u.searchParams.set('affid', CONSTANTS.AFFILIATE_TAG);
+        else if (host.includes('meesho')) u.searchParams.set('referral_code', CONSTANTS.AFFILIATE_TAG);
+        else u.searchParams.set('ref', CONSTANTS.AFFILIATE_TAG);
+        return u.toString();
+      } catch (_) {
+        return personal || CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK;
+      }
+    }
+
+    function convertAnyAffiliateUrl() {
+      const raw = (document.getElementById('aff-raw-url-input')?.value || '').trim();
+      if (!raw) {
+        showToast('Paste an Amazon/Flipkart/Meesho product URL first!', 'error');
+        return;
+      }
+      state.affiliateLastConvertedUrl = buildTaggedAffiliateUrl(raw, null);
+      saveState();
+      renderOverlay();
+      showToast(`🔗 Converted with Affiliate ID ${CONSTANTS.AFFILIATE_TAG}!`, 'success');
+    }
+
+    function shareTaggedLink(copyKey) {
+      const entry = COPY_REGISTRY[copyKey];
+      const url = entry?.text || state.affiliateLastConvertedUrl || CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK;
+      state.affiliateStats.shares = (state.affiliateStats.shares || 0) + 1;
+      creditRewards(0, CONSTANTS.AFFILIATE_SHARE_COINS, 'Shared Tagged Affiliate URL', url, 'AFFILIATE');
+      shareContent('ViralBoost Deal Alert 🔥', `Check out this trending deal (Tag ${CONSTANTS.AFFILIATE_TAG}): ${url}`, url);
     }
 
     function savePersonalAffiliateLink() {
@@ -2571,7 +3313,8 @@
 
     function shareAffiliateProduct(id) {
       const pr = AFFILIATE_PRODUCTS.find(x => x.id === id);
-      const link = (state.profile.personalAffiliateLink || '').trim() || CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK;
+      const link = buildTaggedAffiliateUrl('', pr);
+      state.affiliateStats.shares = (state.affiliateStats.shares || 0) + 1;
       const msg = `🔥 Deal Alert: ${pr.title}\n💰 Only ₹${pr.price} (${pr.off}% OFF! MRP ₹${pr.mrp})\n🛍️ Order on ${pr.platform}: ${link}\n\nShared via ViralBoost AI (Tag ${CONSTANTS.AFFILIATE_TAG})`;
       creditRewards(0, CONSTANTS.AFFILIATE_SHARE_COINS, `Shared Affiliate Deal: ${pr.title}`, pr.platform, 'AFFILIATE');
       shareContent(pr.title, msg, link);
@@ -2579,8 +3322,19 @@
 
     function buyAffiliateProduct(id) {
       const pr = AFFILIATE_PRODUCTS.find(x => x.id === id);
-      const link = (state.profile.personalAffiliateLink || '').trim() || CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK;
+      const link = buildTaggedAffiliateUrl('', pr);
+      state.affiliateStats.clicks = (state.affiliateStats.clicks || 0) + 1;
+      state.affiliateStats.ordersLogged = (state.affiliateStats.ordersLogged || 0) + 1;
       creditRewards(CONSTANTS.AFFILIATE_BUY_DIAMONDS, 0, `Affiliate Purchase: ${pr.title}`, `${pr.platform} Verified`, 'AFFILIATE');
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser && pr) {
+        window.ViralBoostFirebase.recordAffiliateOrder({
+          productId: String(pr.id || 'DEAL'),
+          productTitle: pr.title || 'Affiliate Product',
+          platform: pr.platform || 'Shopsy',
+          priceRupees: Number(pr.price) || 0,
+          diamondsRewarded: CONSTANTS.AFFILIATE_BUY_DIAMONDS
+        });
+      }
       window.open(link, '_blank', 'noopener');
       showToast(`💎 +${CONSTANTS.AFFILIATE_BUY_DIAMONDS} Diamonds Credited!`, 'success');
     }
@@ -2633,8 +3387,12 @@
       const sub = (document.getElementById('tkt-subject')?.value || '').trim();
       const msg = (document.getElementById('tkt-message')?.value || '').trim();
       if (!sub || !msg) { showToast('Please enter both subject & message', 'error'); return; }
-      state.tickets.unshift({ id: 'TKT-' + Math.floor(1000 + Math.random() * 9000), category: selectedSupportCat, subject: sub, message: msg, status: 'OPEN', reply: '', time: Date.now() });
+      const tkt = { id: 'TKT-' + Math.floor(1000 + Math.random() * 9000), category: selectedSupportCat, subject: sub, message: msg, status: 'OPEN', reply: '', time: Date.now() };
+      state.tickets.unshift(tkt);
       saveState();
+      if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser) {
+        window.ViralBoostFirebase.submitTicket(tkt);
+      }
       renderApp();
       showToast('🎧 Support Ticket Submitted! Team notified.', 'success');
     }
@@ -2649,6 +3407,7 @@
       state.profile.username = (document.getElementById('prof-name')?.value || '').trim() || 'ViralCreator_99';
       state.profile.email = (document.getElementById('prof-email')?.value || '').trim() || 'creator@viralboost.ai';
       saveState();
+      syncProfileToCloud();
       renderApp();
       showToast('✅ Creator Profile Saved!', 'success');
     }
@@ -2693,12 +3452,37 @@
     }
 
     function approveAdminUpi(idx) {
-      if (state.payments[idx]) {
-        state.payments[idx].status = 'VERIFIED';
+      const pay = state.payments[idx];
+      if (pay) {
+        pay.status = 'VERIFIED';
         state.profile.isVip = true;
+        state.profile.planTier = pay.planId;
+        const durationDays = pay.planId === 'PRO_3_MONTHS' ? 90 : (pay.planId === '1_MONTH_PASS' || pay.planId === 'MONTHLY_VIP') ? 30 : pay.planId === '15_DAYS' ? 15 : 10;
+        state.profile.vipExpiresAt = Date.now() + durationDays * 86400000;
+        state.transactions.unshift({
+          id: 'tx_' + Date.now(),
+          title: `VIP Activated: ${pay.planName}`,
+          subtitle: `UTR ${pay.utr} Verified by Owner (${durationDays} Days)`,
+          diamonds: 0,
+          coins: 0,
+          earned: true,
+          tag: 'VIP_PRO',
+          time: Date.now()
+        });
+        saveState();
+        syncProfileToCloud();
+        renderOverlay();
+        showToast(`✅ UTR ${pay.utr} Approved! VIP Pro Unlocked!`, 'success');
+      }
+    }
+
+    function rejectAdminUpi(idx) {
+      const pay = state.payments[idx];
+      if (pay) {
+        pay.status = 'REJECTED';
         saveState();
         renderOverlay();
-        showToast('✅ Payment Approved by Owner!', 'success');
+        showToast(`❌ UTR ${pay.utr} marked REJECTED.`, 'info');
       }
     }
 
@@ -2779,6 +3563,389 @@
     });
 
     renderApp();
+  </script>
+
+  <!-- Official Firebase Web SDK v12.6.0: App Check (reCAPTCHA Enterprise) + AI Logic + Google Cloud Sync -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app-check.js";
+    import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      addDoc,
+      collection,
+      query,
+      orderBy,
+      limit,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzOys4B3Jq8DX1_6AGeCljNedGkBx0yhM",
+      authDomain: "gen-lang-client-0822394015.firebaseapp.com",
+      projectId: "gen-lang-client-0822394015",
+      storageBucket: "gen-lang-client-0822394015.firebasestorage.app",
+      messagingSenderId: "1092939667146",
+      appId: "1:1092939667146:web:3d65105b8a2f6bd9ecc633"
+    };
+
+    const recaptchaEnterpriseSiteKey = "6LfXMyguAAAAAP7rZillQPgtGQRwHBrlCXISjDsU";
+    const FIRESTORE_DB_ID = "ai-studio-android-viralboo-3301348c-e96b-490a-988e-70a9002b75d1";
+
+    let resolveReady;
+    window.ViralBoostFirebaseReady = new Promise((res) => { resolveReady = res; });
+
+    const bridge = {
+      aiReady: false,
+      appCheckReady: false,
+      currentUser: null,
+      signInWithGoogle: async () => {},
+      signOutGoogle: async () => {},
+      syncUserProfileAndLeaderboard: async () => {},
+      submitPayment: async () => {},
+      submitTicket: async () => {},
+      recordAffiliateOrder: async () => {},
+      generateContent: async () => null
+    };
+    window.ViralBoostFirebase = bridge;
+
+    try {
+      const app = initializeApp(firebaseConfig);
+
+      // Enable Firebase App Check with reCAPTCHA Enterprise on HTTP/HTTPS origins
+      if (window.location.protocol.startsWith("http")) {
+        try {
+          initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider(recaptchaEnterpriseSiteKey),
+            isTokenAutoRefreshEnabled: true
+          });
+          bridge.appCheckReady = true;
+        } catch (acErr) {
+          console.warn("AppCheck init warning:", acErr);
+        }
+      }
+
+      // Initialize Firebase AI Logic Web SDK (Gemini Developer API Backend)
+      const ai = getAI(app, { backend: new GoogleAIBackend() });
+      const socialContentSchema = Schema.object({
+        properties: {
+          title: Schema.string({ description: "Catchy clickable bilingual Hindi/English viral title with emoji" }),
+          hook: Schema.string({ description: "Scroll-stopping 3-second opening hook" }),
+          script: Schema.string({ description: "Complete timestamped [0-3s HOOK], [3-20s BODY], [20-30s CTA] script with visual cues" }),
+          cta: Schema.string({ description: "High-converting comment/share/save call to action" }),
+          hashtags: Schema.array({
+            items: Schema.string(),
+            description: "8-12 trending Hindi and English hashtags starting with #"
+          }),
+          tips: Schema.array({
+            items: Schema.string(),
+            description: "2 actionable posting or sound tips"
+          })
+        }
+      });
+
+      const structuredModel = getGenerativeModel(ai, {
+        model: "gemini-2.5-flash",
+        systemInstruction: "You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators on Instagram Reels, YouTube Shorts, Facebook Reels, and Telegram.",
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: socialContentSchema,
+          temperature: 0.8
+        }
+      });
+
+      const chatModel = getGenerativeModel(ai, {
+        model: "gemini-2.5-flash",
+        systemInstruction: "You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators."
+      });
+      bridge.aiReady = true;
+
+      bridge.generateContent = async ({ prompt, platform, tone, contentType, expectJson = true, history = [] }) => {
+        if (!expectJson) {
+          const histParts = history.slice(-6).filter(m => m && m.text).map(m => ({
+            role: m.sender === "USER" ? "user" : "model",
+            parts: [{ text: String(m.text).slice(0, 1200) }]
+          }));
+          const contents = [...histParts, { role: "user", parts: [{ text: prompt }] }];
+          const result = await chatModel.generateContent({ contents });
+          const rawText = result.response.text();
+          return {
+            ok: true,
+            source: "LIVE_GEMINI",
+            data: { rawText }
+          };
+        }
+
+        const fullPrompt = [
+          `Content Mode: ${contentType}`,
+          `Target Platform: ${platform}`,
+          `Tone / Style: ${tone}`,
+          `Topic / Request: ${prompt}`,
+          "Generate a high-retention viral short-form video package in Hindi/Hinglish/English with trending #hashtags."
+        ].join("\n");
+
+        try {
+          const result = await structuredModel.generateContent(fullPrompt);
+          const jsonText = result.response.text();
+          const parsed = JSON.parse(jsonText);
+          const tagsArr = Array.isArray(parsed.hashtags) ? parsed.hashtags : [];
+          const hashtags = tagsArr
+            .map(t => String(t || "").trim())
+            .filter(Boolean)
+            .map(t => (t.startsWith("#") ? t : `#${t}`))
+            .join(" ") || "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia";
+          return {
+            ok: true,
+            source: "LIVE_GEMINI",
+            data: {
+              title: String(parsed.title || `🔥 ${prompt}`),
+              hook: String(parsed.hook || ""),
+              script: String(parsed.script || jsonText),
+              cta: String(parsed.cta || ""),
+              hashtags,
+              tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+              rawText: jsonText
+            }
+          };
+        } catch (structErr) {
+          const fallbackRes = await chatModel.generateContent(fullPrompt);
+          const rawText = fallbackRes.response.text();
+          return {
+            ok: true,
+            source: "LIVE_GEMINI",
+            data: {
+              title: `🔥 ${prompt.slice(0, 60)}`,
+              hook: rawText.split("\n")[0] || "",
+              script: rawText,
+              cta: "अभी सेव करें और शेयर करें!",
+              hashtags: "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia",
+              tips: [],
+              rawText
+            }
+          };
+        }
+      };
+
+      // Initialize Firebase Authentication & Provisioned Named Cloud Firestore
+      const auth = getAuth(app);
+      const db = getFirestore(app, FIRESTORE_DB_ID);
+      const googleProvider = new GoogleAuthProvider();
+      let lbUnsubscribe = null;
+
+      getRedirectResult(auth).catch(() => {});
+
+      bridge.signInWithGoogle = async () => {
+        try {
+          await signInWithPopup(auth, googleProvider);
+          showToast("🟢 Google Cloud Sync Connected!", "success");
+        } catch (err) {
+          const code = err?.code || "";
+          if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
+            await signInWithRedirect(auth, googleProvider);
+          } else if (code !== "auth/popup-closed-by-user") {
+            showToast(`Google Sign-In error: ${err.message}`, "error");
+          }
+        }
+      };
+
+      bridge.signOutGoogle = async () => {
+        try {
+          await signOut(auth);
+          showToast("Signed out of Google Cloud Sync", "info");
+        } catch (err) {
+          showToast(`Sign-out error: ${err.message}`, "error");
+        }
+      };
+
+      bridge.syncUserProfileAndLeaderboard = async (profile) => {
+        const user = auth.currentUser;
+        if (!user || !profile) return;
+        try {
+          const uid = user.uid;
+          const userRef = doc(db, "users", uid);
+          const existingSnap = await getDoc(userRef);
+          const existingRole = existingSnap.exists() && existingSnap.data()?.role ? existingSnap.data().role : "user";
+          const safeName = String(profile.username || user.displayName || "ViralCreator").trim().slice(0, 80) || "ViralCreator";
+          const safeCoins = Math.max(0, Math.floor(Number(profile.coins) || 0));
+          const safeDiamonds = Math.max(0, Math.floor(Number(profile.diamonds) || 0));
+          const now = Date.now();
+
+          await setDoc(userRef, {
+            uid,
+            displayUserId: String(profile.displayUserId || "74829156"),
+            username: safeName,
+            email: String(profile.email || user.email || "").trim(),
+            niche: String(profile.niche || "Shorts & Reels"),
+            coins: safeCoins,
+            diamonds: safeDiamonds,
+            lifetimeDiamonds: Math.max(0, Math.floor(Number(profile.lifetimeDiamonds) || 0)),
+            bonusRupees: Math.floor(Number(profile.bonusRupees) || 50),
+            streakDays: Math.max(1, Math.floor(Number(profile.streakDays) || 1)),
+            isVip: Boolean(profile.isVip),
+            planTier: String(profile.planTier || "FREE_TRIAL"),
+            vipExpiryDate: Number(profile.vipExpiresAt || 0),
+            role: existingRole,
+            updatedAt: now
+          });
+
+          const lbRef = doc(db, "leaderboard", uid);
+          const handle = "@" + (safeName.toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 24) || "creator");
+          await setDoc(lbRef, {
+            uid,
+            name: safeName,
+            handle,
+            niche: String(profile.niche || "Shorts & Reels"),
+            coins: safeCoins,
+            diamonds: safeDiamonds,
+            streakDays: Math.max(1, Math.floor(Number(profile.streakDays) || 1)),
+            viralScore: safeCoins + (safeDiamonds * 10),
+            isVip: Boolean(profile.isVip),
+            updatedAt: now
+          });
+        } catch (err) {
+          console.warn("Firestore sync error:", err);
+        }
+      };
+
+      bridge.submitPayment = async (pay) => {
+        const user = auth.currentUser;
+        if (!user || !pay) return;
+        try {
+          await addDoc(collection(db, "payments"), {
+            userId: user.uid,
+            userName: String(state.profile.username || user.displayName || "Creator"),
+            planName: String(pay.planName || "VIP Plan").slice(0, 140),
+            amountRupees: Math.max(0, Math.floor(Number(pay.amount) || 0)),
+            utrNumber: String(pay.utr || "").slice(0, 40),
+            paymentMethod: "UPI_QR",
+            status: "PENDING",
+            ownerUpiId: CONSTANTS.OWNER_UPI_ID,
+            timestamp: Date.now(),
+            adminNote: ""
+          });
+        } catch (err) {
+          console.warn("Payment Firestore sync error:", err);
+        }
+      };
+
+      bridge.submitTicket = async (tkt) => {
+        const user = auth.currentUser;
+        if (!user || !tkt) return;
+        try {
+          await addDoc(collection(db, "tickets"), {
+            userId: user.uid,
+            userName: String(state.profile.username || user.displayName || "Creator"),
+            userEmail: String(state.profile.email || user.email || ""),
+            subject: String(tkt.subject || "Support Inquiry").slice(0, 160),
+            category: String(tkt.category || "General Inquiry"),
+            message: String(tkt.message || "").slice(0, 2000),
+            status: "OPEN",
+            adminReply: "",
+            createdAt: Date.now()
+          });
+        } catch (err) {
+          console.warn("Ticket Firestore sync error:", err);
+        }
+      };
+
+      bridge.recordAffiliateOrder = async (ord) => {
+        const user = auth.currentUser;
+        if (!user || !ord) return;
+        try {
+          await addDoc(collection(db, "affiliate_orders"), {
+            userId: user.uid,
+            productId: String(ord.productId || "DEAL"),
+            productTitle: String(ord.productTitle || "Affiliate Deal").slice(0, 160),
+            platform: String(ord.platform || "Shopsy"),
+            priceRupees: Math.max(0, Math.floor(Number(ord.priceRupees) || 0)),
+            affiliateTag: CONSTANTS.AFFILIATE_TAG,
+            diamondsRewarded: Math.floor(Number(ord.diamondsRewarded) || 0),
+            status: "LOGGED",
+            timestamp: Date.now()
+          });
+        } catch (err) {
+          console.warn("Affiliate Firestore sync error:", err);
+        }
+      };
+
+      onAuthStateChanged(auth, async (user) => {
+        bridge.currentUser = user;
+        cloudUser = user;
+        if (lbUnsubscribe) { lbUnsubscribe(); lbUnsubscribe = null; }
+
+        if (user) {
+          try {
+            const userRef = doc(db, "users", user.uid);
+            const snap = await getDoc(userRef);
+            if (snap.exists()) {
+              const d = snap.data();
+              if (typeof d.coins === "number") state.profile.coins = d.coins;
+              if (typeof d.diamonds === "number") state.profile.diamonds = d.diamonds;
+              if (typeof d.lifetimeDiamonds === "number") state.profile.lifetimeDiamonds = d.lifetimeDiamonds;
+              if (typeof d.bonusRupees === "number") state.profile.bonusRupees = d.bonusRupees;
+              if (typeof d.streakDays === "number") state.profile.streakDays = d.streakDays;
+              if (typeof d.isVip === "boolean") state.profile.isVip = d.isVip;
+              if (d.planTier) state.profile.planTier = d.planTier;
+              if (typeof d.vipExpiryDate === "number") state.profile.vipExpiresAt = d.vipExpiryDate;
+              if (d.username) state.profile.username = d.username;
+              if (d.email) state.profile.email = d.email;
+              if (d.niche) state.profile.niche = d.niche;
+              if (d.displayUserId) state.profile.displayUserId = d.displayUserId;
+              saveState();
+            } else {
+              if (user.displayName && state.profile.username === "ViralCreator_99") {
+                state.profile.username = user.displayName;
+              }
+              if (user.email && state.profile.email === "creator@viralboost.ai") {
+                state.profile.email = user.email;
+              }
+              saveState();
+              await bridge.syncUserProfileAndLeaderboard(state.profile);
+            }
+
+            const q = query(collection(db, "leaderboard"), orderBy("viralScore", "desc"), limit(50));
+            lbUnsubscribe = onSnapshot(q, (snapshot) => {
+              cloudLeaderboard = snapshot.docs.map(docSnap => {
+                const cd = docSnap.data() || {};
+                return {
+                  uid: cd.uid || docSnap.id,
+                  name: cd.name || "Creator",
+                  niche: cd.niche || "Shorts & Reels",
+                  coins: Number(cd.coins) || 0,
+                  diamonds: Number(cd.diamonds) || 0,
+                  isVip: Boolean(cd.isVip)
+                };
+              });
+              if (state.activeTab === "ranks" && !activeOverlay) renderApp();
+            }, (err) => console.warn("Leaderboard snapshot:", err));
+          } catch (syncErr) {
+            console.warn("Cloud restore warning:", syncErr);
+          }
+        } else {
+          cloudLeaderboard = [];
+        }
+        syncHeader();
+        if (!activeOverlay) renderApp();
+      });
+
+      syncHeader();
+    } catch (initErr) {
+      console.error("Firebase initialization warning:", initErr);
+    } finally {
+      if (resolveReady) resolveReady(bridge);
+    }
   </script>
 </body>
 </html>
