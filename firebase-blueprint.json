@@ -129,10 +129,30 @@
         "updatedAt": { "type": "integer", "description": "Last update epoch millis" }
       },
       "required": ["userId", "name", "handle", "platform", "createdAt"]
+    },
+    "ViralReel": {
+      "title": "ViralReel",
+      "description": "Real creator video/reel published to the Viral Creator Reels Hub.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Publishing Firebase Auth UID" },
+        "creator": { "type": "string", "description": "Creator display name" },
+        "handle": { "type": "string", "description": "Creator channel handle" },
+        "platform": { "type": "string", "description": "YouTube, Instagram, GoLiveGram, or Facebook" },
+        "title": { "type": "string", "description": "Video / reel title" },
+        "videoUrl": { "type": "string", "description": "Real reel or video URL" },
+        "tag": { "type": "string", "description": "Hashtags string" },
+        "viewsCount": { "type": "integer", "description": "Watch count" },
+        "likesCount": { "type": "integer", "description": "Likes count" },
+        "spotlight": { "type": "boolean", "description": "VIP spotlight flag" },
+        "createdAt": { "type": "integer", "description": "Creation epoch millis" },
+        "updatedAt": { "type": "integer", "description": "Last update epoch millis" }
+      },
+      "required": ["userId", "creator", "handle", "platform", "title", "createdAt"]
     }
   },
   "auth": {
-    "providers": ["google.com"]
+    "providers": ["google.com", "phone"]
   },
   "firestore": {
     "databaseId": "ai-studio-android-viralboo-3301348c-e96b-490a-988e-70a9002b75d1",
@@ -171,6 +191,11 @@
         "path": "/communityCreators/{creatorId}",
         "entity": "CommunityCreator",
         "description": "Real signed-up creator channels in the Creator Community Pool."
+      },
+      {
+        "path": "/viralReels/{reelId}",
+        "entity": "ViralReel",
+        "description": "Real creator reels and videos published to the Viral Creator Reels Hub."
       }
     ]
   }

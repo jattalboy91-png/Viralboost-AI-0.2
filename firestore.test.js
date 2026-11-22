@@ -292,3 +292,52 @@ test("communityCreators enforces real-user ownership and follow increment rules"
   await assertSucceeds(aliceDb.collection("communityCreators").doc("cr_alice").delete());
 });
 
+test("viralReels enforces real-user ownership and view/like counter updates", async () => {
+  const unauthDb = testEnv.unauthenticatedContext().firestore();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  const bobDb = testEnv.authenticatedContext(BOB_UID).firestore();
+
+  await assertFails(
+    unauthDb.collection("viralReels").doc("reel_unauth").set({
+      userId: "fake",
+      creator: "Fake",
+      handle: "@fake",
+      platform: "YouTube",
+      title: "Fake Reel",
+      createdAt: Date.now(),
+    })
+  );
+
+  await assertSucceeds(
+    aliceDb.collection("viralReels").doc("reel_alice").set({
+      userId: ALICE_UID,
+      creator: "AliceCreator",
+      handle: "@alice_reels",
+      platform: "Instagram",
+      title: "Real Creator Breakdown",
+      videoUrl: "https://instagram.com/reel/abc",
+      tag: "#CreatorGrowth",
+      viewsCount: 0,
+      likesCount: 0,
+      spotlight: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    })
+  );
+
+  await assertSucceeds(unauthDb.collection("viralReels").get());
+  await assertSucceeds(
+    bobDb.collection("viralReels").doc("reel_alice").update({
+      viewsCount: 1,
+      likesCount: 1,
+      updatedAt: Date.now(),
+    })
+  );
+  await assertFails(
+    bobDb.collection("viralReels").doc("reel_alice").update({
+      title: "Hijacked Title",
+    })
+  );
+  await assertFails(bobDb.collection("viralReels").doc("reel_alice").delete());
+  await assertSucceeds(aliceDb.collection("viralReels").doc("reel_alice").delete());
+});

@@ -101,6 +101,9 @@
   </style>
 </head>
 <body class="min-h-screen antialiased selection:bg-violet-600 selection:text-white">
+  <!-- Persistent reCAPTCHA container for Firebase Phone Auth (must survive auth-gate re-renders) -->
+  <div id="firebase-recaptcha-container" style="position:fixed;bottom:0;right:0;z-index:999;"></div>
+
   <!-- Mandatory First-Screen Authentication & Legal Terms Gate (Never Auto-Login as Guest) -->
   <div id="auth-gate" class="hidden min-h-screen max-w-lg mx-auto px-4 py-6 flex flex-col justify-between"></div>
 
@@ -392,30 +395,11 @@
       { id: 6, title: '3-Piece Non-Stick Granite Kitchen Cookware Set', category: 'Home & Kitchen', discountText: '75% OFF', price: '₹799', oldPrice: '₹3,199', commission: 'Affiliate Commission | ID: 5665937', rating: '★ 4.5', emoji: '🍳' }
     ];
 
-    const INITIAL_REELS_FEED = [
-      { id: 'r1', creator: '⚡ Rohan Finance Fast', handle: '@rohan_finance', platform: 'YouTube', title: '₹500 से रोज ₹2,000 कैसे बनाएं? Zero Investment Blueprint 2026', views: '142K', likes: '18.4K', duration: '0:48', spotlight: true, color: 'from-red-600/30 to-amber-600/20', tag: '#FinanceShorts #PassiveIncome' },
-      { id: 'r2', creator: '💃 Priya Dance & Reels', handle: '@desi_priya', platform: 'Instagram', title: 'Trending Haryanvi Mashup Step Tutorial — 1M+ Views Guarantee!', views: '389K', likes: '52.1K', duration: '0:32', spotlight: true, color: 'from-pink-600/30 to-purple-600/20', tag: '#InstaReels #HaryanviSwag' },
-      { id: 'r3', creator: '🤖 Vikas AI Tech', handle: '@vikas_shorts', platform: 'GoLiveGram', title: 'Top 3 Free AI Tools जो आपका चैनल 7 दिन में Monetize करेंगे', views: '94K', likes: '11.2K', duration: '0:55', spotlight: false, color: 'from-violet-600/30 to-cyan-600/20', tag: '#AITools #CreatorEconomy' },
-      { id: 'r4', creator: '🎤 Ankit Haryanvi Rap', handle: '@haryanvi_swag_king', platform: 'YouTube', title: 'Desi Swag Attitude Rap — Studio Session + Beat Drop', views: '215K', likes: '29.8K', duration: '0:42', spotlight: false, color: 'from-amber-600/30 to-orange-600/20', tag: '#HaryanviRap #ViralAudio' },
-      { id: 'r5', creator: '🛍️ Neha Budget Hauls', handle: '@neha_hauls', platform: 'Instagram', title: 'Shopsy ₹199 Festive Kurti Haul — 75% OFF Loot Deal!', views: '176K', likes: '24.6K', duration: '0:39', spotlight: true, color: 'from-emerald-600/30 to-teal-600/20', tag: '#ShopsyLoot #BudgetFashion' }
-    ];
-
-    const INITIAL_LEADERBOARD = [
-      { id: 'l1', name: 'Rohan Sharma', niche: 'Finance & Wealth', coins: 4820, diamonds: 640, isVip: true },
-      { id: 'l2', name: 'Priya Verma', niche: 'Lifestyle & Vlog', coins: 4190, diamonds: 520, isVip: true },
-      { id: 'l3', name: 'Vikas Choudhary', niche: 'Tech & AI', coins: 3760, diamonds: 415, isVip: true },
-      { id: 'l4', name: 'Ankit Haryanvi', niche: 'Shorts & Reels', coins: 3120, diamonds: 340, isVip: false },
-      { id: 'l5', name: 'Neha Thakur', niche: 'Fashion & Deals', coins: 2640, diamonds: 290, isVip: true },
-      { id: 'l6', name: 'Karan Gaming', niche: 'Gaming Nexus', coins: 1980, diamonds: 185, isVip: false },
-      { id: 'l7', name: 'Sonia Kapoor', niche: 'Fitness & Health', coins: 1450, diamonds: 140, isVip: false },
-      { id: 'l8', name: 'Deepak Patel', niche: 'Shorts & Reels', coins: 920, diamonds: 95, isVip: false }
-    ];
-
     const TICKER_MESSAGES = [
-      '🔥 राहुल ने ऐप खोलते ही ₹50 वेलकम बोनस और 10 💎 कमाए!',
-      '💎 प्रिया ने Shopsy मॉल से शॉपिंग करके +10 डायमंड और ₹50 बचाए!',
-      '🚀 विकास ने 1-Click AI वीडियो शेयर करके Instagram पर 5K व्यूज पाए!',
-      '⭐ अमित ने आज Shopsy एफिलिएट (Tag 5665937) कमीशन से ₹350 कमाए!'
+      '🔥 Welcome Bonus ₹50 & +10 💎 Credited on Verified Sign Up!',
+      '🛍️ Shopsy 75% OFF Mega Mall: +10 💎 & +15 🪙 on Every Order (Tag 5665937)!',
+      '🤖 1-Click Live AI Studio: Gemini 2.5 Flash Scripts + HD Video Export Ready!',
+      '🚀 Real Creator Reels & Community Pool — Publish Your Channel Live!'
     ];
 
     // =========================================================================
@@ -621,6 +605,7 @@
     let cloudUser = null;
     let cloudLeaderboard = [];
     let cloudCommunityCreators = [];
+    let cloudViralReels = [];
     let adminUsersState = {
       loading: false,
       loadedOnce: false,
@@ -1168,9 +1153,12 @@
       method: 'mobile', // 'mobile' | 'email'
       name: '',
       contact: '',
+      e164: '',
       otp: '',
-      generatedOtp: '',
       otpSent: false,
+      otpLoading: false,
+      otpConfirming: false,
+      errorMsg: '',
       agreed: false,
       googleLoading: false,
       pendingGoogleSignup: false
@@ -1184,10 +1172,12 @@
     function renderSecureSignupScreen() {
       const a = authUiState;
       const isMobile = a.method === 'mobile';
-      const canSendOtp = isMobile && !a.otpSent && a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10;
+      const canSendOtp = isMobile && !a.otpSent && !a.otpLoading && a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10;
       const canCompleteSignup = a.agreed &&
+        !a.otpLoading &&
+        !a.otpConfirming &&
         a.name.trim().length >= 2 &&
-        (isMobile ? (a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length >= 4) : a.contact.trim().length >= 5);
+        (isMobile ? (a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length === 6) : a.contact.trim().length >= 5);
       const canSubmit = (isMobile && !a.otpSent) ? canSendOtp : canCompleteSignup;
 
       return `
@@ -1239,7 +1229,7 @@
             <!-- Mobile OTP vs Google / Email Toggle -->
             <div class="grid grid-cols-2 gap-2">
               <button type="button" onclick="selectAuthMethod('mobile')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition min-h-[44px] ${isMobile ? 'bg-violet-600 border-violet-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300'}">
-                <span>📱</span><span>Mobile (OTP)</span>
+                <span>📱</span><span>Mobile (SMS OTP)</span>
               </button>
               <button type="button" onclick="selectAuthMethod('email')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition min-h-[44px] ${!isMobile ? 'bg-violet-600 border-violet-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300'}">
                 <span>✉️</span><span>Google / Email</span>
@@ -1254,19 +1244,25 @@
 
             <!-- Mobile Number or Email Input -->
             <div>
-              <label for="auth-contact-input" class="block text-[11px] font-bold text-slate-300 mb-1">${isMobile ? 'Enter Mobile Number' : 'Enter Google / Email ID'}</label>
-              <input id="auth-contact-input" type="${isMobile ? 'tel' : 'email'}" value="${escapeHtml(a.contact)}" oninput="authUiState.contact=this.value;updateAuthSubmitButtonState()" placeholder="${isMobile ? 'e.g. 9876543210' : 'e.g. creator@gmail.com'}" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
+              <label for="auth-contact-input" class="block text-[11px] font-bold text-slate-300 mb-1">${isMobile ? 'Enter Mobile Number (+91 or country code)' : 'Enter Google / Email ID'}</label>
+              <input id="auth-contact-input" type="${isMobile ? 'tel' : 'email'}" value="${escapeHtml(a.contact)}" oninput="authUiState.contact=this.value;authUiState.errorMsg='';updateAuthSubmitButtonState()" placeholder="${isMobile ? 'e.g. 9876543210 or +919876543210' : 'e.g. creator@gmail.com'}" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
             </div>
 
-            <!-- 6-Digit Mobile OTP Verification Box -->
+            <!-- Real Firebase Phone Auth 6-Digit SMS OTP Verification Box -->
             ${isMobile && a.otpSent ? `
               <div class="rounded-xl bg-slate-950/90 border border-amber-400/60 p-3 space-y-2">
-                <label for="auth-otp-input" class="block text-[11px] font-bold text-amber-300">🔐 Enter 6-Digit Mobile OTP</label>
-                <input id="auth-otp-input" type="number" inputmode="numeric" value="${escapeHtml(a.otp)}" oninput="authUiState.otp=this.value;updateAuthSubmitButtonState()" placeholder="Enter 6-digit OTP" class="w-full rounded-xl bg-slate-900 border border-amber-400/50 px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:border-cyan-400" />
+                <label for="auth-otp-input" class="block text-[11px] font-bold text-amber-300">🔐 Enter Real 6-Digit SMS OTP</label>
+                <input id="auth-otp-input" type="tel" maxlength="6" inputmode="numeric" value="${escapeHtml(a.otp)}" oninput="authUiState.otp=this.value.replace(/\\D/g,'').slice(0,6);authUiState.errorMsg='';updateAuthSubmitButtonState()" placeholder="Enter 6-digit SMS OTP" class="w-full rounded-xl bg-slate-900 border border-amber-400/50 px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:border-cyan-400" />
                 <div class="flex items-center justify-between text-[10.5px]">
-                  <span class="text-emerald-300 font-semibold">✓ Verification OTP (${escapeHtml(a.generatedOtp)}) sent to ${escapeHtml(a.contact)}</span>
-                  <button type="button" onclick="autofillSignupOtp()" class="text-amber-300 font-bold underline shrink-0 ml-2">Auto-fill</button>
+                  <span class="text-emerald-300 font-semibold">✓ SMS OTP requested for ${escapeHtml(a.e164 || a.contact)}</span>
+                  <button type="button" onclick="sendMobileSignupOtp()" ${a.otpLoading ? 'disabled' : ''} class="text-cyan-300 font-bold underline shrink-0 ml-2 disabled:opacity-50">Resend SMS</button>
                 </div>
+              </div>
+            ` : ''}
+
+            ${a.errorMsg ? `
+              <div class="rounded-xl bg-red-950/70 border border-red-500/60 p-2.5 text-[11px] text-red-200 font-semibold">
+                ⚠️ ${escapeHtml(a.errorMsg)}
               </div>
             ` : ''}
 
@@ -1291,7 +1287,7 @@
 
             <!-- Primary CTA Button -->
             <button id="auth-submit-btn" type="button" onclick="${isMobile && !a.otpSent ? 'sendMobileSignupOtp()' : 'completeSecureSignup()'}" ${canSubmit ? '' : 'disabled'} class="w-full py-3 rounded-xl font-display font-extrabold text-xs min-h-[48px] transition shadow-lg ${canSubmit ? (isMobile && !a.otpSent ? 'bg-violet-600 hover:bg-violet-500 text-white' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950') : 'bg-slate-800 text-slate-500 cursor-not-allowed'}">
-              ${isMobile && !a.otpSent ? '📱 Send OTP & Verify' : '✅ Complete Sign Up & Enter App'}
+              ${a.otpLoading ? '⏳ Sending Real SMS OTP...' : a.otpConfirming ? '⏳ Verifying SMS OTP...' : (isMobile && !a.otpSent ? '📱 Send Real SMS OTP' : '✅ Verify & Complete Sign Up')}
             </button>
           </div>
 
@@ -1317,10 +1313,12 @@
       if (!btn) return;
       const a = authUiState;
       const isMobile = a.method === 'mobile';
-      const canSendOtp = isMobile && !a.otpSent && a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10;
+      const canSendOtp = isMobile && !a.otpSent && !a.otpLoading && a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10;
       const canCompleteSignup = a.agreed &&
+        !a.otpLoading &&
+        !a.otpConfirming &&
         a.name.trim().length >= 2 &&
-        (isMobile ? (a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length >= 4) : a.contact.trim().length >= 5);
+        (isMobile ? (a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length === 6) : a.contact.trim().length >= 5);
       const canSubmit = (isMobile && !a.otpSent) ? canSendOtp : canCompleteSignup;
       btn.disabled = !canSubmit;
       btn.className = `w-full py-3 rounded-xl font-display font-extrabold text-xs min-h-[48px] transition shadow-lg ${
@@ -1334,6 +1332,8 @@
       authUiState.method = method;
       authUiState.otpSent = false;
       authUiState.otp = '';
+      authUiState.e164 = '';
+      authUiState.errorMsg = '';
       renderApp();
     }
 
@@ -1385,31 +1385,49 @@
       triggerGoogleCloudSignIn();
     }
 
-    function sendMobileSignupOtp() {
-      const cleanPhone = authUiState.contact.replace(/\D/g, '');
+    async function sendMobileSignupOtp() {
+      if (authUiState.otpLoading) return;
+      const rawContact = (authUiState.contact || '').trim();
+      const digits = rawContact.replace(/\D/g, '');
       if (authUiState.name.trim().length < 2) {
         showToast('Please enter your full name first!', 'error');
         return;
       }
-      if (cleanPhone.length < 10) {
+      if (digits.length < 10) {
         showToast('Please enter a valid 10-digit mobile number!', 'error');
         return;
       }
-      const code = String(Math.floor(100000 + Math.random() * 900000));
-      authUiState.generatedOtp = code;
-      authUiState.otpSent = true;
-      authUiState.otp = '';
+      const e164 = rawContact.startsWith('+')
+        ? ('+' + digits)
+        : ('+91' + digits.slice(-10));
+
+      authUiState.otpLoading = true;
+      authUiState.errorMsg = '';
+      authUiState.e164 = e164;
       renderApp();
-      showToast(`📱 Verification OTP (${code}) sent to ${authUiState.contact}!`, 'success');
+
+      try {
+        if (window.ViralBoostFirebaseReady) {
+          await window.ViralBoostFirebaseReady;
+        }
+        if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.sendPhoneOtp !== 'function') {
+          throw new Error('Firebase Phone Auth is initializing — try again in a moment.');
+        }
+        await window.ViralBoostFirebase.sendPhoneOtp(e164);
+        authUiState.otpSent = true;
+        authUiState.otp = '';
+        showToast(`📱 Real SMS OTP sent to ${e164}!`, 'success');
+      } catch (err) {
+        const msg = String(err?.message || err || 'Could not send SMS OTP.');
+        authUiState.errorMsg = msg;
+        showToast(`⚠️ SMS OTP Error: ${msg}`, 'error');
+      } finally {
+        authUiState.otpLoading = false;
+        renderApp();
+      }
     }
 
-    function autofillSignupOtp() {
-      if (!authUiState.generatedOtp) authUiState.generatedOtp = '123456';
-      authUiState.otp = authUiState.generatedOtp;
-      renderApp();
-    }
-
-    function completeSecureSignup() {
+    async function completeSecureSignup() {
       const a = authUiState;
       const isMobile = a.method === 'mobile';
       const name = a.name.trim();
@@ -1429,13 +1447,30 @@
           return;
         }
         if (!a.otpSent) {
-          sendMobileSignupOtp();
+          await sendMobileSignupOtp();
           return;
         }
-        if (a.otp.trim() !== a.generatedOtp && a.otp.trim() !== '123456') {
-          showToast('Invalid 6-digit OTP! Check the SMS verification code.', 'error');
+        if (a.otp.trim().length !== 6) {
+          showToast('Enter the exact 6-digit SMS OTP sent to your phone.', 'error');
           return;
         }
+        authUiState.otpConfirming = true;
+        authUiState.errorMsg = '';
+        renderApp();
+        try {
+          if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.confirmPhoneOtp !== 'function') {
+            throw new Error('Firebase Phone Auth SDK not ready.');
+          }
+          await window.ViralBoostFirebase.confirmPhoneOtp(a.otp.trim());
+        } catch (otpErr) {
+          const msg = String(otpErr?.message || otpErr || 'Invalid or expired SMS OTP.');
+          authUiState.otpConfirming = false;
+          authUiState.errorMsg = msg;
+          renderApp();
+          showToast(`⚠️ OTP Verification Failed: ${msg}`, 'error');
+          return;
+        }
+        authUiState.otpConfirming = false;
       } else {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) {
           showToast('Please enter a valid email address!', 'error');
@@ -1445,10 +1480,10 @@
 
       const ts = new Date().toISOString();
       state.profile.username = name;
-      state.profile.userContact = contact;
+      state.profile.userContact = isMobile ? (a.e164 || contact) : contact;
       if (!isMobile || contact.includes('@')) state.profile.email = contact;
       else if (cloudUser?.email) state.profile.email = cloudUser.email;
-      state.profile.authMethod = cloudUser ? 'google' : (isMobile ? 'mobile_otp' : 'email');
+      state.profile.authMethod = isMobile ? 'mobile_otp' : (cloudUser ? 'google' : 'email');
       state.profile.isLoggedIn = true;
       state.profile.hasAgreedToTerms = true;
       state.profile.legalAccepted = true;
@@ -1456,7 +1491,7 @@
       state.profile.welcomeClaimed = true;
       state.legalAuditLogs.unshift({
         name,
-        contact,
+        contact: state.profile.userContact,
         method: state.profile.authMethod,
         timestamp: ts,
         status: 'AGREED_AND_VERIFIED'
@@ -2110,9 +2145,7 @@
       const myScore = p.coins + p.diamonds * 10;
       const myEntry = { id: 'self', name: `${p.username} (You)`, niche: p.niche, coins: p.coins, diamonds: p.diamonds, isVip: p.isVip, isSelf: true };
       const cloudOthers = (cloudLeaderboard || []).filter(c => !cloudUser || c.uid !== cloudUser.uid);
-      const existingNames = new Set(cloudOthers.map(c => c.name.toLowerCase()));
-      const mergedSeeds = INITIAL_LEADERBOARD.filter(c => !existingNames.has(c.name.toLowerCase()));
-      const all = [...cloudOthers, ...mergedSeeds, myEntry];
+      const all = [...cloudOthers, myEntry];
       all.sort((a, b) => {
         if (state.leaderboardTab === 0) return (b.coins + b.diamonds * 10) - (a.coins + a.diamonds * 10);
         if (state.leaderboardTab === 1) return b.coins - a.coins;
@@ -2576,13 +2609,13 @@
     }
 
     // -------------------------------------------------------------------------
-    // OVERLAY 3: VIRAL CREATOR REELS HUB
+    // OVERLAY 3: VIRAL CREATOR REELS HUB (LIVE FIRESTORE viralReels ONLY)
     // -------------------------------------------------------------------------
     function renderReelsHubOverlay() {
-      const feeds = INITIAL_REELS_FEED.filter(r => state.reelsPlatform === 'All' || r.platform === state.reelsPlatform);
+      const feeds = (cloudViralReels || []).filter(r => state.reelsPlatform === 'All' || r.platform === state.reelsPlatform);
       return `
-        ${overlayHeader('🎬 Viral Creator Reels Hub', 'YouTube • Instagram • GoLiveGram • +15 🪙 +3 💎/Reel')}
-        <div class="p-3.5 space-y-3.5">
+        ${overlayHeader('🎬 Viral Creator Reels Hub', 'Live Cloud Firestore Reels • Watch & Earn +15 🪙 +3 💎')}
+        <div id="reels-hub" class="p-3.5 space-y-3.5">
           <div class="rounded-2xl p-3.5 bg-gradient-to-r from-red-900/80 to-amber-900/40 border border-amber-400 flex items-center justify-between gap-2">
             <div>
               <div class="text-xs font-extrabold text-amber-300">🔥 TODAY OFFER — 50% OFF CREATOR PASS</div>
@@ -2591,30 +2624,69 @@
             <button onclick="switchTab('vip')" class="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs shrink-0">Claim ⭐</button>
           </div>
 
+          <!-- Publish Real Reel / Video to Cloud Firestore -->
+          <div class="rounded-2xl p-3.5 app-card border-cyan-400/50 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-bold text-xs text-cyan-300">➕ Upload / Link Your Real Reel to Cloud Hub</h3>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9.5px] font-bold">Firestore Live</span>
+            </div>
+            <input id="reel-title-input" type="text" placeholder="Video / Reel Title (e.g. My Latest Comedy Short)..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input id="reel-handle-input" type="text" placeholder="@your_channel_handle" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
+              <select id="reel-plat-select" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white">
+                <option>YouTube</option><option>Instagram</option><option>GoLiveGram</option><option>Facebook</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input id="reel-url-input" type="url" placeholder="Video / Reel Link (https://...)" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-cyan-300" />
+              <input id="reel-tags-input" type="text" placeholder="#ViralReels #Trending" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-amber-300" />
+            </div>
+            <button onclick="publishViralReel()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-600 via-violet-600 to-cyan-500 text-white font-extrabold text-xs">🚀 Publish Real Reel to Cloud Hub</button>
+            ${!cloudUser ? `
+              <div class="rounded-xl bg-slate-950/80 border border-amber-400/40 px-3 py-2 flex items-center justify-between gap-2 text-[10.5px]">
+                <span class="text-amber-200">Sign in with Google or Mobile SMS OTP to publish live reels.</span>
+                <button onclick="triggerGoogleCloudSignIn()" class="px-2.5 py-1 rounded-lg bg-white text-slate-950 font-extrabold shrink-0">G Sign In</button>
+              </div>` : ''}
+          </div>
+
           <div class="flex gap-2 overflow-x-auto no-scrollbar">
-            ${['All', 'YouTube', 'Instagram', 'GoLiveGram'].map(pf => `
+            ${['All', 'YouTube', 'Instagram', 'GoLiveGram', 'Facebook'].map(pf => `
               <button onclick="state.reelsPlatform='${pf}';saveState();renderOverlay()" class="px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 ${state.reelsPlatform===pf ? 'bg-violet-600 text-white' : 'app-card text-slate-300'}">${pf}</button>
             `).join('')}
           </div>
 
-          ${feeds.map(r => {
+          ${feeds.length === 0 ? `
+            <div class="rounded-2xl p-6 app-card border-dashed border-slate-700 text-center space-y-2">
+              <div class="text-3xl">🎬</div>
+              <div class="text-xs font-bold text-slate-200">No real videos or creators yet. Upload or link your channel to go live!</div>
+              <div class="text-[11px] text-slate-400">Real videos published by signed-up creators to Cloud Firestore viralReels appear here live.</div>
+            </div>
+          ` : feeds.map(r => {
             const watched = state.watchedReels.includes(r.id);
+            const isSelf = Boolean(cloudUser && r.userId === cloudUser.uid);
             return `
-              <div class="rounded-2xl p-4 bg-gradient-to-br ${r.color} app-card space-y-2.5">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <div class="text-xs font-extrabold text-white">${r.creator} ${r.spotlight ? '<span class="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 text-[9px]">SPOTLIGHT</span>' : ''}</div>
-                    <div class="text-[10.5px] text-cyan-300">${r.platform} • ${r.handle} • ⏱️ ${r.duration}</div>
+              <div class="rounded-2xl p-4 bg-gradient-to-br from-violet-950/60 via-slate-950 to-cyan-950/40 app-card space-y-2.5">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <div class="text-xs font-extrabold text-white truncate">${escapeHtml(r.creator || 'Creator')} ${r.spotlight ? '<span class="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 text-[9px]">SPOTLIGHT</span>' : ''}</div>
+                    <div class="text-[10.5px] text-cyan-300 truncate">${escapeHtml(r.platform)} • ${escapeHtml(r.handle)}</div>
                   </div>
-                  <span class="text-xs font-bold text-slate-300">👁️ ${r.views}</span>
+                  <div class="flex items-center gap-2 text-xs font-bold text-slate-300 shrink-0">
+                    <span>👁️ ${Number(r.viewsCount || 0)}</span>
+                    <span>❤️ ${Number(r.likesCount || 0)}</span>
+                  </div>
                 </div>
-                <p class="text-sm font-bold text-white">${r.title}</p>
-                <p class="text-[11px] text-cyan-200">${r.tag}</p>
+                <p class="text-sm font-bold text-white">${escapeHtml(r.title)}</p>
+                ${r.tag ? `<p class="text-[11px] text-cyan-200">${escapeHtml(r.tag)}</p>` : ''}
+                ${r.videoUrl && /^https?:\/\//i.test(r.videoUrl) ? `
+                  <a href="${escapeHtml(r.videoUrl)}" target="_blank" rel="noopener" class="inline-block text-[11px] font-bold text-amber-300 underline">🔗 Open Original Video ↗</a>` : ''}
                 <div class="flex gap-2">
                   <button onclick="watchReelEarn('${r.id}')" ${watched ? 'disabled' : ''} class="flex-1 py-2.5 rounded-xl font-extrabold text-xs ${watched ? 'bg-emerald-900/50 text-emerald-300' : 'bg-cyan-400 text-slate-950'}">
                     ${watched ? 'Reward Claimed ✅' : '▶ Watch & Earn +15 🪙 +3 💎'}
                   </button>
-                  <button onclick="openSpotlightBoostModal('${escapeHtml(r.creator)}')" class="px-3 py-2.5 rounded-xl bg-amber-400/20 border border-amber-400 text-amber-300 font-bold text-xs">⚡ Boost</button>
+                  <button onclick="likeViralReel('${r.id}')" class="px-3 py-2.5 rounded-xl bg-pink-500/20 border border-pink-400 text-pink-200 font-bold text-xs">❤️</button>
+                  <button onclick="openSpotlightBoostModal('${escapeHtml(r.creator || r.handle)}')" class="px-3 py-2.5 rounded-xl bg-amber-400/20 border border-amber-400 text-amber-300 font-bold text-xs">⚡ Boost</button>
+                  ${isSelf || state.profile.isOwner ? `<button onclick="deleteViralReel('${r.id}')" title="Delete Reel" class="px-2.5 py-2.5 rounded-xl bg-red-950/70 border border-red-500/40 text-red-300 font-bold text-xs">🗑️</button>` : ''}
                 </div>
               </div>`;
           }).join('')}
@@ -2798,7 +2870,7 @@
             ${list.length === 0 ? `
               <div class="rounded-2xl p-6 app-card border-dashed border-slate-700 text-center space-y-2">
                 <div class="text-3xl">🌐</div>
-                <div class="text-xs font-bold text-slate-200">No real creators listed yet. Be the first to add your channel!</div>
+                <div class="text-xs font-bold text-slate-200">No real videos or creators yet. Upload or link your channel to go live!</div>
                 <div class="text-[11px] text-slate-400">Real signed-up creators published to Cloud Firestore communityCreators appear here automatically.</div>
               </div>
             ` : list.map(c => {
@@ -3340,7 +3412,7 @@
         try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3500))]); } catch (_) {}
       }
 
-      // 1) Primary Production Engine: Official Firebase AI Logic Web SDK + App Check (Zero API Key Exposure)
+      // 1) Primary Production Engine: Official Firebase AI Logic Web SDK (App Check + resilient direct fallback)
       if (window.ViralBoostFirebase && window.ViralBoostFirebase.aiReady) {
         try {
           const fbRes = await window.ViralBoostFirebase.generateContent({ prompt: cleanPrompt, platform, tone, contentType, expectJson, history });
@@ -3349,9 +3421,6 @@
           }
         } catch (fbErr) {
           lastErrorMsg = String(fbErr?.message || fbErr || 'Firebase AI Logic request failed');
-          if (lastErrorMsg.includes('403') || lastErrorMsg.toLowerCase().includes('appcheck') || lastErrorMsg.toLowerCase().includes('forbidden')) {
-            showToast(`⚠️ App Check / AI 403 on ${window.location.hostname || CONSTANTS.PRODUCTION_HOST}: verify domain in reCAPTCHA Enterprise & Firebase AI Logic.`, 'error');
-          }
         }
       } else {
         lastErrorMsg = window.ViralBoostFirebase?.lastAiError || 'Firebase AI Logic Web SDK did not initialize.';
@@ -4224,11 +4293,86 @@
       showToast('👑 Congratulations! VIP Pro Unlocked via Diamonds!', 'success');
     }
 
-    function watchReelEarn(reelId) {
+    async function watchReelEarn(reelId) {
       if (state.watchedReels.includes(reelId)) return;
+      const reel = (cloudViralReels || []).find(x => x.id === reelId);
       state.watchedReels.push(reelId);
-      creditRewards(CONSTANTS.REEL_WATCH_DIAMONDS, CONSTANTS.REEL_WATCH_COINS, 'Watched Viral Reel', `Reels Hub Reward (${reelId})`, 'REELS');
+      creditRewards(CONSTANTS.REEL_WATCH_DIAMONDS, CONSTANTS.REEL_WATCH_COINS, 'Watched Viral Reel', reel ? reel.title : `Reels Hub (${reelId})`, 'REELS');
+      if (reel?.videoUrl && /^https?:\/\//i.test(reel.videoUrl)) {
+        try { window.open(reel.videoUrl, '_blank', 'noopener'); } catch (_) {}
+      }
+      if (cloudUser && window.ViralBoostFirebase && typeof window.ViralBoostFirebase.incrementReelStat === 'function') {
+        try {
+          await window.ViralBoostFirebase.incrementReelStat(reelId, {
+            viewsCount: Number(reel?.viewsCount || 0) + 1
+          });
+        } catch (err) {
+          console.warn('Reel view update note:', err);
+        }
+      }
       showToast(`🎬 +${CONSTANTS.REEL_WATCH_COINS} 🪙 & +${CONSTANTS.REEL_WATCH_DIAMONDS} 💎 Credited!`, 'success');
+    }
+
+    async function publishViralReel() {
+      const title = (document.getElementById('reel-title-input')?.value || '').trim();
+      const handle = (document.getElementById('reel-handle-input')?.value || '').trim();
+      const platform = document.getElementById('reel-plat-select')?.value || 'YouTube';
+      const videoUrl = (document.getElementById('reel-url-input')?.value || '').trim();
+      const tag = (document.getElementById('reel-tags-input')?.value || '').trim();
+      if (!title || !handle) {
+        showToast('Enter both Reel Title and your Channel Handle first!', 'error');
+        return;
+      }
+      if (!cloudUser) {
+        showToast('Sign in with Google or Phone OTP first to publish your reel to Firestore!', 'error');
+        triggerGoogleCloudSignIn();
+        return;
+      }
+      try {
+        await window.ViralBoostFirebase.publishViralReel({
+          creator: state.profile.username || cloudUser.displayName || 'Creator',
+          handle,
+          platform,
+          title,
+          videoUrl,
+          tag,
+          spotlight: Boolean(state.profile.isVip)
+        });
+        ['reel-title-input', 'reel-url-input', 'reel-tags-input'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        showToast('🚀 Published live to Cloud Firestore Viral Reels Hub!', 'success');
+      } catch (err) {
+        showToast(`⚠️ Publish Reel Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function likeViralReel(reelId) {
+      const reel = (cloudViralReels || []).find(x => x.id === reelId);
+      if (!reel) return;
+      if (!cloudUser) {
+        showToast('Sign in with Google or Phone OTP to like reels!', 'info');
+        return;
+      }
+      try {
+        await window.ViralBoostFirebase.incrementReelStat(reelId, {
+          likesCount: Number(reel.likesCount || 0) + 1
+        });
+        showToast('❤️ Liked live on Cloud Firestore!', 'success');
+      } catch (err) {
+        showToast(`⚠️ Like update failed: ${err.message}`, 'error');
+      }
+    }
+
+    async function deleteViralReel(reelId) {
+      if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.deleteViralReel !== 'function') return;
+      try {
+        await window.ViralBoostFirebase.deleteViralReel(reelId);
+        showToast('🗑️ Reel removed from Cloud Firestore.', 'info');
+      } catch (err) {
+        showToast(`⚠️ Remove failed: ${err.message}`, 'error');
+      }
     }
 
     function openSpotlightBoostModal(creator) {
@@ -4743,14 +4887,16 @@
     renderApp();
   </script>
 
-  <!-- Official Firebase Web SDK v12.6.0: App Check (reCAPTCHA Enterprise) + AI Logic (Gemini 2.5 + Imagen 3) + Cloud Firestore -->
+  <!-- Official Firebase Web SDK v12.6.0: App Check (reCAPTCHA Enterprise + 401 Resilience) + Phone & Google Auth + AI Logic + Cloud Firestore -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app-check.js";
+    import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app-check.js";
     import { getAI, getGenerativeModel, getImagenModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
     import {
       getAuth,
       GoogleAuthProvider,
+      RecaptchaVerifier,
+      signInWithPhoneNumber,
       signInWithPopup,
       signInWithRedirect,
       getRedirectResult,
@@ -4802,6 +4948,8 @@
       lastAuthError: "",
       signInWithGoogle: async () => {},
       signOutGoogle: async () => {},
+      sendPhoneOtp: async () => {},
+      confirmPhoneOtp: async () => {},
       syncUserProfileAndLeaderboard: async () => {},
       submitPayment: async () => {},
       submitTicket: async () => {},
@@ -4811,6 +4959,9 @@
       addCommunityCreator: async () => {},
       followCommunityCreator: async () => {},
       deleteCommunityCreator: async () => {},
+      publishViralReel: async () => {},
+      incrementReelStat: async () => {},
+      deleteViralReel: async () => {},
       saveAppConfig: async () => {},
       fetchAllUsers: async () => [],
       updateUserAdmin: async () => {},
@@ -4820,23 +4971,42 @@
 
     try {
       const app = initializeApp(firebaseConfig);
+      // Secondary AI-direct app instance without App Check attachment for [401]/[403] WebView/browser resilience
+      const aiDirectApp = initializeApp(firebaseConfig, "ai-direct-fallback");
 
-      // Enable Firebase App Check with reCAPTCHA Enterprise on HTTP/HTTPS origins (e.g. jattalboy91-png.github.io)
+      // Configure Firebase App Check with ReCaptchaEnterpriseProvider and verify token non-blockingly
+      let appCheckTokenOk = false;
       if (window.location.protocol.startsWith("http")) {
         try {
-          initializeAppCheck(app, {
+          const appCheck = initializeAppCheck(app, {
             provider: new ReCaptchaEnterpriseProvider(recaptchaEnterpriseSiteKey),
             isTokenAutoRefreshEnabled: true
           });
-          bridge.appCheckReady = true;
+          try {
+            const tok = await Promise.race([
+              getToken(appCheck, false),
+              new Promise((_, rej) => setTimeout(() => rej(new Error("App Check token timeout")), 3500))
+            ]);
+            if (tok && tok.token) {
+              appCheckTokenOk = true;
+              bridge.appCheckReady = true;
+            }
+          } catch (tokErr) {
+            appCheckTokenOk = false;
+            bridge.appCheckReady = false;
+            console.warn("AppCheck token check bypassed (using direct AI fallback):", tokErr);
+          }
         } catch (acErr) {
-          bridge.lastAiError = String(acErr?.message || acErr);
+          appCheckTokenOk = false;
+          bridge.appCheckReady = false;
           console.warn("AppCheck init warning:", acErr);
         }
       }
 
-      // Initialize Firebase AI Logic Web SDK (Gemini Developer API Backend)
-      const ai = getAI(app, { backend: new GoogleAIBackend() });
+      // Initialize Firebase AI Logic Web SDK (Gemini Developer API Backend) on both App Check & Direct instances
+      const primaryAi = getAI(app, { backend: new GoogleAIBackend() });
+      const directAi = getAI(aiDirectApp, { backend: new GoogleAIBackend() });
+
       const socialContentSchema = Schema.object({
         properties: {
           title: Schema.string({ description: "Catchy clickable bilingual Hindi/English viral title with emoji" }),
@@ -4854,100 +5024,130 @@
         }
       });
 
-      const structuredModel = getGenerativeModel(ai, {
-        model: "gemini-2.5-flash",
-        systemInstruction: "You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators on Instagram Reels, YouTube Shorts, Facebook Reels, and Telegram.",
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: socialContentSchema,
-          temperature: 0.8
-        }
-      });
+      const SYSTEM_PROMPT = "You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators on Instagram Reels, YouTube Shorts, Facebook Reels, and Telegram.";
 
-      const chatModel = getGenerativeModel(ai, {
-        model: "gemini-2.5-flash",
-        systemInstruction: "You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators."
-      });
+      function buildAiModels(aiInstance) {
+        return {
+          structuredModel: getGenerativeModel(aiInstance, {
+            model: "gemini-2.5-flash",
+            systemInstruction: SYSTEM_PROMPT,
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: socialContentSchema,
+              temperature: 0.8
+            }
+          }),
+          chatModel: getGenerativeModel(aiInstance, {
+            model: "gemini-2.5-flash",
+            systemInstruction: SYSTEM_PROMPT
+          }),
+          getImagen: (aspectRatio = "9:16") => getImagenModel(aiInstance, {
+            model: "imagen-3.0-generate-002",
+            generationConfig: {
+              numberOfImages: 1,
+              aspectRatio
+            }
+          }),
+          getGeminiImage: () => getGenerativeModel(aiInstance, {
+            model: "gemini-2.5-flash-image",
+            generationConfig: {
+              responseModalities: ["IMAGE", "TEXT"]
+            }
+          })
+        };
+      }
 
-      const imagenModelPortrait = getImagenModel(ai, {
-        model: "imagen-3.0-generate-002",
-        generationConfig: {
-          numberOfImages: 1,
-          aspectRatio: "9:16"
+      function isAppCheckFailure(err) {
+        const s = String(err?.message || err || "").toLowerCase();
+        return s.includes("401") || s.includes("403") || s.includes("appcheck") || s.includes("app check") || s.includes("token is invalid") || s.includes("unauthenticated");
+      }
+
+      async function runWithAiFallback(task) {
+        if (appCheckTokenOk) {
+          try {
+            return await task(buildAiModels(primaryAi));
+          } catch (err) {
+            if (!isAppCheckFailure(err)) throw err;
+            console.warn("Primary App Check AI request rejected; retrying seamlessly via direct Firebase AI Logic instance:", err?.message || err);
+            appCheckTokenOk = false;
+            bridge.appCheckReady = false;
+            return await task(buildAiModels(directAi));
+          }
         }
-      });
+        return await task(buildAiModels(directAi));
+      }
+
       bridge.aiReady = true;
 
       bridge.generateContent = async ({ prompt, platform, tone, contentType, expectJson = true, history = [] }) => {
         bridge.lastAiError = "";
         try {
-          if (!expectJson) {
-            const histParts = history.slice(-6).filter(m => m && m.text).map(m => ({
-              role: m.sender === "USER" ? "user" : "model",
-              parts: [{ text: String(m.text).slice(0, 1200) }]
-            }));
-            const contents = [...histParts, { role: "user", parts: [{ text: prompt }] }];
-            const result = await chatModel.generateContent({ contents });
-            const rawText = result.response.text();
-            return {
-              ok: true,
-              source: "LIVE_GEMINI",
-              data: { rawText }
-            };
-          }
-
-          const fullPrompt = [
-            `Content Mode: ${contentType}`,
-            `Target Platform: ${platform}`,
-            `Tone / Style: ${tone}`,
-            `Topic / Request: ${prompt}`,
-            "Generate a high-retention viral short-form video package in Hindi/Hinglish/English with trending #hashtags."
-          ].join("\n");
-
-          try {
-            const result = await structuredModel.generateContent(fullPrompt);
-            const jsonText = result.response.text();
-            const parsed = JSON.parse(jsonText);
-            const tagsArr = Array.isArray(parsed.hashtags) ? parsed.hashtags : [];
-            const hashtags = tagsArr
-              .map(t => String(t || "").trim())
-              .filter(Boolean)
-              .map(t => (t.startsWith("#") ? t : `#${t}`))
-              .join(" ") || "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia";
-            return {
-              ok: true,
-              source: "LIVE_GEMINI",
-              data: {
-                title: String(parsed.title || `🔥 ${prompt}`),
-                hook: String(parsed.hook || ""),
-                script: String(parsed.script || jsonText),
-                cta: String(parsed.cta || ""),
-                hashtags,
-                tips: Array.isArray(parsed.tips) ? parsed.tips : [],
-                rawText: jsonText
-              }
-            };
-          } catch (structErr) {
-            const errStr = String(structErr?.message || structErr || "");
-            if (errStr.includes("403") || errStr.toLowerCase().includes("appcheck") || errStr.toLowerCase().includes("forbidden")) {
-              throw structErr;
+          return await runWithAiFallback(async ({ structuredModel, chatModel }) => {
+            if (!expectJson) {
+              const histParts = history.slice(-6).filter(m => m && m.text).map(m => ({
+                role: m.sender === "USER" ? "user" : "model",
+                parts: [{ text: String(m.text).slice(0, 1200) }]
+              }));
+              const contents = [...histParts, { role: "user", parts: [{ text: prompt }] }];
+              const result = await chatModel.generateContent({ contents });
+              const rawText = result.response.text();
+              return {
+                ok: true,
+                source: "LIVE_GEMINI",
+                data: { rawText }
+              };
             }
-            const fallbackRes = await chatModel.generateContent(fullPrompt);
-            const rawText = fallbackRes.response.text();
-            return {
-              ok: true,
-              source: "LIVE_GEMINI",
-              data: {
-                title: `🔥 ${prompt.slice(0, 60)}`,
-                hook: rawText.split("\n")[0] || "",
-                script: rawText,
-                cta: "अभी सेव करें और शेयर करें!",
-                hashtags: "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia",
-                tips: [],
-                rawText
-              }
-            };
-          }
+
+            const fullPrompt = [
+              `Content Mode: ${contentType}`,
+              `Target Platform: ${platform}`,
+              `Tone / Style: ${tone}`,
+              `Topic / Request: ${prompt}`,
+              "Generate a high-retention viral short-form video package in Hindi/Hinglish/English with trending #hashtags."
+            ].join("\n");
+
+            try {
+              const result = await structuredModel.generateContent(fullPrompt);
+              const jsonText = result.response.text();
+              const parsed = JSON.parse(jsonText);
+              const tagsArr = Array.isArray(parsed.hashtags) ? parsed.hashtags : [];
+              const hashtags = tagsArr
+                .map(t => String(t || "").trim())
+                .filter(Boolean)
+                .map(t => (t.startsWith("#") ? t : `#${t}`))
+                .join(" ") || "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia";
+              return {
+                ok: true,
+                source: "LIVE_GEMINI",
+                data: {
+                  title: String(parsed.title || `🔥 ${prompt}`),
+                  hook: String(parsed.hook || ""),
+                  script: String(parsed.script || jsonText),
+                  cta: String(parsed.cta || ""),
+                  hashtags,
+                  tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+                  rawText: jsonText
+                }
+              };
+            } catch (structErr) {
+              if (isAppCheckFailure(structErr)) throw structErr;
+              const fallbackRes = await chatModel.generateContent(fullPrompt);
+              const rawText = fallbackRes.response.text();
+              return {
+                ok: true,
+                source: "LIVE_GEMINI",
+                data: {
+                  title: `🔥 ${prompt.slice(0, 60)}`,
+                  hook: rawText.split("\n")[0] || "",
+                  script: rawText,
+                  cta: "अभी सेव करें और शेयर करें!",
+                  hashtags: "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia",
+                  tips: [],
+                  rawText
+                }
+              };
+            }
+          });
         } catch (aiErr) {
           bridge.lastAiError = String(aiErr?.message || aiErr || "AI request error");
           throw aiErr;
@@ -4956,26 +5156,40 @@
 
       bridge.generateImage = async ({ prompt, aspectRatio = "9:16" }) => {
         bridge.lastAiError = "";
+        const imgPrompt = String(prompt || "Vibrant creator studio artwork");
         try {
-          const model = aspectRatio === "9:16"
-            ? imagenModelPortrait
-            : getImagenModel(ai, {
-                model: "imagen-3.0-generate-002",
-                generationConfig: { numberOfImages: 1, aspectRatio }
-              });
-          const res = await model.generateImages(String(prompt || "Vibrant creator studio artwork"));
-          if (res?.images?.length > 0 && res.images[0]?.bytesBase64Encoded) {
-            const img = res.images[0];
-            const mime = img.mimeType || "image/png";
-            return {
-              ok: true,
-              mimeType: mime,
-              dataUrl: `data:${mime};base64,${img.bytesBase64Encoded}`
-            };
-          }
-          throw new Error(res?.filteredReason || "Imagen 3 returned no image output.");
+          return await runWithAiFallback(async ({ getImagen, getGeminiImage }) => {
+            try {
+              const res = await getImagen(aspectRatio).generateImages(imgPrompt);
+              if (res?.images?.length > 0 && res.images[0]?.bytesBase64Encoded) {
+                const img = res.images[0];
+                const mime = img.mimeType || "image/png";
+                return {
+                  ok: true,
+                  mimeType: mime,
+                  dataUrl: `data:${mime};base64,${img.bytesBase64Encoded}`
+                };
+              }
+            } catch (imErr) {
+              if (isAppCheckFailure(imErr)) throw imErr;
+              // Fallback to Gemini native image output model if Imagen endpoint isn't enabled on project tier
+              const gRes = await getGeminiImage().generateContent(imgPrompt);
+              const parts = gRes?.response?.candidates?.[0]?.content?.parts || [];
+              const inline = parts.find(p => p?.inlineData?.data);
+              if (inline?.inlineData?.data) {
+                const mime = inline.inlineData.mimeType || "image/png";
+                return {
+                  ok: true,
+                  mimeType: mime,
+                  dataUrl: `data:${mime};base64,${inline.inlineData.data}`
+                };
+              }
+              throw imErr;
+            }
+            throw new Error("Live AI returned no image output.");
+          });
         } catch (imgErr) {
-          bridge.lastAiError = String(imgErr?.message || imgErr || "Imagen 3 error");
+          bridge.lastAiError = String(imgErr?.message || imgErr || "AI Image generation error");
           throw imgErr;
         }
       };
@@ -4986,10 +5200,49 @@
       const googleProvider = new GoogleAuthProvider();
       googleProvider.setCustomParameters({ prompt: "select_account" });
       let lbUnsubscribe = null;
+      let activePhoneConfirmation = null;
 
       getRedirectResult(auth).catch((redirErr) => {
         if (redirErr?.code) bridge.lastAuthError = redirErr.code;
       });
+
+      // Real Firebase Phone SMS OTP Sign-In
+      bridge.sendPhoneOtp = async (e164Phone) => {
+        bridge.lastAuthError = "";
+        const hostEl = document.getElementById("firebase-recaptcha-container");
+        if (!hostEl) throw new Error("reCAPTCHA container missing in DOM.");
+        if (window.__vbRecaptchaVerifier) {
+          try { window.__vbRecaptchaVerifier.clear(); } catch (_) {}
+          window.__vbRecaptchaVerifier = null;
+        }
+        hostEl.innerHTML = "";
+        const verifier = new RecaptchaVerifier(auth, "firebase-recaptcha-container", {
+          size: "invisible",
+          callback: () => {},
+          "expired-callback": () => {
+            bridge.lastAuthError = "reCAPTCHA challenge expired — please tap Send Real SMS OTP again.";
+          }
+        });
+        window.__vbRecaptchaVerifier = verifier;
+        try {
+          activePhoneConfirmation = await signInWithPhoneNumber(auth, e164Phone, verifier);
+          return true;
+        } catch (err) {
+          bridge.lastAuthError = err?.code || err?.message || "SMS OTP request failed";
+          try { verifier.clear(); } catch (_) {}
+          window.__vbRecaptchaVerifier = null;
+          throw err;
+        }
+      };
+
+      bridge.confirmPhoneOtp = async (code) => {
+        if (!activePhoneConfirmation) {
+          throw new Error("SMS OTP session expired — please tap Resend SMS first.");
+        }
+        const cred = await activePhoneConfirmation.confirm(String(code).trim());
+        activePhoneConfirmation = null;
+        return cred.user;
+      };
 
       // Subscribe live to global appConfig/settings (public read enabled in firestore.rules)
       onSnapshot(doc(db, "appConfig", "settings"), (cfgSnap) => {
@@ -5007,6 +5260,16 @@
         }));
         if (activeOverlay === "creatorPool") renderOverlay();
       }, (err) => console.warn("communityCreators snapshot:", err));
+
+      // Subscribe live to real Cloud Firestore viralReels (zero dummy reels)
+      const vrQuery = query(collection(db, "viralReels"), orderBy("createdAt", "desc"), limit(100));
+      onSnapshot(vrQuery, (vrSnap) => {
+        cloudViralReels = vrSnap.docs.map(d => ({
+          id: d.id,
+          ...(d.data() || {})
+        }));
+        if (activeOverlay === "reelsHub") renderOverlay();
+      }, (err) => console.warn("viralReels snapshot:", err));
 
       bridge.signInWithGoogle = async () => {
         bridge.lastAuthError = "";
@@ -5139,6 +5402,41 @@
         const user = auth.currentUser;
         if (!user || !creatorId) throw new Error("Sign in required.");
         await deleteDoc(doc(db, "communityCreators", creatorId));
+      };
+
+      bridge.publishViralReel = async ({ creator, handle, platform, title, videoUrl, tag, spotlight }) => {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Sign in required.");
+        const now = Date.now();
+        await addDoc(collection(db, "viralReels"), {
+          userId: user.uid,
+          creator: String(creator || user.displayName || "Creator").trim().slice(0, 80) || "Creator",
+          handle: String(handle || "").trim().slice(0, 100),
+          platform: ["YouTube", "Instagram", "GoLiveGram", "Facebook"].includes(platform) ? platform : "YouTube",
+          title: String(title || "Creator Reel").trim().slice(0, 160),
+          videoUrl: String(videoUrl || "").trim().slice(0, 500),
+          tag: String(tag || "").trim().slice(0, 140),
+          viewsCount: 0,
+          likesCount: 0,
+          spotlight: Boolean(spotlight),
+          createdAt: now,
+          updatedAt: now
+        });
+      };
+
+      bridge.incrementReelStat = async (reelId, updates) => {
+        const user = auth.currentUser;
+        if (!user || !reelId) return;
+        const clean = { updatedAt: Date.now() };
+        if (updates.viewsCount !== undefined) clean.viewsCount = Math.max(0, Math.floor(Number(updates.viewsCount) || 0));
+        if (updates.likesCount !== undefined) clean.likesCount = Math.max(0, Math.floor(Number(updates.likesCount) || 0));
+        await updateDoc(doc(db, "viralReels", reelId), clean);
+      };
+
+      bridge.deleteViralReel = async (reelId) => {
+        const user = auth.currentUser;
+        if (!user || !reelId) throw new Error("Sign in required.");
+        await deleteDoc(doc(db, "viralReels", reelId));
       };
 
       bridge.saveAppConfig = async (cfg) => {
