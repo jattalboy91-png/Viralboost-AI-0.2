@@ -572,11 +572,14 @@
     let beatTimer = null;
     let isAudioPlaying = false;
     let canvasRaf = null;
+    let reelPreviewElapsedSec = 0;
     let isExportingVideo = false;
     let exportProgressPct = 0;
+    let exportStatusText = '';
     let exportedReelUrl = '';
     let exportedReelBlob = null;
     let exportedReelExt = 'webm';
+    let exportedReelStats = null;
     let isStudioGenerating = false;
 
     function updateTrialAndVipLifecycle() {
@@ -2476,12 +2479,15 @@
                     <div class="font-extrabold">⚠️ Live AI Generation Error</div>
                     <div>${escapeHtml(s.errorMsg)}</div>
                   </div>` : ''}
-                <button onclick="exportOneClickReelVideo()" ${isExportingVideo ? 'disabled' : ''} class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow disabled:opacity-60">
-                  ${isExportingVideo ? `🎬 Rendering 9:16 Video (${exportProgressPct}%)...` : `🎥 Render & Download 9:16 Video`}
+                <button id="export-reel-btn" onclick="exportOneClickReelVideo()" ${isExportingVideo ? 'disabled' : ''} class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow disabled:opacity-75">
+                  ${isExportingVideo ? escapeHtml(exportStatusText || `🎬 Rendering 720×1280 @ 30 FPS (${exportProgressPct}%)...`) : `🎥 Render & Download 9:16 HD Video (30 FPS)`}
                 </button>
                 ${exportedReelUrl ? `
                   <div class="rounded-xl bg-slate-950 border border-emerald-500/60 p-2.5 space-y-2">
-                    <div class="text-[11px] font-bold text-emerald-300">✅ Real 9:16 Video Rendered (.${escapeHtml(exportedReelExt)})</div>
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-[11px] font-bold text-emerald-300">✅ Real 9:16 HD Video Rendered (.${escapeHtml(exportedReelExt)})</span>
+                      ${exportedReelStats ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9.5px] font-mono font-bold">${escapeHtml(exportedReelStats.resolution)} • ${exportedReelStats.effectiveFps} FPS (${exportedReelStats.frames}f)</span>` : ''}
+                    </div>
                     <video src="${exportedReelUrl}" controls playsinline class="w-full max-h-56 rounded-lg bg-black"></video>
                     <div class="grid grid-cols-2 gap-2">
                       <a href="${exportedReelUrl}" download="viralboost-reel-${Date.now()}.${escapeHtml(exportedReelExt)}" class="py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs text-center">⬇ Download .${escapeHtml(exportedReelExt)}</a>
@@ -3171,84 +3177,121 @@
     // =========================================================================
     // 7. INTERACTIVE ACTIONS, CANVAS RENDERER & SYNTH AUDIO BEAT PLAYER
     // =========================================================================
+    // Pure deterministic 9:16 frame renderer shared between live preview (360x640) and HD export (720x1280)
+    function drawReelFrame(ctx, canvasWidth, canvasHeight, elapsedSec, opts = {}) {
+      const cat = opts.cat || AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx] || AI_VIDEO_CATEGORIES[0];
+      const title = opts.title != null ? opts.title : (state.aiStudioState.title || `${cat.titleHindi} • Tap Live AI Generate`);
+      const coverImg = opts.coverImg || null;
+      const isVip = opts.isVip != null ? opts.isVip : Boolean(state.profile.isVip);
+      const w = 360;
+      const h = 640;
+      const t = Math.max(0, Number(elapsedSec) || 0) * 2.7;
+
+      ctx.save();
+      ctx.setTransform(canvasWidth / w, 0, 0, canvasHeight / h, 0, 0);
+
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, '#09071A');
+      grad.addColorStop(0.5, cat.secondary + '44');
+      grad.addColorStop(1, cat.accent + '55');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Aspect-preserving ("cover") Ken Burns motion zoom so 1:1 / 16:9 / 9:16 images never stretch
+      const hasCover = Boolean(coverImg && (coverImg.naturalWidth > 0 || coverImg.width > 0));
+      if (hasCover) {
+        const iw = coverImg.naturalWidth || coverImg.width || w;
+        const ih = coverImg.naturalHeight || coverImg.height || h;
+        const baseScale = Math.max(w / iw, h / ih);
+        const zoom = 1.02 + Math.sin(t * 0.7) * 0.04;
+        const dw = iw * baseScale * zoom;
+        const dh = ih * baseScale * zoom;
+        ctx.save();
+        ctx.globalAlpha = 0.84;
+        ctx.drawImage(coverImg, (w - dw) / 2, (h - dh) / 2, dw, dh);
+        ctx.restore();
+      }
+
+      // Subtle bottom contrast gradient for high text legibility
+      const legibilityGrad = ctx.createLinearGradient(0, h * 0.45, 0, h);
+      legibilityGrad.addColorStop(0, 'rgba(7, 7, 18, 0)');
+      legibilityGrad.addColorStop(1, 'rgba(7, 7, 18, 0.86)');
+      ctx.fillStyle = legibilityGrad;
+      ctx.fillRect(0, h * 0.45, w, h * 0.55);
+
+      // Animated neon rings
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.strokeStyle = i % 2 === 0 ? cat.accent : '#00E5FF';
+        ctx.globalAlpha = 0.25 + 0.15 * Math.sin(t + i);
+        ctx.lineWidth = 2;
+        ctx.arc(w / 2, h * 0.42, 48 + i * 28 + Math.sin(t * 1.5 + i) * 8, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      if (!hasCover) {
+        ctx.font = '56px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(cat.emoji, w / 2, h * 0.36 + Math.sin(t * 2) * 6);
+      }
+
+      // Equalizer bars synced to deterministic elapsed time
+      const bars = 18;
+      const bw = (w - 60) / bars;
+      for (let b = 0; b < bars; b++) {
+        const bh = 16 + Math.abs(Math.sin(t * 3 + b * 0.6)) * 46;
+        ctx.fillStyle = b % 2 === 0 ? '#00E5FF' : cat.accent;
+        ctx.fillRect(30 + b * bw + 2, h * 0.56 - bh / 2, bw - 5, bh);
+      }
+
+      // Hook Caption Card Overlay
+      ctx.fillStyle = 'rgba(7, 7, 18, 0.86)';
+      ctx.fillRect(18, h * 0.65, w - 36, 98);
+      ctx.strokeStyle = cat.accent;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(18, h * 0.65, w - 36, 98);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 14px "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'center';
+      wrapCanvasText(ctx, title, w / 2, h * 0.65 + 28, w - 58, 20);
+
+      if (!isVip) {
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.88)';
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText('⚡ Created with ViralBoost AI', w / 2, 28);
+      }
+
+      ctx.restore();
+    }
+
     function startReelCanvasLoop() {
       const canvas = document.getElementById('reel-studio-canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-      let t = 0;
       let coverImg = null;
       if (state.aiStudioState.coverDataUrl) {
         coverImg = new Image();
         coverImg.src = state.aiStudioState.coverDataUrl;
       }
+      let lastPerf = performance.now();
 
-      function draw() {
+      function draw(nowPerf) {
         const c = document.getElementById('reel-studio-canvas');
         if (!c || activeOverlay !== 'oneClickAiStudio') return;
-        const cat = AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx];
-        if (state.aiStudioState.isPlaying) t += 0.045;
-
-        const w = c.width, h = c.height;
-        const grad = ctx.createLinearGradient(0, 0, w, h);
-        grad.addColorStop(0, '#09071A');
-        grad.addColorStop(0.5, cat.secondary + '44');
-        grad.addColorStop(1, cat.accent + '55');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, h);
-
-        if (coverImg && coverImg.complete && coverImg.naturalWidth > 0) {
-          ctx.save();
-          ctx.globalAlpha = 0.82;
-          const zoom = 1 + Math.sin(t * 0.7) * 0.04;
-          const dw = w * zoom, dh = h * zoom;
-          ctx.drawImage(coverImg, (w - dw) / 2, (h - dh) / 2, dw, dh);
-          ctx.restore();
+        const deltaSec = Math.min(0.1, Math.max(0, (nowPerf - lastPerf) / 1000));
+        lastPerf = nowPerf;
+        if (state.aiStudioState.isPlaying) {
+          reelPreviewElapsedSec += deltaSec;
         }
-
-        // Animated neon rings
-        for (let i = 0; i < 4; i++) {
-          ctx.beginPath();
-          ctx.strokeStyle = i % 2 === 0 ? cat.accent : '#00E5FF';
-          ctx.globalAlpha = 0.25 + 0.15 * Math.sin(t + i);
-          ctx.lineWidth = 2;
-          ctx.arc(w / 2, h * 0.42, 48 + i * 28 + Math.sin(t * 1.5 + i) * 8, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
-
-        // Category Emoji & Visualizer bars (subtle overlay when HD cover image is active)
-        if (!(coverImg && coverImg.complete && coverImg.naturalWidth > 0)) {
-          ctx.font = '56px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(cat.emoji, w / 2, h * 0.36 + Math.sin(t * 2) * 6);
-        }
-
-        const bars = 18;
-        const bw = (w - 60) / bars;
-        for (let b = 0; b < bars; b++) {
-          const bh = 16 + Math.abs(Math.sin(t * 3 + b * 0.6)) * 46;
-          ctx.fillStyle = b % 2 === 0 ? '#00E5FF' : cat.accent;
-          ctx.fillRect(30 + b * bw + 2, h * 0.56 - bh / 2, bw - 5, bh);
-        }
-
-        // Hook Caption Card Overlay
-        ctx.fillStyle = 'rgba(7, 7, 18, 0.84)';
-        ctx.fillRect(18, h * 0.65, w - 36, 98);
-        ctx.strokeStyle = cat.accent;
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(18, h * 0.65, w - 36, 98);
-
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 14px "Plus Jakarta Sans", sans-serif';
-        ctx.textAlign = 'center';
-        wrapCanvasText(ctx, state.aiStudioState.title || `${cat.titleHindi} • Tap Live AI Generate`, w / 2, h * 0.65 + 28, w - 58, 20);
-
-        if (!state.profile.isVip) {
-          ctx.fillStyle = 'rgba(255, 215, 0, 0.85)';
-          ctx.font = 'bold 11px monospace';
-          ctx.fillText('⚡ Created with ViralBoost AI', w / 2, 28);
-        }
-
+        drawReelFrame(ctx, c.width, c.height, reelPreviewElapsedSec, {
+          cat: AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx],
+          title: state.aiStudioState.title || `${AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx].titleHindi} • Tap Live AI Generate`,
+          coverImg,
+          isVip: state.profile.isVip
+        });
         canvasRaf = requestAnimationFrame(draw);
       }
       if (canvasRaf) cancelAnimationFrame(canvasRaf);
@@ -3516,34 +3559,198 @@
       return await window.ViralBoostFirebase.generateImage({ prompt, aspectRatio });
     }
 
-    async function exportOneClickReelVideo() {
-      const canvas = document.getElementById('reel-studio-canvas');
-      if (!canvas) {
-        showToast('Canvas not ready — open AI Video Studio first!', 'error');
-        return;
+    function preloadStudioCoverForExport(srcUrl) {
+      return new Promise((resolve) => {
+        if (!srcUrl) { resolve(null); return; }
+        const img = new Image();
+        let settled = false;
+        const finish = (val) => {
+          if (settled) return;
+          settled = true;
+          resolve(val);
+        };
+        const timer = setTimeout(() => finish(img.complete && img.naturalWidth > 0 ? img : null), 3000);
+        img.onload = async () => {
+          clearTimeout(timer);
+          try { if (typeof img.decode === 'function') await img.decode(); } catch (_) {}
+          finish(img);
+        };
+        img.onerror = () => { clearTimeout(timer); finish(null); };
+        if (/^https?:\/\//i.test(srcUrl)) img.crossOrigin = 'anonymous';
+        img.src = srcUrl;
+      });
+    }
+
+    function createPrecision30FpsTicker(onTick) {
+      const intervalMs = 1000 / 30;
+      const workerCode = `
+        let timerId = null;
+        self.onmessage = function(e) {
+          if (e.data === 'start') {
+            if (timerId !== null) clearInterval(timerId);
+            timerId = setInterval(function() { self.postMessage('tick'); }, ${intervalMs.toFixed(4)});
+          } else if (e.data === 'stop') {
+            if (timerId !== null) clearInterval(timerId);
+            timerId = null;
+          }
+        };
+      `;
+      let worker = null;
+      let workerBlobUrl = '';
+      let fallbackTimer = null;
+      try {
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        workerBlobUrl = URL.createObjectURL(blob);
+        worker = new Worker(workerBlobUrl);
+        worker.onmessage = () => onTick();
+        worker.postMessage('start');
+      } catch (_) {
+        worker = null;
+        fallbackTimer = setInterval(onTick, intervalMs);
       }
-      if (typeof MediaRecorder === 'undefined' || !canvas.captureStream) {
+      return {
+        stop() {
+          if (worker) {
+            try { worker.postMessage('stop'); } catch (_) {}
+            try { worker.terminate(); } catch (_) {}
+            worker = null;
+          }
+          if (workerBlobUrl) {
+            try { URL.revokeObjectURL(workerBlobUrl); } catch (_) {}
+            workerBlobUrl = '';
+          }
+          if (fallbackTimer !== null) {
+            clearInterval(fallbackTimer);
+            fallbackTimer = null;
+          }
+        }
+      };
+    }
+
+    function updateExportButtonDom(text, disabled) {
+      exportStatusText = text;
+      const btn = document.getElementById('export-reel-btn');
+      if (btn) {
+        btn.textContent = text;
+        btn.disabled = Boolean(disabled);
+      }
+    }
+
+    async function exportOneClickReelVideo() {
+      if (typeof MediaRecorder === 'undefined') {
         showToast('Your browser does not support in-browser video recording.', 'error');
         return;
       }
       if (isExportingVideo) return;
 
+      const TARGET_FPS = 30;
+      const DURATION_MS = 5000;
+      const TOTAL_FRAMES = 150;
+      const EXPORT_W = 720;
+      const EXPORT_H = 1280;
+
       isExportingVideo = true;
-      exportProgressPct = 5;
+      exportProgressPct = 2;
+      exportedReelStats = null;
       state.aiStudioState.isPlaying = true;
-      renderOverlay();
+      updateExportButtonDom(`🎬 Preparing 720×1280 @ 30 FPS...`, true);
+
+      // Dedicated hidden 9:16 HD export canvas (never destroyed by overlay re-renders!)
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = EXPORT_W;
+      exportCanvas.height = EXPORT_H;
+      exportCanvas.setAttribute('aria-hidden', 'true');
+      exportCanvas.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:2px;height:2px;opacity:0.001;pointer-events:none;';
+      if (typeof exportCanvas.captureStream !== 'function') {
+        isExportingVideo = false;
+        updateExportButtonDom('🎥 Render & Download 9:16 HD Video (30 FPS)', false);
+        showToast('Your browser does not support canvas video stream capture.', 'error');
+        return;
+      }
+      document.body.appendChild(exportCanvas);
+      const exportCtx = exportCanvas.getContext('2d', { alpha: false });
+
+      let beatInterval = null;
+      let keepAliveOsc = null;
+      let keepAliveGain = null;
+      let ticker = null;
+      let safetyTimer = null;
+      let combinedStream = null;
+      let recorder = null;
+      let backgroundedDuringExport = document.hidden;
+
+      const onVisibilityTrack = () => {
+        if (document.hidden) backgroundedDuringExport = true;
+      };
+      document.addEventListener('visibilitychange', onVisibilityTrack);
+
+      const cleanupResources = () => {
+        document.removeEventListener('visibilitychange', onVisibilityTrack);
+        if (ticker) { ticker.stop(); ticker = null; }
+        if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null; }
+        if (beatInterval) { clearInterval(beatInterval); beatInterval = null; }
+        if (keepAliveOsc) { try { keepAliveOsc.stop(); } catch (_) {} try { keepAliveOsc.disconnect(); } catch (_) {} keepAliveOsc = null; }
+        if (keepAliveGain) { try { keepAliveGain.disconnect(); } catch (_) {} keepAliveGain = null; }
+        if (combinedStream) {
+          try { combinedStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+          combinedStream = null;
+        }
+        if (exportCanvas.parentNode) {
+          try { exportCanvas.parentNode.removeChild(exportCanvas); } catch (_) {}
+        }
+      };
 
       try {
-        const cat = AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx];
-        const videoStream = canvas.captureStream(30);
+        const cat = AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx] || AI_VIDEO_CATEGORIES[0];
+        const snapshot = {
+          cat,
+          title: state.aiStudioState.title || `${cat.titleHindi} • Tap Live AI Generate`,
+          coverImg: await preloadStudioCoverForExport(state.aiStudioState.coverDataUrl),
+          isVip: Boolean(state.profile.isVip)
+        };
+
+        // Render initial frame before starting MediaRecorder
+        drawReelFrame(exportCtx, EXPORT_W, EXPORT_H, 0, snapshot);
+
+        // Prefer manual captureStream(0) + requestFrame() so frame rate stays locked to 30 FPS clock
+        let videoStream;
+        let videoTrack = null;
+        let useManualFrameRequest = false;
+        try {
+          videoStream = exportCanvas.captureStream(0);
+          videoTrack = videoStream.getVideoTracks()[0] || null;
+          if (videoTrack && typeof videoTrack.requestFrame === 'function') {
+            useManualFrameRequest = true;
+          } else {
+            videoStream.getTracks().forEach(t => t.stop());
+            videoStream = exportCanvas.captureStream(TARGET_FPS);
+            videoTrack = videoStream.getVideoTracks()[0] || null;
+          }
+        } catch (_) {
+          videoStream = exportCanvas.captureStream(TARGET_FPS);
+          videoTrack = videoStream.getVideoTracks()[0] || null;
+        }
+
         const tracks = [...videoStream.getVideoTracks()];
 
-        // Route synthesized WebAudio beat into MediaRecorder audio track
-        let beatInterval = null;
+        // Route synthesized WebAudio beat + silent carrier into MediaRecorder AND keep AudioContext active
+        // (Active AudioContext keeps Chromium/WebViews from throttling background-tab timers)
         try {
           audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
           if (audioCtx.state === 'suspended') await audioCtx.resume();
           const dest = audioCtx.createMediaStreamDestination();
+
+          // Continuous ultra-quiet carrier prevents MediaRecorder silence-stalls & background tab sleep
+          keepAliveOsc = audioCtx.createOscillator();
+          keepAliveGain = audioCtx.createGain();
+          keepAliveOsc.type = 'sine';
+          keepAliveOsc.frequency.setValueAtTime(180, audioCtx.currentTime);
+          keepAliveGain.gain.setValueAtTime(0.00005, audioCtx.currentTime);
+          keepAliveOsc.connect(keepAliveGain);
+          keepAliveGain.connect(dest);
+          keepAliveGain.connect(audioCtx.destination);
+          keepAliveOsc.start();
+
           let step = 0;
           const pulseMs = (60 / (cat.bpm || 128)) * 1000;
           const triggerPulse = () => {
@@ -3567,7 +3774,7 @@
           tracks.push(...dest.stream.getAudioTracks());
         } catch (_) {}
 
-        const combined = new MediaStream(tracks);
+        combinedStream = new MediaStream(tracks);
         const candidates = [
           { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
           { mime: 'video/mp4', ext: 'mp4' },
@@ -3577,21 +3784,39 @@
         ];
         const chosen = candidates.find(c => MediaRecorder.isTypeSupported(c.mime)) || { mime: '', ext: 'webm' };
         exportedReelExt = chosen.ext;
-        const recorder = chosen.mime ? new MediaRecorder(combined, { mimeType: chosen.mime }) : new MediaRecorder(combined);
+
+        try {
+          recorder = chosen.mime
+            ? new MediaRecorder(combinedStream, { mimeType: chosen.mime, videoBitsPerSecond: 4000000, audioBitsPerSecond: 128000 })
+            : new MediaRecorder(combinedStream, { videoBitsPerSecond: 4000000, audioBitsPerSecond: 128000 });
+        } catch (_) {
+          recorder = chosen.mime ? new MediaRecorder(combinedStream, { mimeType: chosen.mime }) : new MediaRecorder(combinedStream);
+        }
+
         const chunks = [];
         recorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
 
-        const durationMs = 5000;
-        const startT = Date.now();
-        const progTimer = setInterval(() => {
-          exportProgressPct = Math.min(96, Math.round(((Date.now() - startT) / durationMs) * 100));
-        }, 250);
+        let renderedFrames = 0;
+        let stopInitiated = false;
+        const startPerf = performance.now();
+
+        const finalizeStop = () => {
+          if (stopInitiated) return;
+          stopInitiated = true;
+          if (ticker) { ticker.stop(); ticker = null; }
+          if (recorder && recorder.state !== 'inactive') {
+            try { recorder.stop(); } catch (_) {}
+          }
+        };
 
         recorder.onstop = () => {
-          clearInterval(progTimer);
-          if (beatInterval) clearInterval(beatInterval);
+          const totalElapsedMs = Math.max(1000, performance.now() - startPerf);
+          const effectiveFps = Math.min(TARGET_FPS, Math.round((renderedFrames / (totalElapsedMs / 1000)) * 10) / 10);
+          cleanupResources();
           isExportingVideo = false;
           exportProgressPct = 100;
+          exportStatusText = '';
+
           const finalMime = chosen.mime || 'video/webm';
           const blob = new Blob(chunks, { type: finalMime });
           exportedReelBlob = blob;
@@ -3599,16 +3824,66 @@
             try { URL.revokeObjectURL(exportedReelUrl); } catch (_) {}
           }
           exportedReelUrl = URL.createObjectURL(blob);
+          exportedReelStats = {
+            frames: renderedFrames,
+            targetFps: TARGET_FPS,
+            effectiveFps,
+            resolution: `${EXPORT_W}×${EXPORT_H}`,
+            backgroundSafe: backgroundedDuringExport
+          };
           renderOverlay();
-          showToast(`🎬 Real 9:16 Video (.${exportedReelExt}) Rendered! Ready to Download!`, 'success');
+          showToast(`🎬 9:16 HD Video (${renderedFrames} frames @ ${effectiveFps} FPS) Ready!`, 'success');
         };
 
-        recorder.start(200);
-        setTimeout(() => {
-          if (recorder.state !== 'inactive') recorder.stop();
-        }, durationMs);
+        recorder.onerror = (ev) => {
+          cleanupResources();
+          isExportingVideo = false;
+          exportStatusText = '';
+          renderOverlay();
+          showToast('Recording error: ' + (ev?.error?.message || 'MediaRecorder failed'), 'error');
+        };
+
+        recorder.start(250);
+
+        // Push frame 0 immediately
+        if (useManualFrameRequest && videoTrack) {
+          try { videoTrack.requestFrame(); } catch (_) {}
+        }
+        renderedFrames = 1;
+
+        // Web Worker 30Hz clock drives deterministic canvas rendering regardless of background tab rAF pause
+        ticker = createPrecision30FpsTicker(() => {
+          if (!isExportingVideo || stopInitiated) return;
+          const elapsedMs = performance.now() - startPerf;
+          const expectedFrames = Math.min(TOTAL_FRAMES, Math.floor((elapsedMs / 1000) * TARGET_FPS) + 1);
+
+          // Catch up gracefully if OS delayed a tick so exported frame timeline never stalls
+          while (renderedFrames < expectedFrames && renderedFrames < TOTAL_FRAMES) {
+            const frameTimeSec = renderedFrames / TARGET_FPS;
+            drawReelFrame(exportCtx, EXPORT_W, EXPORT_H, frameTimeSec, snapshot);
+            if (useManualFrameRequest && videoTrack) {
+              try { videoTrack.requestFrame(); } catch (_) {}
+            }
+            renderedFrames++;
+          }
+
+          const pct = Math.min(99, Math.round((renderedFrames / TOTAL_FRAMES) * 100));
+          exportProgressPct = pct;
+          if (renderedFrames % 5 === 0 || renderedFrames >= TOTAL_FRAMES) {
+            updateExportButtonDom(`🎬 Rendering 720×1280 @ 30 FPS (${pct}% • ${renderedFrames}/${TOTAL_FRAMES}f)`, true);
+          }
+
+          if (renderedFrames >= TOTAL_FRAMES && elapsedMs >= DURATION_MS - 34) {
+            finalizeStop();
+          }
+        });
+
+        // Hard safety guard so export always finishes cleanly
+        safetyTimer = setTimeout(finalizeStop, DURATION_MS + 1500);
       } catch (e) {
+        cleanupResources();
         isExportingVideo = false;
+        exportStatusText = '';
         renderOverlay();
         showToast('Video export failed: ' + (e.message || 'Unknown error'), 'error');
       }
