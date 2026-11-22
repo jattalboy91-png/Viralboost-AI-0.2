@@ -63,14 +63,22 @@
       --text-primary: #0F172A;
       --text-secondary: #475569;
     }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body {
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+    body {
       background-color: var(--bg-main);
       color: var(--text-primary);
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
       overscroll-behavior-y: contain;
     }
+    img, video, canvas, svg { max-width: 100%; }
     .app-card {
       background-color: var(--bg-card);
       border: 1px solid var(--border-card);
@@ -105,11 +113,11 @@
   <div id="firebase-recaptcha-container" style="position:fixed;bottom:0;right:0;z-index:999;"></div>
 
   <!-- Mandatory First-Screen Authentication & Legal Terms Gate (Never Auto-Login as Guest) -->
-  <div id="auth-gate" class="hidden min-h-screen max-w-lg mx-auto px-4 py-6 flex flex-col justify-between"></div>
+  <div id="auth-gate" class="hidden min-h-screen w-full max-w-lg mx-auto px-3.5 py-6 flex flex-col justify-between overflow-x-hidden"></div>
 
-  <div id="app" class="hidden max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col relative pb-24">
+  <div id="app" class="hidden w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col relative pb-24 overflow-x-hidden">
     <!-- Persistent Top App Header -->
-    <header class="sticky top-0 z-30 backdrop-blur-xl bg-[#070712]/90 dark:bg-[#070712]/90 border-b border-slate-800/80 px-3.5 py-2.5 flex items-center justify-between gap-2">
+    <header class="sticky top-0 z-30 w-full max-w-full backdrop-blur-xl bg-[#070712]/90 dark:bg-[#070712]/90 border-b border-slate-800/80 px-3 py-2.5 flex items-center justify-between gap-2 overflow-hidden">
       <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="switchTab('home')">
         <div class="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-cyan-400/50 shadow-lg shadow-violet-600/30 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-cyan-400 flex items-center justify-center">
           <img src="./public/viralboost-icon.jpg" alt="ViralBoost AI Logo" class="w-full h-full object-cover" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='./viralboost-icon.jpg';}else{this.style.display='none';this.nextElementSibling.style.display='flex';}" />
@@ -142,7 +150,7 @@
     </header>
 
     <!-- Main Dynamic View Root (6 Bottom Tabs) -->
-    <main id="main-content" class="flex-1 px-3.5 pt-3 space-y-4">
+    <main id="main-content" class="flex-1 w-full min-w-0 px-3 sm:px-3.5 pt-3 space-y-4 overflow-x-hidden">
       <!-- Populated cleanly via JS renderTab() -->
     </main>
 
@@ -181,8 +189,8 @@
   </div>
 
   <!-- Full-Screen Overlay Host (1-Click AI Video Studio, Diamond Dashboard, Reels Hub, Shopsy Mall, Affiliate Hub, Creator Pool, Gemini Studio, Cross-Poster, Admin Panel) -->
-  <div id="overlay-host" class="hidden fixed inset-0 z-50 bg-[#070712] overflow-y-auto">
-    <div id="overlay-body" class="max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col pb-12"></div>
+  <div id="overlay-host" class="hidden fixed inset-0 z-50 w-full max-w-[100vw] bg-[#070712] overflow-y-auto overflow-x-hidden">
+    <div id="overlay-body" class="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col pb-12 overflow-x-hidden"></div>
   </div>
 
   <!-- Reusable Action Modal (UPI Payment, Channel Config, Welcome ₹50 Bonus, Order Form, Admin Login, Boost Modal) -->
@@ -466,7 +474,7 @@
     const TICKER_MESSAGES = [
       '🔥 Welcome Bonus ₹50 & +10 💎 Credited on Verified Sign Up!',
       '🛍️ Shopsy 75% OFF Mega Mall: +10 💎 & +15 🪙 on Every Order (Tag 5665937)!',
-      '🤖 1-Click Live AI Studio: Gemini 2.5 Flash Scripts + HD Video Export Ready!',
+      '🤖 1-Click Live AI Studio: Gemini 3.8 Flash Scripts + HD Video Export Ready!',
       '🚀 Real Creator Reels & Community Pool — Publish Your Channel Live!'
     ];
 
@@ -575,7 +583,7 @@
           videoUrl: ''
         },
         geminiChat: [
-          { sender: 'GEMINI', text: 'नमस्ते क्रिएटर! 🤖 मैं ViralBoost Gemini 2.5 Flash Live AI हूँ। कोई भी टॉपिक लिखें — मैं रीयल-टाइम में वायरल हुक्स, स्क्रिप्ट और हैशटैग्स जनरेट करूंगा!', time: 'Live' }
+          { sender: 'GEMINI', text: 'नमस्ते क्रिएटर! 🤖 मैं ViralBoost Gemini 3.8 Flash Live AI हूँ। कोई भी टॉपिक लिखें — मैं रीयल-टाइम में वायरल हुक्स, स्क्रिप्ट और हैशटैग्स जनरेट करूंगा!', time: 'Live' }
         ],
         todayDate: today
       };
@@ -793,7 +801,7 @@
             <div class="rounded-2xl p-5 bg-gradient-to-br from-[#171236] via-[#0B1733] to-[#1D0F2F] border border-cyan-400/50 space-y-2 shadow-xl">
               <div class="text-4xl float-soft">🚀</div>
               <h3 class="font-display font-extrabold text-base text-white">Sponsored Creator Partner • ViralBoost Network</h3>
-              <p class="text-xs text-cyan-200 leading-relaxed">Scale Reels & Shorts 10x faster with Gemini 2.5 Flash + Imagen 3 AI Video Studio & Affiliate Deals (Tag ${escapeHtml(CONSTANTS.AFFILIATE_TAG)}).</p>
+              <p class="text-xs text-cyan-200 leading-relaxed">Scale Reels & Shorts 10x faster with Gemini 3.8 Flash + Imagen 3 AI Video Studio & Affiliate Deals (Tag ${escapeHtml(CONSTANTS.AFFILIATE_TAG)}).</p>
               <div class="pt-1">
                 <button onclick="UnityAdEngine.finishInterstitial();switchTab('vip')" class="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs shadow">Remove All Ads with VIP 👑</button>
               </div>
@@ -2468,15 +2476,15 @@
 
     function overlayHeader(title, subtitle, rightBadge = '') {
       return `
-        <div class="sticky top-0 z-20 bg-[#0E0C24]/95 backdrop-blur-md border-b border-slate-800 px-3.5 py-3 flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2.5 min-w-0">
+        <div class="sticky top-0 z-20 w-full max-w-full bg-[#0E0C24]/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-3.5 py-3 flex items-center justify-between gap-2 overflow-hidden">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
             <button onclick="closeOverlay()" class="w-10 h-10 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white font-bold flex items-center justify-center shrink-0">←</button>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <h2 class="font-display font-extrabold text-sm sm:text-base text-white truncate">${title}</h2>
               <p class="text-[10.5px] text-cyan-400 font-semibold truncate">${subtitle}</p>
             </div>
           </div>
-          ${rightBadge ? `<div>${rightBadge}</div>` : `<button onclick="closeOverlay()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-xs font-bold text-slate-300">Home 🏠</button>`}
+          ${rightBadge ? `<div class="shrink-0">${rightBadge}</div>` : `<button onclick="closeOverlay()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 shrink-0">Home 🏠</button>`}
         </div>`;
     }
 
@@ -2515,28 +2523,28 @@
           : active
             ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200 animate-pulse'
             : 'bg-slate-900/70 border-slate-800 text-slate-400';
-        const icon = done ? '✓' : active ? '⏳' : `${num}.`;
-        return `<div class="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border text-[10.5px] font-bold transition ${cls}"><span>${icon}</span><span class="truncate">${label}</span></div>`;
+        const prefix = done ? '✓' : active ? '⏳' : '';
+        return `<div class="flex-1 min-w-[104px] sm:min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl border text-[10px] sm:text-[10.5px] font-bold transition overflow-hidden ${cls}">${prefix ? `<span class="shrink-0">${prefix}</span>` : ''}<span class="truncate">${num}. ${label}</span></div>`;
       };
 
       return `
-        ${overlayHeader('1-Click AI Video & Viral Hashtags', 'Pro Creator Studio • Gemini 2.5 + Imagen 3 • 1080×1920 @ 30FPS', `<span class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-400/20 to-cyan-400/20 border border-amber-400/60 text-amber-300 text-[10px] font-extrabold">${state.profile.isVip ? '👑 VIP 1080P HD' : '⚡ PRO STUDIO'}</span>`)}
-        <div class="p-3.5 sm:p-5 space-y-4 max-w-5xl mx-auto">
+        ${overlayHeader('1-Click AI Video & Viral Hashtags', 'Pro Creator Studio • Gemini 3.8 Flash + Imagen 3 • 1080×1920 @ 30FPS', `<span class="px-2 py-1 rounded-lg bg-gradient-to-r from-amber-400/20 to-cyan-400/20 border border-amber-400/60 text-amber-300 text-[9.5px] font-extrabold whitespace-nowrap">${state.profile.isVip ? '👑 VIP HD' : '⚡ PRO'}</span>`)}
+        <div class="w-full max-w-5xl mx-auto px-3 py-3.5 sm:p-5 space-y-3.5 sm:space-y-4 min-w-0 overflow-x-hidden">
 
           <!-- 1. TOP CONTROL CARD -->
-          <div class="rounded-3xl bg-[#110F26]/95 border border-white/10 p-4 shadow-2xl space-y-3.5">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <div>
+          <div class="w-full max-w-full min-w-0 rounded-3xl bg-[#110F26]/95 border border-white/10 p-3.5 sm:p-4 shadow-2xl space-y-3 overflow-hidden">
+            <div class="flex items-center justify-between gap-2 flex-wrap w-full min-w-0">
+              <div class="min-w-0">
                 <div class="text-xs font-display font-extrabold text-white tracking-wide">🎬 Creator Studio Controls</div>
-                <div class="text-[10.5px] text-slate-400">Pick category, craft prompt, choose beat & visual cover</div>
+                <div class="text-[10.5px] text-slate-400">Pick category, craft prompt, choose beat &amp; visual cover</div>
               </div>
-              <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold">🟢 Live Gemini 2.5 + Imagen 3</span>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold shrink-0">🟢 Live Gemini 3.8 Flash</span>
             </div>
 
-            <!-- Sleek Category Pills -->
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            <!-- Sleek Category Pills (100% Mobile Wrap Fit — Zero Horizontal Overflow) -->
+            <div class="flex flex-wrap gap-1.5 sm:gap-2 w-full min-w-0">
               ${AI_VIDEO_CATEGORIES.map((c, idx) => `
-                <button onclick="selectAiStudioCategory(${idx})" class="px-3.5 py-2 rounded-full border shrink-0 flex items-center gap-1.5 transition text-xs font-extrabold ${s.catIdx===idx ? 'bg-gradient-to-r from-violet-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-cyan-500/20' : 'bg-slate-900/90 border-slate-700/80 text-slate-300 hover:border-slate-500'}">
+                <button onclick="selectAiStudioCategory(${idx})" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full border shrink-0 flex items-center gap-1.5 transition text-[11px] sm:text-xs font-extrabold ${s.catIdx===idx ? 'bg-gradient-to-r from-violet-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-cyan-500/20' : 'bg-slate-900/90 border-slate-700/80 text-slate-300 hover:border-slate-500'}">
                   <span>${c.emoji}</span>
                   <span>${c.shortLabel}</span>
                 </button>
@@ -2544,21 +2552,21 @@
             </div>
 
             <!-- Clean Prompt Input Box + Random Viral Idea Button -->
-            <div class="space-y-2">
-              <div class="flex items-center justify-between gap-2">
-                <label for="studio-topic-input" class="text-[11px] font-bold text-slate-300">Reel Topic / Prompt (${cat.titleHindi})</label>
-                <button type="button" onclick="generateRandomViralIdea()" class="px-3 py-1 rounded-full bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/50 text-amber-300 text-[11px] font-extrabold transition shrink-0">
+            <div class="space-y-2 w-full min-w-0">
+              <div class="flex items-center justify-between gap-2 flex-wrap w-full min-w-0">
+                <label for="studio-topic-input" class="text-[11px] font-bold text-slate-300 truncate">Reel Topic / Prompt (${cat.titleHindi})</label>
+                <button type="button" onclick="generateRandomViralIdea()" class="px-3 py-1 rounded-full bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/50 text-amber-300 text-[10.5px] font-extrabold transition shrink-0">
                   🎲 Random Viral Idea
                 </button>
               </div>
-              <textarea id="studio-topic-input" rows="2" oninput="state.aiStudioState.customTopic=this.value;saveState()" placeholder="e.g. ${escapeHtml(cat.sampleHook)}" class="w-full rounded-2xl bg-slate-950/90 border border-slate-700/90 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 resize-none">${escapeHtml(s.customTopic)}</textarea>
+              <textarea id="studio-topic-input" rows="2" oninput="state.aiStudioState.customTopic=this.value;saveState()" placeholder="e.g. ${escapeHtml(cat.sampleHook)}" class="w-full max-w-full min-w-0 rounded-2xl bg-slate-950/90 border border-slate-700/90 px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 resize-none">${escapeHtml(s.customTopic)}</textarea>
             </div>
 
             <!-- Music/Beat Selector Pill + Compact Custom Cover Upload Chip -->
-            <div class="flex flex-wrap items-center gap-2.5">
-              <div class="flex-1 min-w-[210px] flex items-center gap-2 rounded-full bg-slate-950 border border-violet-500/40 px-3 py-1.5">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full min-w-0">
+              <div class="w-full sm:flex-1 min-w-0 max-w-full flex items-center gap-2 rounded-full bg-slate-950 border border-violet-500/40 px-3 py-1.5 overflow-hidden">
                 <span class="text-xs shrink-0">🎵</span>
-                <select aria-label="Select background beat" onchange="selectStudioBeat(this.value)" class="flex-1 bg-transparent text-[11.5px] font-bold text-amber-300 outline-none cursor-pointer truncate">
+                <select aria-label="Select background beat" onchange="selectStudioBeat(this.value)" class="flex-1 min-w-0 w-full bg-transparent text-[11px] font-bold text-amber-300 outline-none cursor-pointer truncate">
                   ${STUDIO_BEATS.map((b, bIdx) => `
                     <option value="${bIdx}" class="bg-slate-950 text-white" ${activeBeat.idx === bIdx ? 'selected' : ''}>${bIdx === 0 ? `Auto: ${cat.beatTrackName}` : b.name}</option>
                   `).join('')}
@@ -2568,8 +2576,8 @@
                 </button>
               </div>
 
-              <div class="flex items-center gap-1.5 shrink-0">
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 border border-cyan-400/50 text-[11.5px] font-extrabold text-cyan-300 transition">
+              <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
+                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 border border-cyan-400/50 text-[11px] font-extrabold text-cyan-300 transition">
                   <span>📸</span>
                   <span>${s.coverDataUrl ? 'Change Cover' : 'Custom Cover'}</span>
                   <input type="file" accept="image/*" class="hidden" onchange="handleStudioCoverUpload(event)" />
@@ -2580,23 +2588,23 @@
           </div>
 
           <!-- 2. PRIMARY ACTION BAR -->
-          <div class="rounded-3xl bg-gradient-to-br from-[#191338] to-[#0D132B] border border-violet-500/30 p-3.5 shadow-xl space-y-2.5">
-            <button onclick="executeOneClickAiGenerate()" ${isStudioGenerating ? 'disabled' : ''} class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-pink-500 to-violet-600 hover:brightness-110 text-white font-display font-extrabold text-sm sm:text-base shadow-lg shadow-pink-500/25 transition disabled:opacity-60">
+          <div class="w-full max-w-full min-w-0 rounded-3xl bg-gradient-to-br from-[#191338] to-[#0D132B] border border-violet-500/30 p-3.5 shadow-xl space-y-2.5 overflow-hidden">
+            <button onclick="executeOneClickAiGenerate()" ${isStudioGenerating ? 'disabled' : ''} class="w-full max-w-full py-3.5 px-3 sm:px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-pink-500 to-violet-600 hover:brightness-110 text-white font-display font-extrabold text-xs sm:text-base shadow-lg shadow-pink-500/25 transition disabled:opacity-60 break-words">
               ${isStudioGenerating ? '⏳ Generating Live AI Video & Script...' : '✨ Generate Live AI Video & Script'}
             </button>
 
             <!-- Live Step-by-Step Progress Badges -->
-            <div class="grid grid-cols-3 gap-2">
-              ${stepBadge(1, '1. Writing Script...')}
-              ${stepBadge(2, '2. Creating HD Visual...')}
-              ${stepBadge(3, '3. Ready to Render')}
+            <div class="flex flex-wrap sm:grid sm:grid-cols-3 gap-1.5 sm:gap-2 w-full min-w-0">
+              ${stepBadge(1, 'Writing Script...')}
+              ${stepBadge(2, 'Creating HD Visual...')}
+              ${stepBadge(3, 'Ready to Render')}
             </div>
 
             ${(isStudioGenerating || s.progressStage) ? `
-              <div class="space-y-1 pt-0.5">
-                <div class="flex items-center justify-between text-[10.5px]">
-                  <span class="font-bold text-cyan-300 truncate">${escapeHtml(s.progressStage || 'Processing Live AI...')}</span>
-                  <span class="font-mono font-bold text-amber-300">${s.progressPct || 15}%</span>
+              <div class="space-y-1 pt-0.5 w-full min-w-0">
+                <div class="flex items-center justify-between gap-2 text-[10.5px]">
+                  <span class="font-bold text-cyan-300 truncate min-w-0">${escapeHtml(s.progressStage || 'Processing Live AI...')}</span>
+                  <span class="font-mono font-bold text-amber-300 shrink-0">${s.progressPct || 15}%</span>
                 </div>
                 <div class="h-1.5 bg-slate-900 rounded-full overflow-hidden">
                   <div class="h-full bg-gradient-to-r from-cyan-400 via-pink-400 to-amber-400 transition-all duration-300" style="width:${s.progressPct || 15}%"></div>
@@ -2604,28 +2612,28 @@
               </div>` : ''}
 
             ${s.errorMsg ? `
-              <div class="rounded-2xl bg-red-950/75 border border-red-500/50 p-2.5 text-[11px] text-red-200">
+              <div class="rounded-2xl bg-red-950/75 border border-red-500/50 p-2.5 text-[11px] text-red-200 break-words overflow-hidden">
                 <span class="font-extrabold">⚠️ Live AI Note:</span> ${escapeHtml(s.errorMsg)}
               </div>` : ''}
           </div>
 
           <!-- 3. 9:16 LIVE PREVIEW & EXPORT STAGE -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start w-full min-w-0">
             <!-- Centered Rounded 9:16 Vertical Preview Card -->
-            <div class="lg:col-span-5 flex flex-col items-center space-y-3">
-              <div class="rounded-[28px] overflow-hidden border-2 border-cyan-400/60 bg-black relative w-full max-w-[290px] aspect-[9/16] shadow-[0_0_40px_rgba(0,229,255,0.18)]">
+            <div class="lg:col-span-5 flex flex-col items-center space-y-3 w-full min-w-0">
+              <div class="rounded-[28px] overflow-hidden border-2 border-cyan-400/60 bg-black relative w-full max-w-[270px] sm:max-w-[290px] aspect-[9/16] shadow-[0_0_40px_rgba(0,229,255,0.18)]">
                 <canvas id="reel-studio-canvas" width="360" height="640" class="w-full h-full block"></canvas>
 
                 <!-- Top Floating Live Stage Pill -->
-                <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                  <span class="px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[10px] font-extrabold text-cyan-300">● 9:16 HD • 30FPS</span>
-                  <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[10px] font-bold text-amber-300">${activeBeat.bpm} BPM</span>
+                <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-1 pointer-events-none">
+                  <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[9.5px] font-extrabold text-cyan-300">● 9:16 HD • 30FPS</span>
+                  <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[9.5px] font-bold text-amber-300">${activeBeat.bpm} BPM</span>
                 </div>
 
                 <!-- Bottom Frosted Visualizer & Playback Controls -->
-                <div class="absolute bottom-3 left-3 right-3 bg-black/75 backdrop-blur-md px-3 py-2 rounded-2xl border border-white/15 space-y-1.5">
-                  <div class="flex items-center justify-between gap-2">
-                    <button onclick="toggleReelPlay()" class="px-3 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">${s.isPlaying ? '⏸ Pause' : '▶ Play'}</button>
+                <div class="absolute bottom-3 left-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-2 rounded-2xl border border-white/15">
+                  <div class="flex items-center justify-between gap-1.5">
+                    <button onclick="toggleReelPlay()" class="px-2.5 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-[11px] shrink-0">${s.isPlaying ? '⏸ Pause' : '▶ Play'}</button>
                     <div class="flex items-end gap-0.5 h-4 px-1" aria-hidden="true">
                       <span class="w-1 rounded-full bg-cyan-400 ${s.isPlaying ? 'animate-pulse h-3' : 'h-1.5'}"></span>
                       <span class="w-1 rounded-full bg-pink-400 ${s.isPlaying ? 'animate-pulse h-4' : 'h-2'}"></span>
@@ -2633,25 +2641,25 @@
                       <span class="w-1 rounded-full bg-emerald-400 ${s.isPlaying ? 'animate-pulse h-4' : 'h-2'}"></span>
                       <span class="w-1 rounded-full bg-violet-400 ${s.isPlaying ? 'animate-pulse h-3' : 'h-1.5'}"></span>
                     </div>
-                    <button onclick="toggleBeatSynth(${activeBeat.bpm})" class="px-3 py-1.5 rounded-xl bg-violet-600 text-white font-bold text-xs">${isAudioPlaying ? '🔊 Beat' : '🎵 Beat'}</button>
+                    <button onclick="toggleBeatSynth(${activeBeat.bpm})" class="px-2.5 py-1.5 rounded-xl bg-violet-600 text-white font-bold text-[11px] shrink-0">${isAudioPlaying ? '🔊 Beat' : '🎵 Beat'}</button>
                   </div>
                 </div>
               </div>
 
               ${s.coverDataUrl ? `
-                <div class="w-full max-w-[290px] rounded-2xl bg-slate-950/90 border border-cyan-500/40 p-2.5 flex items-center justify-between gap-2">
-                  <span class="text-[11px] font-bold text-cyan-300 truncate">🖼️ HD Cover Ready</span>
+                <div class="w-full max-w-[270px] sm:max-w-[290px] rounded-2xl bg-slate-950/90 border border-cyan-500/40 p-2.5 flex items-center justify-between gap-2 min-w-0">
+                  <span class="text-[11px] font-bold text-cyan-300 truncate min-w-0">🖼️ HD Cover Ready</span>
                   <a href="${s.coverDataUrl}" download="viralboost-ai-cover-${Date.now()}.png" class="px-3 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-[11px] shrink-0">⬇ Save PNG</a>
                 </div>` : ''}
 
               <!-- Prominent Render & Download 9:16 HD Video (30FPS) Button -->
-              <button id="export-reel-btn" onclick="exportOneClickReelVideo()" ${isExportingVideo ? 'disabled' : ''} class="w-full max-w-[290px] py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:brightness-105 text-slate-950 font-display font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition disabled:opacity-75">
+              <button id="export-reel-btn" onclick="exportOneClickReelVideo()" ${isExportingVideo ? 'disabled' : ''} class="w-full max-w-[270px] sm:max-w-[290px] py-3 px-3 sm:px-4 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:brightness-105 text-slate-950 font-display font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition disabled:opacity-75 break-words">
                 ${isExportingVideo ? escapeHtml(exportStatusText || `🎬 Rendering 1080×1920 @ 30 FPS (${exportProgressPct}%)...`) : `⬇️ Render & Download 9:16 HD Video (30FPS)`}
               </button>
 
               ${exportedReelUrl ? `
-                <div class="w-full max-w-[290px] rounded-2xl bg-slate-950 border border-emerald-500/60 p-3 space-y-2.5 shadow-xl">
-                  <div class="flex items-center justify-between gap-2">
+                <div class="w-full max-w-[270px] sm:max-w-[290px] rounded-2xl bg-slate-950 border border-emerald-500/60 p-3 space-y-2.5 shadow-xl overflow-hidden">
+                  <div class="flex items-center justify-between gap-1.5 flex-wrap">
                     <span class="text-[11px] font-extrabold text-emerald-300">✅ Rendered (.${escapeHtml(exportedReelExt)})</span>
                     ${exportedReelStats ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9.5px] font-mono font-bold">${escapeHtml(exportedReelStats.resolution)} • ${exportedReelStats.effectiveFps} FPS (${exportedReelStats.frames}f)</span>` : ''}
                   </div>
@@ -2664,49 +2672,49 @@
             </div>
 
             <!-- Editable Script & Hashtags Card with One-Tap Copy Buttons -->
-            <div class="lg:col-span-7 rounded-3xl bg-[#110F26]/95 border border-white/10 p-4 shadow-2xl space-y-3.5">
-              <div class="flex items-center justify-between gap-2 flex-wrap">
-                <div>
-                  <div class="text-xs font-display font-extrabold text-white">📝 Editable Script & Viral Hashtags</div>
+            <div class="lg:col-span-7 w-full min-w-0 max-w-full rounded-3xl bg-[#110F26]/95 border border-white/10 p-3.5 sm:p-4 shadow-2xl space-y-3.5 overflow-hidden">
+              <div class="flex items-center justify-between gap-2 flex-wrap w-full min-w-0">
+                <div class="min-w-0">
+                  <div class="text-xs font-display font-extrabold text-white">📝 Editable Script &amp; Viral Hashtags</div>
                   <div class="text-[10.5px] text-slate-400">Edit hook, script, or tags anytime — preview canvas updates live</div>
                 </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold ${hasResult ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}">${hasResult ? '🟢 AI Generated' : '✨ Ready'}</span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold ${hasResult ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}">${hasResult ? '🟢 AI Ready' : '✨ Ready'}</span>
                   <button onclick="saveStudioToHistory()" class="px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10.5px] font-extrabold">Save 💾</button>
                 </div>
               </div>
 
               <!-- Editable Headline Title -->
-              <div class="space-y-1">
-                <div class="flex items-center justify-between">
-                  <label for="studio-title-edit" class="text-[11px] font-bold text-cyan-300">Reel Headline / On-Canvas Hook</label>
-                  <button type="button" onclick="copyStudioField('title')" class="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10.5px] font-bold text-slate-200">📋 Copy Hook</button>
+              <div class="space-y-1 w-full min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <label for="studio-title-edit" class="text-[11px] font-bold text-cyan-300 truncate min-w-0">Reel Headline / On-Canvas Hook</label>
+                  <button type="button" onclick="copyStudioField('title')" class="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10.5px] font-bold text-slate-200 shrink-0">📋 Copy Hook</button>
                 </div>
-                <input id="studio-title-edit" type="text" value="${escapeHtml(s.title)}" oninput="updateStudioEditableField('title', this.value)" placeholder="Your viral hook title appears here (or type your own)..." class="w-full rounded-xl bg-slate-950 border border-slate-700/90 px-3 py-2 text-xs font-bold text-white outline-none focus:border-cyan-400" />
+                <input id="studio-title-edit" type="text" value="${escapeHtml(s.title)}" oninput="updateStudioEditableField('title', this.value)" placeholder="Your viral hook title appears here (or type your own)..." class="w-full max-w-full min-w-0 rounded-xl bg-slate-950 border border-slate-700/90 px-3 py-2 text-xs font-bold text-white outline-none focus:border-cyan-400" />
               </div>
 
               <!-- Editable Script -->
-              <div class="space-y-1">
-                <div class="flex items-center justify-between">
-                  <label for="studio-script-edit" class="text-[11px] font-bold text-amber-300">Video Script ([0-3s HOOK], [3-20s BODY], [20-30s CTA])</label>
-                  <button type="button" onclick="copyStudioField('script')" class="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10.5px] font-bold text-slate-200">📋 Copy Script</button>
+              <div class="space-y-1 w-full min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <label for="studio-script-edit" class="text-[11px] font-bold text-amber-300 truncate min-w-0">Video Script ([0-3s HOOK], [3-20s BODY], [20-30s CTA])</label>
+                  <button type="button" onclick="copyStudioField('script')" class="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10.5px] font-bold text-slate-200 shrink-0">📋 Copy Script</button>
                 </div>
-                <textarea id="studio-script-edit" rows="7" oninput="updateStudioEditableField('script', this.value)" placeholder="Tap 'Generate Live AI Video & Script' above to write a bilingual Gemini 2.5 Flash script, or write/paste your own script here..." class="w-full rounded-2xl bg-slate-950 border border-slate-700/90 p-3 text-xs text-slate-200 leading-relaxed outline-none focus:border-cyan-400">${escapeHtml(s.script)}</textarea>
+                <textarea id="studio-script-edit" rows="7" oninput="updateStudioEditableField('script', this.value)" placeholder="Tap 'Generate Live AI Video & Script' above to write a bilingual Gemini 3.8 Flash script, or write/paste your own script here..." class="w-full max-w-full min-w-0 rounded-2xl bg-slate-950 border border-slate-700/90 p-3 text-xs text-slate-200 leading-relaxed outline-none focus:border-cyan-400">${escapeHtml(s.script)}</textarea>
               </div>
 
               <!-- Editable Viral Hashtags -->
-              <div class="space-y-1">
-                <div class="flex items-center justify-between">
-                  <label for="studio-hashtags-edit" class="text-[11px] font-bold text-pink-300">Trending Viral Hashtags</label>
-                  <button type="button" onclick="copyStudioField('hashtags')" class="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10.5px] font-bold text-slate-200">#️⃣ Copy Tags</button>
+              <div class="space-y-1 w-full min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <label for="studio-hashtags-edit" class="text-[11px] font-bold text-pink-300 truncate min-w-0">Trending Viral Hashtags</label>
+                  <button type="button" onclick="copyStudioField('hashtags')" class="px-2.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10.5px] font-bold text-slate-200 shrink-0">#️⃣ Copy Tags</button>
                 </div>
-                <textarea id="studio-hashtags-edit" rows="2" oninput="updateStudioEditableField('hashtags', this.value)" placeholder="#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia" class="w-full rounded-xl bg-slate-950 border border-slate-700/90 px-3 py-2 text-xs text-cyan-300 font-semibold outline-none focus:border-cyan-400">${escapeHtml(s.hashtags)}</textarea>
+                <textarea id="studio-hashtags-edit" rows="2" oninput="updateStudioEditableField('hashtags', this.value)" placeholder="#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia" class="w-full max-w-full min-w-0 rounded-xl bg-slate-950 border border-slate-700/90 px-3 py-2 text-xs text-cyan-300 font-semibold outline-none focus:border-cyan-400">${escapeHtml(s.hashtags)}</textarea>
               </div>
 
               <!-- Quick Copy & Share Bar -->
-              <div class="grid grid-cols-2 gap-2.5 pt-1">
-                <button type="button" onclick="copyStudioField('all')" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs">📋 Copy Full Kit</button>
-                <button type="button" onclick="shareStudioReel()" class="py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs">🚀 Share Reel (+10 🪙)</button>
+              <div class="grid grid-cols-2 gap-2 pt-1 w-full min-w-0">
+                <button type="button" onclick="copyStudioField('all')" class="py-2.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs truncate">📋 Copy Full Kit</button>
+                <button type="button" onclick="shareStudioReel()" class="py-2.5 px-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs truncate">🚀 Share Reel (+10 🪙)</button>
               </div>
             </div>
           </div>
@@ -3692,7 +3700,7 @@
         const cfg = { temperature: 0.85, topP: 0.95, maxOutputTokens: 1200 };
         if (expectJson) cfg.responseMimeType = 'application/json';
 
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(userKey)}`, {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(userKey)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -4162,6 +4170,77 @@
       reader.readAsDataURL(file);
     }
 
+    function generateDynamicHdCoverDataUrl({ topic = '', cat = null, title = '' } = {}) {
+      const c = document.createElement('canvas');
+      c.width = 1080;
+      c.height = 1920;
+      const ctx = c.getContext('2d');
+      const activeCat = cat || getActiveStudioCategory();
+      const accent = activeCat.accent || '#00E5FF';
+      const secondary = activeCat.secondary || '#7C3AED';
+
+      // Deep cinematic gradient backdrop
+      const bg = ctx.createLinearGradient(0, 0, 1080, 1920);
+      bg.addColorStop(0, '#050412');
+      bg.addColorStop(0.45, secondary + '55');
+      bg.addColorStop(1, '#09071D');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Volumetric studio glow orbs
+      const g1 = ctx.createRadialGradient(260, 420, 40, 260, 420, 560);
+      g1.addColorStop(0, accent + '88');
+      g1.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g1;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      const g2 = ctx.createRadialGradient(840, 1280, 50, 840, 1280, 620);
+      g2.addColorStop(0, secondary + '99');
+      g2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g2;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Subtle futuristic perspective grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 2;
+      for (let x = 0; x <= 1080; x += 90) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1920); ctx.stroke();
+      }
+      for (let y = 0; y <= 1920; y += 90) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1080, y); ctx.stroke();
+      }
+
+      // Glowing concentric neon rings
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.strokeStyle = i % 2 === 0 ? accent : '#00E5FF';
+        ctx.globalAlpha = 0.28 - i * 0.04;
+        ctx.lineWidth = 5;
+        ctx.arc(540, 720, 180 + i * 95, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // Center vibrant creator emblem
+      ctx.font = '200px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(activeCat.emoji || '🎬', 540, 720);
+
+      // Category & Topic atmospheric pill
+      const badgeLabel = String(activeCat.shortLabel || 'CREATOR STUDIO').toUpperCase();
+      ctx.fillStyle = 'rgba(10, 12, 32, 0.72)';
+      ctx.fillRect(290, 290, 500, 68);
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(290, 290, 500, 68);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 34px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText(`✦ ${badgeLabel} ✦`, 540, 325);
+
+      return c.toDataURL('image/png');
+    }
+
     async function executeOneClickAiGenerate() {
       if (isStudioGenerating) return;
       const q = getTrialQuotas();
@@ -4176,7 +4255,7 @@
       isStudioGenerating = true;
       state.aiStudioState.errorMsg = '';
       state.aiStudioState.progressStep = 1;
-      state.aiStudioState.progressStage = '1. Writing Script... (Live Gemini 2.5 Flash)';
+      state.aiStudioState.progressStage = '1. Writing Script... (Live Gemini 3.8 Flash)';
       state.aiStudioState.progressPct = 28;
       renderOverlay();
 
@@ -4193,20 +4272,30 @@
         state.aiStudioState.script = `${res.data.script}\n\n🛍️ Shop Deals (ID ${CONSTANTS.AFFILIATE_TAG}): ${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}`;
         state.aiStudioState.hashtags = res.data.hashtags;
         state.aiStudioState.progressStep = 2;
-        state.aiStudioState.progressStage = '2. Creating HD Visual... (Live Imagen 3 9:16 Artwork)';
+        state.aiStudioState.progressStage = '2. Creating HD Visual... (Imagen 3 + HD Studio Cover)';
         state.aiStudioState.progressPct = 65;
         renderOverlay();
 
-        // Live Imagen 3 visual cover generation (imagen-3.0-generate-002)
+        // Live Imagen 3 visual cover with graceful dynamic 1080x1920 HD canvas cover fallback
+        let usedDynamicFallback = false;
         try {
           const imgPrompt = `Vibrant cinematic 9:16 vertical social reel poster art for Indian creator video about "${topic}", category "${cat.titleEnglish}", neon studio lighting, ultra detailed, no text clutter`;
           const imgRes = await callImagenBackend({ prompt: imgPrompt, aspectRatio: '9:16' });
           if (imgRes && imgRes.ok && imgRes.dataUrl) {
             state.aiStudioState.coverDataUrl = imgRes.dataUrl;
+          } else {
+            usedDynamicFallback = true;
           }
         } catch (imgErr) {
-          console.warn('Imagen 3 live note:', imgErr);
-          state.aiStudioState.errorMsg = `Script generated live; Imagen 3 visual note: ${imgErr.message || imgErr}`;
+          console.warn('Imagen fallback to dynamic HD canvas cover:', imgErr);
+          usedDynamicFallback = true;
+        }
+        if (usedDynamicFallback) {
+          state.aiStudioState.coverDataUrl = generateDynamicHdCoverDataUrl({
+            topic,
+            cat,
+            title: state.aiStudioState.title
+          });
         }
 
         state.profile.videosUsed += 1;
@@ -4227,7 +4316,7 @@
         isStudioGenerating = false;
         saveState();
         renderOverlay();
-        showToast('🟢 Live Gemini 2.5 + Imagen 3 Reel Ready!', 'success');
+        showToast('🟢 Live Gemini 3.8 Flash + 9:16 HD Visual Ready!', 'success');
         setTimeout(() => {
           if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
             exportOneClickReelVideo();
@@ -4410,7 +4499,7 @@
       if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
       if (box) {
         box.classList.remove('hidden');
-        box.innerHTML = `<div class="text-cyan-300 font-bold">⏳ Calling Live Gemini 2.5 Flash for "${escapeHtml(kw)}"...</div>`;
+        box.innerHTML = `<div class="text-cyan-300 font-bold">⏳ Calling Live Gemini 3.8 Flash for "${escapeHtml(kw)}"...</div>`;
       }
       try {
         const res = await callGeminiBackend({
@@ -4458,7 +4547,7 @@
       openModal(`
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="font-display font-extrabold text-base text-white">⚡ ${toolId.replace(/_/g, ' ')} ${isImageMode ? '(Imagen 3 HD)' : '(Gemini 2.5)'}</h3>
+            <h3 class="font-display font-extrabold text-base text-white">⚡ ${toolId.replace(/_/g, ' ')} ${isImageMode ? '(Imagen 3 HD)' : '(Gemini 3.8 Flash)'}</h3>
             <button onclick="closeModal()" class="text-slate-400 font-bold">✕</button>
           </div>
           <input id="modal-ai-topic" type="text" placeholder="Enter your topic, scene idea, or product..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white" onkeydown="if(event.key==='Enter') runModalAiTool('${toolId}')" />
@@ -4477,7 +4566,7 @@
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Calling Live Firebase AI...'; }
       if (out) {
         out.classList.remove('hidden');
-        out.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-xs text-cyan-300 font-bold">⏳ ${isImageMode ? 'Step 1/2 Generating Gemini prompt & Imagen 3 HD art...' : 'Generating live content via Gemini 2.5 Flash...'}</div>`;
+        out.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-xs text-cyan-300 font-bold">⏳ ${isImageMode ? 'Step 1/2 Generating Gemini 3.8 Flash prompt & HD cover art...' : 'Generating live content via Gemini 3.8 Flash...'}</div>`;
       }
 
       try {
@@ -4491,7 +4580,7 @@
         let generatedImgUrl = '';
         let imgWarning = '';
         if (isImageMode) {
-          if (out) out.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-xs text-cyan-300 font-bold">⏳ Step 2/2 Rendering 9:16 HD Image via Imagen 3 (imagen-3.0-generate-002)...</div>`;
+          if (out) out.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-xs text-cyan-300 font-bold">⏳ Step 2/2 Rendering 9:16 HD Image...</div>`;
           try {
             const imgRes = await callImagenBackend({
               prompt: `High-CTR vertical 9:16 social media thumbnail / cover artwork for "${topic}", dramatic neon contrast, Indian creator aesthetic, ultra-crisp photography`,
@@ -4502,7 +4591,9 @@
               state.aiStudioState.coverDataUrl = imgRes.dataUrl;
             }
           } catch (imgErr) {
-            imgWarning = String(imgErr?.message || imgErr);
+            console.warn('Imagen modal fallback to dynamic HD canvas cover:', imgErr);
+            generatedImgUrl = generateDynamicHdCoverDataUrl({ topic, cat: getActiveStudioCategory(), title: bp.title });
+            state.aiStudioState.coverDataUrl = generatedImgUrl;
           }
         }
 
@@ -4567,7 +4658,7 @@
         state.geminiChat.push({
           sender: 'GEMINI',
           text: replyText,
-          source: '🟢 Live Gemini 2.5 Flash',
+          source: '🟢 Live Gemini 3.8 Flash',
           time: 'Now'
         });
         saveState();
@@ -4597,7 +4688,7 @@
       const tone = document.getElementById('gem-tone').value;
       const resEl = document.getElementById('gem-studio-result');
       if (resEl) {
-        resEl.innerHTML = `<div class="rounded-2xl p-4 app-card border-cyan-400/50 text-xs text-cyan-300 font-bold">⏳ Calling Live Google Gemini 2.5 Flash for ${escapeHtml(pf)}...</div>`;
+        resEl.innerHTML = `<div class="rounded-2xl p-4 app-card border-cyan-400/50 text-xs text-cyan-300 font-bold">⏳ Calling Live Google Gemini 3.8 Flash for ${escapeHtml(pf)}...</div>`;
       }
       try {
         const res = await callGeminiBackend({ prompt: topic, platform: pf, tone, contentType: 'GEMINI_STUDIO' });
@@ -5533,7 +5624,7 @@
       function buildAiModels(aiInstance) {
         return {
           structuredModel: getGenerativeModel(aiInstance, {
-            model: "gemini-2.5-flash",
+            model: "gemini-3.8-flash",
             systemInstruction: SYSTEM_PROMPT,
             generationConfig: {
               responseMimeType: "application/json",
@@ -5542,7 +5633,7 @@
             }
           }),
           chatModel: getGenerativeModel(aiInstance, {
-            model: "gemini-2.5-flash",
+            model: "gemini-3.8-flash",
             systemInstruction: SYSTEM_PROMPT
           }),
           getImagen: (aspectRatio = "9:16") => getImagenModel(aiInstance, {
@@ -5553,7 +5644,7 @@
             }
           }),
           getGeminiImage: () => getGenerativeModel(aiInstance, {
-            model: "gemini-2.5-flash-image",
+            model: "gemini-3.8-flash",
             generationConfig: {
               responseModalities: ["IMAGE", "TEXT"]
             }
