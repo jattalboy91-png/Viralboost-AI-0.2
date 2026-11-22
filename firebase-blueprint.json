@@ -92,6 +92,43 @@
         "timestamp": { "type": "integer", "description": "Order timestamp" }
       },
       "required": ["userId", "productId", "productTitle", "affiliateTag", "timestamp"]
+    },
+    "AppConfig": {
+      "title": "AppConfig",
+      "description": "Global remotely editable monetization, Unity Ads, AdMob, web ad tag, affiliate, and welcome bonus settings (appConfig/settings).",
+      "type": "object",
+      "properties": {
+        "unityGameId": { "type": "string", "description": "Primary Unity Ads Game ID (e.g. 800427608)" },
+        "unityBannerPlacementId": { "type": "string", "description": "Unity Banner Placement ID (e.g. BP_Banner_Android)" },
+        "unityInterstitialPlacementId": { "type": "string", "description": "Unity Interstitial Placement ID (e.g. BP_Interstitial_Android)" },
+        "unityRewardedPlacementId": { "type": "string", "description": "Unity Rewarded Placement ID (e.g. BP_Rewarded_Android)" },
+        "webAdTagUrl": { "type": "string", "description": "Optional external Web Ad Script or VAST/Banner Tag URL" },
+        "admobAppId": { "type": "string", "description": "Optional secondary AdMob App ID" },
+        "admobBannerId": { "type": "string", "description": "Optional secondary AdMob Banner ID" },
+        "admobInterstitialId": { "type": "string", "description": "Optional secondary AdMob Interstitial ID" },
+        "admobRewardedId": { "type": "string", "description": "Optional secondary AdMob Rewarded ID" },
+        "affiliateTag": { "type": "string", "description": "Global affiliate tag (e.g. 5665937)" },
+        "welcomeBonusRupees": { "type": "integer", "description": "Welcome bonus amount in INR" },
+        "updatedAt": { "type": "integer", "description": "Last admin save epoch millis" }
+      }
+    },
+    "CommunityCreator": {
+      "title": "CommunityCreator",
+      "description": "Real signed-up creator channel submitted to the Creator Community Follow-for-Follow Pool.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Submitting Firebase Auth UID" },
+        "name": { "type": "string", "description": "Creator display name" },
+        "handle": { "type": "string", "description": "Channel handle or URL" },
+        "platform": { "type": "string", "description": "YouTube, Instagram, GoLiveGram, or Facebook" },
+        "niche": { "type": "string", "description": "Content category" },
+        "url": { "type": "string", "description": "Channel link" },
+        "followersCount": { "type": "integer", "description": "Community follow counter" },
+        "spotlight": { "type": "boolean", "description": "VIP spotlight flag" },
+        "createdAt": { "type": "integer", "description": "Creation epoch millis" },
+        "updatedAt": { "type": "integer", "description": "Last update epoch millis" }
+      },
+      "required": ["userId", "name", "handle", "platform", "createdAt"]
     }
   },
   "auth": {
@@ -124,6 +161,16 @@
         "path": "/affiliate_orders/{orderId}",
         "entity": "AffiliateOrderDoc",
         "description": "Affiliate product orders and diamond rewards scoped per userId."
+      },
+      {
+        "path": "/appConfig/{configId}",
+        "entity": "AppConfig",
+        "description": "Global editable app, Unity Ads, AdMob, and affiliate settings (appConfig/settings)."
+      },
+      {
+        "path": "/communityCreators/{creatorId}",
+        "entity": "CommunityCreator",
+        "description": "Real signed-up creator channels in the Creator Community Pool."
       }
     ]
   }

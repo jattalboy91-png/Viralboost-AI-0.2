@@ -215,3 +215,80 @@ test("Support tickets and affiliate orders are strictly scoped by userId", async
   await assertSucceeds(aliceDb.collection("affiliate_orders").where("userId", "==", ALICE_UID).get());
   await assertFails(bobDb.collection("affiliate_orders").doc("ord_1").get());
 });
+
+test("appConfig/settings allows public read and admin-only write", async () => {
+  const unauthDb = testEnv.unauthenticatedContext().firestore();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  const adminDb = testEnv.authenticatedContext(ADMIN_UID, {
+    email: "jattalboy91@gmail.com",
+    email_verified: true,
+  }).firestore();
+
+  await assertFails(
+    aliceDb.collection("appConfig").doc("settings").set({
+      unityGameId: "999",
+    })
+  );
+
+  await assertSucceeds(
+    adminDb.collection("appConfig").doc("settings").set({
+      unityGameId: "800427608",
+      unityBannerPlacementId: "BP_Banner_Android",
+      unityInterstitialPlacementId: "BP_Interstitial_Android",
+      unityRewardedPlacementId: "BP_Rewarded_Android",
+      affiliateTag: "5665937",
+      welcomeBonusRupees: 50,
+      updatedAt: Date.now(),
+    })
+  );
+
+  await assertSucceeds(unauthDb.collection("appConfig").doc("settings").get());
+});
+
+test("communityCreators enforces real-user ownership and follow increment rules", async () => {
+  const unauthDb = testEnv.unauthenticatedContext().firestore();
+  const aliceDb = testEnv.authenticatedContext(ALICE_UID).firestore();
+  const bobDb = testEnv.authenticatedContext(BOB_UID).firestore();
+
+  await assertFails(
+    unauthDb.collection("communityCreators").doc("cr_unauth").set({
+      userId: "fake",
+      name: "Fake",
+      handle: "@fake",
+      platform: "YouTube",
+      followersCount: 0,
+      createdAt: Date.now(),
+    })
+  );
+
+  await assertSucceeds(
+    aliceDb.collection("communityCreators").doc("cr_alice").set({
+      userId: ALICE_UID,
+      name: "AliceCreator",
+      handle: "@alice_reels",
+      platform: "Instagram",
+      niche: "Shorts & Reels",
+      url: "https://instagram.com/alice_reels",
+      followersCount: 0,
+      spotlight: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    })
+  );
+
+  await assertSucceeds(unauthDb.collection("communityCreators").get());
+  await assertSucceeds(
+    bobDb.collection("communityCreators").doc("cr_alice").update({
+      followersCount: 1,
+      updatedAt: Date.now(),
+    })
+  );
+  await assertFails(
+    bobDb.collection("communityCreators").doc("cr_alice").update({
+      handle: "@hijacked",
+    })
+  );
+  await assertFails(bobDb.collection("communityCreators").doc("cr_alice").delete());
+  await assertSucceeds(aliceDb.collection("communityCreators").doc("cr_alice").delete());
+});
+

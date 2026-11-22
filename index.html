@@ -218,10 +218,30 @@
       PRODUCTION_WEB_URL: 'https://jattalboy91-png.github.io/Viralboost-AI-0.2/',
       PRODUCTION_HOST: 'jattalboy91-png.github.io',
       ANDROID_PACKAGE_ID: 'com.aistudio.viralboostai.vrbst',
+      UNITY_GAME_ID: '800427608',
+      UNITY_BANNER_PLACEMENT: 'BP_Banner_Android',
+      UNITY_INTERSTITIAL_PLACEMENT: 'BP_Interstitial_Android',
+      UNITY_REWARDED_PLACEMENT: 'BP_Rewarded_Android',
       APP_URL: (window.location.hostname === 'jattalboy91-png.github.io' || window.location.protocol === 'file:')
         ? 'https://jattalboy91-png.github.io/Viralboost-AI-0.2/'
         : (window.location.origin + window.location.pathname).replace(/index\.html$/i, '')
     };
+
+    const DEFAULT_APP_CONFIG = {
+      unityGameId: '800427608',
+      unityBannerPlacementId: 'BP_Banner_Android',
+      unityInterstitialPlacementId: 'BP_Interstitial_Android',
+      unityRewardedPlacementId: 'BP_Rewarded_Android',
+      webAdTagUrl: '',
+      admobAppId: '',
+      admobBannerId: '',
+      admobInterstitialId: '',
+      admobRewardedId: '',
+      affiliateTag: '5665937',
+      welcomeBonusRupees: 50
+    };
+
+    let appConfigState = { ...DEFAULT_APP_CONFIG };
 
     const PLANS = [
       {
@@ -380,14 +400,6 @@
       { id: 'r5', creator: '🛍️ Neha Budget Hauls', handle: '@neha_hauls', platform: 'Instagram', title: 'Shopsy ₹199 Festive Kurti Haul — 75% OFF Loot Deal!', views: '176K', likes: '24.6K', duration: '0:39', spotlight: true, color: 'from-emerald-600/30 to-teal-600/20', tag: '#ShopsyLoot #BudgetFashion' }
     ];
 
-    const INITIAL_CREATOR_POOL = [
-      { id: 'c1', handle: '@rahul_vines', name: 'Rahul Vines Official', platform: 'YouTube', followers: '45.2K Subscribers', niche: 'Desi Comedy & Shorts', url: 'https://www.youtube.com', spotlight: true, followed: false },
-      { id: 'c2', handle: '@desi_priya', name: 'Priya Lifestyle & Reels', platform: 'Instagram', followers: '120.8K Followers', niche: 'Trending Dance & Fashion', url: 'https://www.instagram.com', spotlight: true, followed: false },
-      { id: 'c3', handle: '@vikas_shorts', name: 'Vikas Viral Shorts', platform: 'GoLiveGram', followers: '88.4K Followers', niche: 'Tech Hacks & AI Reels', url: 'https://www.youtube.com', spotlight: false, followed: false },
-      { id: 'c4', handle: '@haryanvi_swag_king', name: 'Ankit Haryanvi Rap', platform: 'YouTube', followers: '64.1K Subscribers', niche: 'Music & Attitude Status', url: 'https://www.youtube.com', spotlight: false, followed: false },
-      { id: 'c5', handle: '@amit_jaat_official', name: 'Amit Creator Pro', platform: 'Facebook', followers: '92.0K Followers', niche: 'Motivation & Reels Growth', url: 'https://www.facebook.com', spotlight: true, followed: false }
-    ];
-
     const INITIAL_LEADERBOARD = [
       { id: 'l1', name: 'Rohan Sharma', niche: 'Finance & Wealth', coins: 4820, diamonds: 640, isVip: true },
       { id: 'l2', name: 'Priya Verma', niche: 'Lifestyle & Vlog', coins: 4190, diamonds: 520, isVip: true },
@@ -467,26 +479,13 @@
         transactions: [
           { id: 't_welcome', title: 'Welcome Creator Bonus', subtitle: '₹50 Bonus + Wallet Activation', diamonds: 10, coins: 250, earned: true, tag: 'WELCOME', time: Date.now() - 3600000 }
         ],
-        aiHistory: [
-          {
-            id: 'ai_sample_1',
-            type: 'HOOKS_SCRIPTS',
-            topic: 'Haryanvi Rap & Swag Shorts Hook',
-            platform: 'Instagram Reels',
-            content: '🔥 HOOK (0-3s): देसी छोरा आया मार्केट में — सिस्टम हिला देगा ये ट्रैक!\n⚡ BODY (3-25s): High-contrast slow-mo walk + bass drop transition.\n🎯 CTA (25-35s): Save this audio & tag your squad in comments!',
-            hashtags: '#HaryanviSwag #ViralReels #DesiBeat #ViralBoostAI #ReelsIndia',
-            bookmarked: true,
-            time: Date.now() - 7200000
-          }
-        ],
+        aiHistory: [],
         payments: [],
         tickets: [
           { id: 'TKT-1024', category: 'General Inquiry', subject: 'Welcome to Support Desk', message: 'Ask anything about 12-digit UTR VIP verification, Affiliate Tag 5665937, or AI Tools.', status: 'RESOLVED', reply: 'Team ViralBoost AI: Always ready 24/7 to help creators scale faster! 🚀', time: Date.now() - 86400000 }
         ],
-        referrals: [
-          { id: 'ref1', friendName: 'Aman Rajput', code: 'VB-5665937', status: 'ACTIVE_1_DAY_VIP', time: Date.now() - 43200000 }
-        ],
-        creatorPool: INITIAL_CREATOR_POOL,
+        referrals: [],
+        followedPoolIds: [],
         watchedReels: [],
         insightPresetIdx: 0,
         insightTfIdx: 1,
@@ -506,10 +505,13 @@
           customTopic: '',
           coverDataUrl: '',
           isPlaying: true,
-          aiSource: 'READY',
-          title: '🔥 देसी छोरा आया मार्केट में — 1-Click Viral Reel!',
-          script: 'HOOK (0-3s): सिस्टम हिलाने वाला ओपनिंग शॉट + स्लो-मो ज़ूम!\nSCENE (3-20s): हाई-एनर्जी 808 बीट ड्रॉप के साथ लिरिक्स कैप्शन सिंक!\nCTA (20-30s): अभी शेयर करें और कमेंट में 🔥 लिखें!',
-          hashtags: '#HaryanviSwag #DesiRap #ViralReels #ShortsIndia #ViralBoostAI #TrendingAudio'
+          aiSource: 'IDLE',
+          title: '',
+          script: '',
+          hashtags: '',
+          errorMsg: '',
+          progressStage: '',
+          progressPct: 0
         },
         crossPoster: {
           title: '',
@@ -519,7 +521,7 @@
           videoUrl: ''
         },
         geminiChat: [
-          { sender: 'GEMINI', text: 'नमस्ते क्रिएटर! 🤖 मैं ViralBoost Gemini AI हूँ। कोई भी टॉपिक या निच बताएं — मैं अभी 100% वायरल हुक्स, 60-सेकंड स्क्रिप्ट और हैशटैग्स बना दूंगा!', time: 'Live' }
+          { sender: 'GEMINI', text: 'नमस्ते क्रिएटर! 🤖 मैं ViralBoost Gemini 2.5 Flash Live AI हूँ। कोई भी टॉपिक लिखें — मैं रीयल-टाइम में वायरल हुक्स, स्क्रिप्ट और हैशटैग्स जनरेट करूंगा!', time: 'Live' }
         ],
         todayDate: today
       };
@@ -543,16 +545,35 @@
           mergedProfile.legalAccepted = false;
           mergedProfile.isOwner = false;
         }
-        return {
+        // Strip legacy dummy creatorPool & legacy demo ai_sample_1 from cached state
+        const cleanAiHistory = Array.isArray(parsed.aiHistory)
+          ? parsed.aiHistory.filter(x => x && x.id !== 'ai_sample_1')
+          : [];
+        const cleanAiStudio = { ...def.aiStudioState, ...(parsed.aiStudioState || {}) };
+        if (cleanAiStudio.aiSource === 'READY' || cleanAiStudio.aiSource === 'OFFLINE_BLUEPRINT') {
+          cleanAiStudio.aiSource = 'IDLE';
+          cleanAiStudio.title = '';
+          cleanAiStudio.script = '';
+          cleanAiStudio.hashtags = '';
+        }
+        cleanAiStudio.errorMsg = '';
+        cleanAiStudio.progressStage = '';
+        cleanAiStudio.progressPct = 0;
+
+        const cleaned = {
           ...def,
           ...parsed,
           profile: mergedProfile,
+          aiHistory: cleanAiHistory,
+          followedPoolIds: Array.isArray(parsed.followedPoolIds) ? parsed.followedPoolIds : [],
           legalAuditLogs: Array.isArray(parsed.legalAuditLogs) ? parsed.legalAuditLogs : def.legalAuditLogs,
           affiliateStats: { ...def.affiliateStats, ...(parsed.affiliateStats || {}) },
           channels: { ...def.channels, ...(parsed.channels || {}) },
-          aiStudioState: { ...def.aiStudioState, ...(parsed.aiStudioState || {}) },
+          aiStudioState: cleanAiStudio,
           crossPoster: { ...def.crossPoster, ...(parsed.crossPoster || {}) }
         };
+        delete cleaned.creatorPool;
+        return cleaned;
       } catch (e) {
         return defaultState();
       }
@@ -571,6 +592,7 @@
     let exportProgressPct = 0;
     let exportedReelUrl = '';
     let exportedReelBlob = null;
+    let exportedReelExt = 'webm';
     let isStudioGenerating = false;
 
     function updateTrialAndVipLifecycle() {
@@ -598,6 +620,291 @@
 
     let cloudUser = null;
     let cloudLeaderboard = [];
+    let cloudCommunityCreators = [];
+    let adminUsersState = {
+      loading: false,
+      loadedOnce: false,
+      error: '',
+      search: '',
+      users: [],
+      payments: []
+    };
+
+    // =========================================================================
+    // 2B. PRIMARY UNITY ADS ENGINE (WEB + NATIVE ANDROID APK BRIDGE READY)
+    // =========================================================================
+    const UnityAdEngine = {
+      initialized: false,
+      bannerRequested: false,
+      injectedWebTagUrl: '',
+      pendingRewardCallback: null,
+      pendingInterstitialCallback: null,
+      lastInterstitialAt: 0,
+
+      getBridge() {
+        return window.UnityAdsBridge || window.AndroidUnityAds || null;
+      },
+
+      isNativeApk() {
+        return Boolean(this.getBridge());
+      },
+
+      init() {
+        const gameId = appConfigState.unityGameId || CONSTANTS.UNITY_GAME_ID;
+        CONSTANTS.UNITY_GAME_ID = gameId;
+        CONSTANTS.UNITY_BANNER_PLACEMENT = appConfigState.unityBannerPlacementId || CONSTANTS.UNITY_BANNER_PLACEMENT;
+        CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT = appConfigState.unityInterstitialPlacementId || CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT;
+        CONSTANTS.UNITY_REWARDED_PLACEMENT = appConfigState.unityRewardedPlacementId || CONSTANTS.UNITY_REWARDED_PLACEMENT;
+
+        const bridge = this.getBridge();
+        if (bridge && typeof bridge.initialize === 'function' && !this.initialized) {
+          try {
+            bridge.initialize(String(gameId), false);
+          } catch (e) {}
+        }
+        this.initialized = true;
+        this.injectOptionalWebAdTag();
+      },
+
+      injectOptionalWebAdTag() {
+        const url = String(appConfigState.webAdTagUrl || '').trim();
+        if (!url || url === this.injectedWebTagUrl) return;
+        try {
+          const parsed = new URL(url);
+          if (!parsed.protocol.startsWith('http')) return;
+          const existing = document.getElementById('vb-custom-web-ad-script');
+          if (existing) existing.remove();
+          const s = document.createElement('script');
+          s.id = 'vb-custom-web-ad-script';
+          s.async = true;
+          s.src = parsed.toString();
+          s.setAttribute('data-unity-game-id', appConfigState.unityGameId);
+          document.head.appendChild(s);
+          this.injectedWebTagUrl = url;
+        } catch (_) {}
+      },
+
+      syncBanner() {
+        this.init();
+        const p = state.profile;
+        const bridge = this.getBridge();
+        if (p.isVip) {
+          if (bridge && typeof bridge.hideBanner === 'function') {
+            try { bridge.hideBanner(); } catch (_) {}
+          }
+          return;
+        }
+        if (bridge && typeof bridge.showBanner === 'function' && !this.bannerRequested) {
+          try {
+            bridge.showBanner(appConfigState.unityBannerPlacementId, appConfigState.unityGameId);
+            this.bannerRequested = true;
+          } catch (_) {}
+        }
+      },
+
+      showInterstitial(reason = 'navigation', onComplete = null) {
+        this.init();
+        if (state.profile.isVip) {
+          if (typeof onComplete === 'function') onComplete();
+          return;
+        }
+        const now = Date.now();
+        if (reason !== 'post_signup' && reason !== 'admin_test' && now - this.lastInterstitialAt < 45000) {
+          if (typeof onComplete === 'function') onComplete();
+          return;
+        }
+        this.lastInterstitialAt = now;
+        this.pendingInterstitialCallback = onComplete;
+
+        const bridge = this.getBridge();
+        if (bridge && typeof bridge.showInterstitial === 'function') {
+          try {
+            bridge.showInterstitial(appConfigState.unityInterstitialPlacementId, appConfigState.unityGameId);
+            return;
+          } catch (_) {}
+        }
+
+        // Web Unity Interstitial Ad Modal (BP_Interstitial_Android)
+        let remaining = 5;
+        openModal(`
+          <div class="space-y-3.5 text-center" data-unity-placement="${escapeHtml(appConfigState.unityInterstitialPlacementId)}">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 font-extrabold">UNITY ADS • GAME ${escapeHtml(appConfigState.unityGameId)}</span>
+              <span class="font-mono text-slate-400">${escapeHtml(appConfigState.unityInterstitialPlacementId)}</span>
+            </div>
+            <div class="rounded-2xl p-5 bg-gradient-to-br from-[#171236] via-[#0B1733] to-[#1D0F2F] border border-cyan-400/50 space-y-2 shadow-xl">
+              <div class="text-4xl float-soft">🚀</div>
+              <h3 class="font-display font-extrabold text-base text-white">Sponsored Creator Partner • ViralBoost Network</h3>
+              <p class="text-xs text-cyan-200 leading-relaxed">Scale Reels & Shorts 10x faster with Gemini 2.5 Flash + Imagen 3 AI Video Studio & Affiliate Deals (Tag ${escapeHtml(CONSTANTS.AFFILIATE_TAG)}).</p>
+              <div class="pt-1">
+                <button onclick="UnityAdEngine.finishInterstitial();switchTab('vip')" class="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs shadow">Remove All Ads with VIP 👑</button>
+              </div>
+            </div>
+            <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="unity-int-bar" class="h-full bg-cyan-400 transition-all duration-1000" style="width:10%"></div>
+            </div>
+            <button id="unity-int-close-btn" disabled onclick="UnityAdEngine.finishInterstitial()" class="w-full py-2.5 rounded-xl bg-slate-800 text-slate-400 font-extrabold text-xs disabled:opacity-70">
+              Skip Ad in ${remaining}s...
+            </button>
+          </div>
+        `);
+        setTimeout(() => {
+          const bar = document.getElementById('unity-int-bar');
+          if (bar) bar.style.width = '100%';
+        }, 60);
+
+        if (window.__unityIntTimer) clearInterval(window.__unityIntTimer);
+        window.__unityIntTimer = setInterval(() => {
+          remaining -= 1;
+          const btn = document.getElementById('unity-int-close-btn');
+          if (!btn) {
+            clearInterval(window.__unityIntTimer);
+            return;
+          }
+          if (remaining <= 0) {
+            clearInterval(window.__unityIntTimer);
+            btn.disabled = false;
+            btn.className = 'w-full py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs shadow cursor-pointer';
+            btn.textContent = 'Continue to App ✕';
+          } else {
+            btn.textContent = `Skip Ad in ${remaining}s...`;
+          }
+        }, 1000);
+      },
+
+      finishInterstitial() {
+        if (window.__unityIntTimer) { clearInterval(window.__unityIntTimer); window.__unityIntTimer = null; }
+        closeModal();
+        const cb = this.pendingInterstitialCallback;
+        this.pendingInterstitialCallback = null;
+        if (typeof cb === 'function') cb();
+      },
+
+      showRewarded(onRewardEarned) {
+        this.init();
+        this.pendingRewardCallback = onRewardEarned;
+
+        const bridge = this.getBridge();
+        if (bridge && typeof bridge.showRewarded === 'function') {
+          try {
+            bridge.showRewarded(appConfigState.unityRewardedPlacementId, appConfigState.unityGameId);
+            return;
+          } catch (_) {}
+        }
+
+        // Timed Interactive Unity Rewarded Ad Player (BP_Rewarded_Android)
+        let secondsLeft = 5;
+        openModal(`
+          <div class="space-y-3.5 text-center" data-unity-placement="${escapeHtml(appConfigState.unityRewardedPlacementId)}">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-extrabold">UNITY REWARDED • GAME ${escapeHtml(appConfigState.unityGameId)}</span>
+              <span class="font-mono text-slate-400">${escapeHtml(appConfigState.unityRewardedPlacementId)}</span>
+            </div>
+            <div class="rounded-2xl p-5 bg-gradient-to-br from-emerald-950/90 via-[#0B172A] to-violet-950/80 border border-emerald-400/50 space-y-2 shadow-2xl">
+              <div class="text-4xl float-soft">💎</div>
+              <h3 class="font-display font-extrabold text-base text-white">Unity Ads Rewarded Boost</h3>
+              <p class="text-xs text-emerald-200">Watch full 5-second Unity sponsor boost to unlock <strong>+${CONSTANTS.REWARDED_AD_PAYOUT} 💎 Diamonds & +15 🪙 Coins</strong> synced to Cloud Firestore!</p>
+              <div id="unity-rew-countdown" class="inline-block px-3 py-1 rounded-full bg-slate-900 border border-emerald-400/40 font-mono text-xs font-extrabold text-amber-300">
+                ⏱️ Reward unlocks in ${secondsLeft}s
+              </div>
+            </div>
+            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div id="rew-bar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-1000" style="width:8%"></div>
+            </div>
+            <div class="flex gap-2">
+              <button id="unity-rew-claim-btn" disabled onclick="UnityAdEngine.claimWebReward()" class="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-extrabold text-xs disabled:opacity-60">
+                🔒 Watching Ad (${secondsLeft}s)...
+              </button>
+              <button onclick="UnityAdEngine.cancelRewarded()" class="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-400 font-bold text-xs">Cancel</button>
+            </div>
+          </div>
+        `);
+        setTimeout(() => {
+          const b = document.getElementById('rew-bar');
+          if (b) b.style.width = '20%';
+        }, 60);
+
+        if (window.__unityRewTimer) clearInterval(window.__unityRewTimer);
+        window.__unityRewTimer = setInterval(() => {
+          secondsLeft -= 1;
+          const pct = Math.min(100, Math.round(((5 - secondsLeft) / 5) * 100));
+          const bar = document.getElementById('rew-bar');
+          const cd = document.getElementById('unity-rew-countdown');
+          const btn = document.getElementById('unity-rew-claim-btn');
+          if (!btn) {
+            clearInterval(window.__unityRewTimer);
+            return;
+          }
+          if (bar) bar.style.width = pct + '%';
+          if (secondsLeft <= 0) {
+            clearInterval(window.__unityRewTimer);
+            if (cd) cd.textContent = '✅ Unity Ad Completed — Reward Ready!';
+            btn.disabled = false;
+            btn.className = 'flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs shadow cursor-pointer';
+            btn.textContent = `🎁 Claim +${CONSTANTS.REWARDED_AD_PAYOUT} 💎 & +15 🪙`;
+          } else {
+            if (cd) cd.textContent = `⏱️ Reward unlocks in ${secondsLeft}s`;
+            btn.textContent = `🔒 Watching Ad (${secondsLeft}s)...`;
+          }
+        }, 1000);
+      },
+
+      claimWebReward() {
+        if (window.__unityRewTimer) { clearInterval(window.__unityRewTimer); window.__unityRewTimer = null; }
+        closeModal();
+        const cb = this.pendingRewardCallback;
+        this.pendingRewardCallback = null;
+        if (typeof cb === 'function') cb();
+      },
+
+      cancelRewarded() {
+        if (window.__unityRewTimer) { clearInterval(window.__unityRewTimer); window.__unityRewTimer = null; }
+        this.pendingRewardCallback = null;
+        closeModal();
+        showToast('Rewarded Ad closed before completion — no diamonds credited.', 'info');
+      }
+    };
+
+    // Native Android APK WebView callbacks for real Unity Ads SDK integration
+    window.onUnityAdRewarded = function(placementId) {
+      if (typeof UnityAdEngine.pendingRewardCallback === 'function') {
+        const cb = UnityAdEngine.pendingRewardCallback;
+        UnityAdEngine.pendingRewardCallback = null;
+        closeModal();
+        cb();
+      } else {
+        creditRewards(CONSTANTS.REWARDED_AD_PAYOUT, 15, 'Unity Rewarded Ad Completed', `Placement: ${placementId || appConfigState.unityRewardedPlacementId}`, 'REWARDED');
+      }
+    };
+    window.onUnityAdClosed = function(placementId) {
+      if (typeof UnityAdEngine.pendingInterstitialCallback === 'function') {
+        UnityAdEngine.finishInterstitial();
+      }
+    };
+    window.onUnityAdFailed = function(placementId, err) {
+      showToast(`Unity Ad Notice (${placementId}): ${err || 'Retrying web fallback'}`, 'info');
+      if (typeof UnityAdEngine.pendingInterstitialCallback === 'function') {
+        UnityAdEngine.finishInterstitial();
+      }
+    };
+
+    function applyLiveAppConfig(cfg) {
+      if (!cfg || typeof cfg !== 'object') return;
+      appConfigState = {
+        ...DEFAULT_APP_CONFIG,
+        ...cfg,
+        welcomeBonusRupees: Number(cfg.welcomeBonusRupees ?? DEFAULT_APP_CONFIG.welcomeBonusRupees) || 50
+      };
+      CONSTANTS.UNITY_GAME_ID = appConfigState.unityGameId || '800427608';
+      CONSTANTS.UNITY_BANNER_PLACEMENT = appConfigState.unityBannerPlacementId || 'BP_Banner_Android';
+      CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT = appConfigState.unityInterstitialPlacementId || 'BP_Interstitial_Android';
+      CONSTANTS.UNITY_REWARDED_PLACEMENT = appConfigState.unityRewardedPlacementId || 'BP_Rewarded_Android';
+      CONSTANTS.AFFILIATE_TAG = appConfigState.affiliateTag || '5665937';
+      CONSTANTS.INITIAL_BONUS_RUPEES = appConfigState.welcomeBonusRupees;
+      UnityAdEngine.init();
+      syncHeader();
+      if (activeOverlay === 'adminPanel') renderOverlay();
+    }
 
     function syncProfileToCloud() {
       if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser) {
@@ -649,14 +956,20 @@
         if (p.isVip) {
           adDock.innerHTML = '';
         } else {
+          UnityAdEngine.syncBanner();
+          const hasTag = Boolean((appConfigState.webAdTagUrl || '').trim());
           adDock.innerHTML = `
-            <div class="rounded-xl bg-slate-900/90 border border-slate-700/80 px-3 py-2 flex items-center justify-between gap-2 text-[11px]">
+            <div id="unity-banner-slot" data-unity-game="${escapeHtml(appConfigState.unityGameId)}" data-unity-placement="${escapeHtml(appConfigState.unityBannerPlacementId)}" class="rounded-xl bg-gradient-to-r from-[#0F172A] via-[#171236] to-[#0B1F33] border border-cyan-500/40 px-3 py-2 flex items-center justify-between gap-2 text-[11px] shadow-lg">
               <div class="flex items-center gap-2 min-w-0">
-                <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[9px] shrink-0">SPONSORED</span>
-                <span class="text-slate-300 truncate">Remove all ads & unlock 4K AI Video Engine</span>
+                <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-extrabold text-[9px] shrink-0">UNITY AD • ${escapeHtml(appConfigState.unityGameId)}</span>
+                <span class="text-slate-200 font-semibold truncate">${UnityAdEngine.isNativeApk() ? `Native Unity Banner Active (${escapeHtml(appConfigState.unityBannerPlacementId)})` : 'Watch Rewarded Unity Ad for +5 💎 or Go Ad-Free VIP'}</span>
               </div>
-              <button onclick="switchTab('vip')" class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-extrabold text-[10px] shrink-0">Go VIP</button>
-            </div>`;
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="watchRewardedBoost()" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-[10px]">+5 💎</button>
+                <button onclick="switchTab('vip')" class="px-2 py-1 rounded-lg bg-amber-400 text-slate-950 font-extrabold text-[10px]">Go VIP</button>
+              </div>
+            </div>
+            ${hasTag ? `<div id="web-ad-tag-slot" class="mt-1 text-center text-[9.5px] text-cyan-400/80 font-mono">Web Ad Tag Active</div>` : ''}`;
         }
       }
     }
@@ -1055,11 +1368,12 @@
           timestamp: ts,
           status: 'AGREED_AND_VERIFIED'
         });
+        state.profile.bonusRupees = Number(appConfigState.welcomeBonusRupees || CONSTANTS.INITIAL_BONUS_RUPEES);
         saveState();
         syncProfileToCloud();
         renderApp();
-        openWelcomeBonusModal();
-        showToast('🟢 Google Cloud Sync Verified! ₹50 Welcome Bonus Active!', 'success');
+        UnityAdEngine.showInterstitial('post_signup', () => openWelcomeBonusModal());
+        showToast(`🟢 Google Cloud Sync Verified! ₹${state.profile.bonusRupees} Welcome Bonus Active!`, 'success');
         return;
       }
       if (!authUiState.agreed) {
@@ -1148,11 +1462,12 @@
         status: 'AGREED_AND_VERIFIED'
       });
 
+      state.profile.bonusRupees = Number(appConfigState.welcomeBonusRupees || CONSTANTS.INITIAL_BONUS_RUPEES);
       saveState();
       syncProfileToCloud();
       renderApp();
-      openWelcomeBonusModal();
-      showToast('🎉 Sign Up Verified! ₹50 Welcome Bonus + 10 💎 + 250 🪙 Active!', 'success');
+      UnityAdEngine.showInterstitial('post_signup', () => openWelcomeBonusModal());
+      showToast(`🎉 Sign Up Verified! ₹${state.profile.bonusRupees} Welcome Bonus + 10 💎 + 250 🪙 Active!`, 'success');
     }
 
     function logoutViralBoostAccount() {
@@ -2036,7 +2351,12 @@
         case 'creatorPool': body.innerHTML = renderCreatorPoolOverlay(); break;
         case 'geminiStudio': body.innerHTML = renderGeminiStudioOverlay(); break;
         case 'crossPoster': body.innerHTML = renderCrossPosterOverlay(); break;
-        case 'adminPanel': body.innerHTML = renderAdminPanelOverlay(); break;
+        case 'adminPanel':
+          body.innerHTML = renderAdminPanelOverlay();
+          if (!adminUsersState.loadedOnce && !adminUsersState.loading) {
+            setTimeout(() => refreshAdminUsers(true), 50);
+          }
+          break;
       }
     }
 
@@ -2060,8 +2380,9 @@
     function renderOneClickAiStudioOverlay() {
       const s = state.aiStudioState;
       const cat = AI_VIDEO_CATEGORIES[s.catIdx];
+      const hasResult = Boolean((s.title || '').trim() || (s.script || '').trim());
       return `
-        ${overlayHeader('1-Click AI Video & Viral हैशटैग', 'Full-Screen AI Reel Studio • Auto Viral Tags', `<span class="px-2.5 py-1 rounded-lg bg-amber-400/20 border border-amber-400 text-amber-300 text-[10px] font-extrabold">${state.profile.isVip ? 'VIP CLEAN HD' : 'FREE STUDIO'}</span>`)}
+        ${overlayHeader('1-Click AI Video & Viral हैशटैग', 'Live Gemini 2.5 Flash + Imagen 3 HD • Real Video & Image Export', `<span class="px-2.5 py-1 rounded-lg bg-amber-400/20 border border-amber-400 text-amber-300 text-[10px] font-extrabold">${state.profile.isVip ? 'VIP CLEAN HD' : 'LIVE AI STUDIO'}</span>`)}
         <div class="p-3.5 space-y-4">
           <!-- 6 Bilingual Categories -->
           <div>
@@ -2078,58 +2399,88 @@
 
           <!-- 9:16 Interactive Canvas Reel Preview + Controls -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-            <div class="rounded-2xl overflow-hidden border-2 border-cyan-400/60 bg-black relative mx-auto w-full max-w-[300px] aspect-[9/16] shadow-2xl">
-              <canvas id="reel-studio-canvas" width="360" height="640" class="w-full h-full block"></canvas>
-              <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 bg-black/70 backdrop-blur-md px-3 py-2 rounded-xl border border-white/15">
-                <button onclick="toggleReelPlay()" class="px-3 py-1 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-xs">${s.isPlaying ? '⏸ Pause' : '▶ Play'}</button>
-                <button onclick="toggleBeatSynth(${cat.bpm})" class="px-3 py-1 rounded-lg bg-violet-600 text-white font-bold text-xs">${isAudioPlaying ? '🔊 Beat ON' : '🎵 Play Beat'}</button>
+            <div class="space-y-2.5">
+              <div class="rounded-2xl overflow-hidden border-2 border-cyan-400/60 bg-black relative mx-auto w-full max-w-[300px] aspect-[9/16] shadow-2xl">
+                <canvas id="reel-studio-canvas" width="360" height="640" class="w-full h-full block"></canvas>
+                <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 bg-black/70 backdrop-blur-md px-3 py-2 rounded-xl border border-white/15">
+                  <button onclick="toggleReelPlay()" class="px-3 py-1 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-xs">${s.isPlaying ? '⏸ Pause' : '▶ Play'}</button>
+                  <button onclick="toggleBeatSynth(${cat.bpm})" class="px-3 py-1 rounded-lg bg-violet-600 text-white font-bold text-xs">${isAudioPlaying ? '🔊 Beat ON' : '🎵 Play Beat'}</button>
+                </div>
               </div>
+              ${s.coverDataUrl ? `
+                <div class="rounded-xl bg-slate-950 border border-cyan-500/40 p-2.5 flex items-center justify-between gap-2 max-w-[300px] mx-auto">
+                  <span class="text-[11px] font-bold text-cyan-300 truncate">🖼️ HD Cover Ready</span>
+                  <a href="${s.coverDataUrl}" download="viralboost-ai-cover-${Date.now()}.png" class="px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-[11px] shrink-0">⬇ Download Image</a>
+                </div>` : ''}
             </div>
 
             <div class="space-y-3">
               <div class="rounded-2xl p-3.5 app-card space-y-2.5">
                 <div class="text-xs font-bold text-amber-300">🎵 SoundTrack: ${cat.beatTrackName}</div>
-                <input id="studio-topic-input" type="text" value="${escapeHtml(s.customTopic)}" oninput="state.aiStudioState.customTopic=this.value;saveState()" placeholder="Optional Topic (e.g. Desi Comedy Gym, Tech Hack)..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" />
+                <input id="studio-topic-input" type="text" value="${escapeHtml(s.customTopic)}" oninput="state.aiStudioState.customTopic=this.value;saveState()" placeholder="Enter your topic (e.g. Desi Comedy Gym, Tech Hack)..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" />
                 <div class="flex gap-2">
                   <label class="flex-1 cursor-pointer text-center py-2 px-3 rounded-xl bg-slate-900 border border-dashed border-cyan-400/60 text-xs font-bold text-cyan-300">
-                    📸 Upload Cover Photo
+                    📸 Upload Custom Cover
                     <input type="file" accept="image/*" class="hidden" onchange="handleStudioCoverUpload(event)" />
                   </label>
                   ${s.coverDataUrl ? `<button onclick="state.aiStudioState.coverDataUrl='';saveState();renderOverlay()" class="px-3 py-2 rounded-xl bg-red-900/50 text-red-200 text-xs font-bold">Clear</button>` : ''}
                 </div>
                 <button onclick="executeOneClickAiGenerate()" ${isStudioGenerating ? 'disabled' : ''} class="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-violet-600 text-white font-display font-extrabold text-sm shadow-lg disabled:opacity-60">
-                  ${isStudioGenerating ? '⏳ Generating via Gemini AI...' : '⚡ 1-Click Generate Video & Hashtags'}
+                  ${isStudioGenerating ? '⏳ Live AI Generating...' : '⚡ 1-Click Live AI Video & Image'}
                 </button>
+                ${isStudioGenerating || s.progressStage ? `
+                  <div class="rounded-xl bg-slate-950 border border-cyan-500/40 p-2.5 space-y-1.5">
+                    <div class="flex items-center justify-between text-[11px]">
+                      <span class="font-bold text-cyan-300">${escapeHtml(s.progressStage || 'Connecting to Firebase AI Logic...')}</span>
+                      <span class="font-mono font-bold text-amber-300">${s.progressPct || 0}%</span>
+                    </div>
+                    <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-gradient-to-r from-cyan-400 to-violet-500 transition-all duration-300" style="width:${s.progressPct || 10}%"></div>
+                    </div>
+                  </div>` : ''}
+                ${s.errorMsg ? `
+                  <div class="rounded-xl bg-red-950/70 border border-red-500/60 p-2.5 text-[11px] text-red-200 space-y-1">
+                    <div class="font-extrabold">⚠️ Live AI Generation Error</div>
+                    <div>${escapeHtml(s.errorMsg)}</div>
+                  </div>` : ''}
                 <button onclick="exportOneClickReelVideo()" ${isExportingVideo ? 'disabled' : ''} class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow disabled:opacity-60">
-                  ${isExportingVideo ? `🎬 Rendering 9:16 Video (${exportProgressPct}%)...` : '🎥 Render & Download Real 9:16 Video (.webm)'}
+                  ${isExportingVideo ? `🎬 Rendering 9:16 Video (${exportProgressPct}%)...` : `🎥 Render & Download 9:16 Video`}
                 </button>
                 ${exportedReelUrl ? `
                   <div class="rounded-xl bg-slate-950 border border-emerald-500/60 p-2.5 space-y-2">
-                    <div class="text-[11px] font-bold text-emerald-300">✅ Real 9:16 Video File Rendered!</div>
+                    <div class="text-[11px] font-bold text-emerald-300">✅ Real 9:16 Video Rendered (.${escapeHtml(exportedReelExt)})</div>
                     <video src="${exportedReelUrl}" controls playsinline class="w-full max-h-56 rounded-lg bg-black"></video>
                     <div class="grid grid-cols-2 gap-2">
-                      <a href="${exportedReelUrl}" download="viralboost-reel-${Date.now()}.webm" class="py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs text-center">⬇ Download Video</a>
+                      <a href="${exportedReelUrl}" download="viralboost-reel-${Date.now()}.${escapeHtml(exportedReelExt)}" class="py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs text-center">⬇ Download .${escapeHtml(exportedReelExt)}</a>
                       <button onclick="shareExportedReelFile()" class="py-2 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-xs">📤 Share File</button>
                     </div>
                   </div>` : ''}
               </div>
 
-              <!-- Generated Output Blueprint -->
+              <!-- Generated Output Blueprint (Strict Live AI — Zero Demo Fallback) -->
               <div class="rounded-2xl p-3.5 app-card border-emerald-500/40 space-y-2">
-                <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-1.5 min-w-0">
-                    <span class="text-xs font-extrabold text-emerald-300">✅ Viral Title & Script</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${s.aiSource === 'LIVE_GEMINI' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-cyan-300'}">${s.aiSource === 'LIVE_GEMINI' ? '🟢 Gemini Live' : 'Studio Kit'}</span>
+                ${hasResult ? `
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <span class="text-xs font-extrabold text-emerald-300">✅ Live AI Title & Script</span>
+                      <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300">🟢 Gemini 2.5 + Imagen 3</span>
+                    </div>
+                    <button onclick="saveStudioToHistory()" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10.5px] font-bold shrink-0">Save 💾</button>
                   </div>
-                  <button onclick="saveStudioToHistory()" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10.5px] font-bold shrink-0">Save 💾</button>
-                </div>
-                <div class="text-xs font-bold text-white">${escapeHtml(s.title)}</div>
-                <pre class="text-[11px] text-slate-300 whitespace-pre-wrap font-sans bg-slate-950/70 p-2.5 rounded-xl">${escapeHtml(s.script)}</pre>
-                <div class="text-[11px] text-cyan-300 font-semibold">${escapeHtml(s.hashtags)}</div>
-                <div class="grid grid-cols-2 gap-2 pt-1">
-                  <button onclick="copyReg('${regCopy(s.title + '\n\n' + s.script + '\n\n' + s.hashtags, 'Copied Full Viral Reel Kit!')}')" class="py-2 rounded-xl bg-slate-800 text-white font-bold text-xs">Copy All 📋</button>
-                  <button onclick="shareStudioReel()" class="py-2 rounded-xl bg-cyan-500 text-slate-950 font-extrabold text-xs">Share Reel 🚀 (+10 🪙)</button>
-                </div>
+                  <div class="text-xs font-bold text-white">${escapeHtml(s.title)}</div>
+                  <pre class="text-[11px] text-slate-300 whitespace-pre-wrap font-sans bg-slate-950/70 p-2.5 rounded-xl">${escapeHtml(s.script)}</pre>
+                  <div class="text-[11px] text-cyan-300 font-semibold">${escapeHtml(s.hashtags)}</div>
+                  <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button onclick="copyReg('${regCopy(s.title + '\n\n' + s.script + '\n\n' + s.hashtags, 'Copied Live AI Reel Kit!')}')" class="py-2 rounded-xl bg-slate-800 text-white font-bold text-xs">Copy All 📋</button>
+                    <button onclick="shareStudioReel()" class="py-2 rounded-xl bg-cyan-500 text-slate-950 font-extrabold text-xs">Share Reel 🚀 (+10 🪙)</button>
+                  </div>
+                ` : `
+                  <div class="text-center py-4 space-y-1.5">
+                    <div class="text-2xl">🤖</div>
+                    <div class="text-xs font-extrabold text-cyan-300">Ready for 100% Live Firebase AI Generation</div>
+                    <p class="text-[11px] text-slate-400">Select a category or enter your topic, then tap <strong>"1-Click Live AI Video & Image"</strong> to generate a real Gemini 2.5 Flash script, Imagen 3 cover artwork, and downloadable 9:16 video.</p>
+                  </div>
+                `}
               </div>
             </div>
           </div>
@@ -2413,19 +2764,28 @@
     // OVERLAY 6: CREATOR COMMUNITY POOL (FOLLOW FOR FOLLOW)
     // -------------------------------------------------------------------------
     function renderCreatorPoolOverlay() {
-      const list = state.creatorPool.filter(c => state.poolPlatform === 'All' || c.platform === state.poolPlatform);
+      const list = (cloudCommunityCreators || []).filter(c => state.poolPlatform === 'All' || c.platform === state.poolPlatform);
+      const followedSet = new Set(state.followedPoolIds || []);
       return `
-        ${overlayHeader('🤝 Creator Community Pool', 'Follow Creators → Gain Real Subscribers & Earn +2 💎')}
-        <div class="p-3.5 space-y-3.5">
+        ${overlayHeader('🤝 Creator Community Pool', 'Live Cloud Firestore Creators • Follow & Earn +2 💎')}
+        <div id="community-pool" class="p-3.5 space-y-3.5">
           <div class="rounded-2xl p-3.5 app-card border-cyan-400/50 space-y-2">
-            <h3 class="font-bold text-xs text-cyan-300">➕ Add Your Channel to Growth Pool</h3>
-            <div class="flex gap-2">
-              <input id="pool-handle-input" type="text" placeholder="@your_channel_handle" class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-bold text-xs text-cyan-300">➕ Add Your Real Channel to Cloud Pool</h3>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9.5px] font-bold">Firestore Live</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <input id="pool-handle-input" type="text" placeholder="@your_channel_handle or link" class="flex-1 min-w-[160px] rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
               <select id="pool-plat-select" class="rounded-xl bg-slate-950 border border-slate-700 px-2 py-2 text-xs text-white">
                 <option>YouTube</option><option>Instagram</option><option>GoLiveGram</option><option>Facebook</option>
               </select>
               <button onclick="addChannelToPool()" class="px-3 py-2 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">Join 🚀</button>
             </div>
+            ${!cloudUser ? `
+              <div class="rounded-xl bg-slate-950/80 border border-amber-400/40 px-3 py-2 flex items-center justify-between gap-2 text-[10.5px]">
+                <span class="text-amber-200">Google Cloud Sync is required to publish a verified creator listing.</span>
+                <button onclick="triggerGoogleCloudSignIn()" class="px-2.5 py-1 rounded-lg bg-white text-slate-950 font-extrabold shrink-0">G Sign In</button>
+              </div>` : ''}
           </div>
 
           <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
@@ -2435,21 +2795,33 @@
           </div>
 
           <div class="space-y-2.5">
-            ${list.map(c => `
-              <div class="rounded-2xl p-3.5 app-card flex items-center justify-between gap-2">
-                <div class="min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-bold text-sm truncate">${escapeHtml(c.name)}</span>
-                    ${c.spotlight ? '<span class="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 text-[9px] font-bold">SPOTLIGHT</span>' : ''}
-                  </div>
-                  <div class="text-[11px] text-cyan-400">${c.platform} • ${escapeHtml(c.handle)} • ${c.followers}</div>
-                  <div class="text-[10px] text-slate-400">${escapeHtml(c.niche)}</div>
-                </div>
-                <button onclick="followPoolCreator('${c.id}')" ${c.followed ? 'disabled' : ''} class="px-3 py-2 rounded-xl text-xs font-extrabold shrink-0 ${c.followed ? 'bg-emerald-900/50 text-emerald-300' : 'bg-sky-500 text-slate-950'}">
-                  ${c.followed ? 'Following ✅' : 'Follow +2 💎'}
-                </button>
+            ${list.length === 0 ? `
+              <div class="rounded-2xl p-6 app-card border-dashed border-slate-700 text-center space-y-2">
+                <div class="text-3xl">🌐</div>
+                <div class="text-xs font-bold text-slate-200">No real creators listed yet. Be the first to add your channel!</div>
+                <div class="text-[11px] text-slate-400">Real signed-up creators published to Cloud Firestore communityCreators appear here automatically.</div>
               </div>
-            `).join('')}
+            ` : list.map(c => {
+              const isFollowed = followedSet.has(c.id);
+              const isSelf = Boolean(cloudUser && c.userId === cloudUser.uid);
+              return `
+                <div class="rounded-2xl p-3.5 app-card flex items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="font-bold text-sm truncate">${escapeHtml(c.name)}</span>
+                      ${c.spotlight ? '<span class="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 text-[9px] font-bold">SPOTLIGHT</span>' : ''}
+                    </div>
+                    <div class="text-[11px] text-cyan-400">${escapeHtml(c.platform)} • ${escapeHtml(c.handle)} • ${Number(c.followersCount || 0)} Community Follows</div>
+                    <div class="text-[10px] text-slate-400">${escapeHtml(c.niche || 'Creator')}</div>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button onclick="followPoolCreator('${c.id}')" ${isFollowed || isSelf ? 'disabled' : ''} class="px-3 py-2 rounded-xl text-xs font-extrabold ${isFollowed ? 'bg-emerald-900/50 text-emerald-300' : isSelf ? 'bg-slate-800 text-slate-400' : 'bg-sky-500 text-slate-950'}">
+                      ${isSelf ? 'Your Channel' : isFollowed ? 'Following ✅' : 'Follow +2 💎'}
+                    </button>
+                    ${isSelf || state.profile.isOwner ? `<button onclick="deletePoolCreator('${c.id}')" title="Remove Listing" class="px-2 py-2 rounded-xl bg-red-950/70 border border-red-500/40 text-red-300 text-xs font-bold">🗑️</button>` : ''}
+                  </div>
+                </div>`;
+            }).join('')}
           </div>
         </div>
       `;
@@ -2523,17 +2895,158 @@
     // OVERLAY 9: OWNER ADMIN PANEL (PASSKEY: admin2653)
     // -------------------------------------------------------------------------
     function renderAdminPanelOverlay() {
+      const cfg = appConfigState;
+      const isCloudAdmin = Boolean(cloudUser && (cloudUser.email || '').toLowerCase() === 'jattalboy91@gmail.com');
+      const searchQ = (adminUsersState.search || '').trim().toLowerCase();
+      const filteredUsers = (adminUsersState.users || []).filter(u => {
+        if (!searchQ) return true;
+        return (u.username || '').toLowerCase().includes(searchQ) ||
+               (u.email || '').toLowerCase().includes(searchQ) ||
+               (u.uid || '').toLowerCase().includes(searchQ);
+      });
+
       return `
-        ${overlayHeader('🛡️ Owner Admin Panel', `Authenticated: ${CONSTANTS.OWNER_UPI_ID}`)}
+        ${overlayHeader('🛡️ Owner Admin Panel', `Owner: ${CONSTANTS.OWNER_UPI_ID} • Live Firestore Control`)}
         <div class="p-3.5 space-y-4">
+          <!-- Cloud Admin Session Status -->
+          <div class="rounded-2xl p-3.5 border ${isCloudAdmin ? 'bg-emerald-950/40 border-emerald-400/60' : 'bg-amber-950/30 border-amber-400/60'} flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="text-xs font-extrabold ${isCloudAdmin ? 'text-emerald-300' : 'text-amber-300'}">
+                ${isCloudAdmin ? `🟢 Cloud Admin Connected (${escapeHtml(cloudUser.email)})` : '⚠️ Passkey Unlocked — Connect Admin Google for Live Firestore Writes'}
+              </div>
+              <div class="text-[10.5px] text-slate-300">Firestore DB: appConfig/settings, users, communityCreators</div>
+            </div>
+            ${isCloudAdmin
+              ? `<button onclick="refreshAdminUsers(false)" class="px-3 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">🔄 Sync Users (${adminUsersState.users.length})</button>`
+              : `<button onclick="triggerGoogleCloudSignIn()" class="px-3 py-2 rounded-xl bg-white text-slate-950 font-extrabold text-xs shadow">Connect Admin Google</button>`}
+          </div>
+
+          <!-- Live Editable appConfig/settings Form -->
+          <div class="rounded-2xl p-4 app-card border-cyan-400/50 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-display font-extrabold text-sm text-cyan-300">📺 Live Ad Networks, Affiliate & Bonus Config (appConfig/settings)</h3>
+              <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[9.5px] font-bold">Unity Primary</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">Unity Game ID</label>
+                <input id="cfg-unity-game" type="text" value="${escapeHtml(cfg.unityGameId)}" class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">Unity Banner Placement ID</label>
+                <input id="cfg-unity-banner" type="text" value="${escapeHtml(cfg.unityBannerPlacementId)}" class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">Unity Interstitial Placement ID</label>
+                <input id="cfg-unity-interstitial" type="text" value="${escapeHtml(cfg.unityInterstitialPlacementId)}" class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">Unity Rewarded Placement ID</label>
+                <input id="cfg-unity-rewarded" type="text" value="${escapeHtml(cfg.unityRewardedPlacementId)}" class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="text-[10.5px] font-bold text-slate-400">Optional Web Ad Script / Tag URL (https://...)</label>
+                <input id="cfg-web-ad-tag" type="url" value="${escapeHtml(cfg.webAdTagUrl)}" placeholder="https://..." class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-cyan-300 font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">AdMob App ID (Secondary)</label>
+                <input id="cfg-admob-app" type="text" value="${escapeHtml(cfg.admobAppId)}" placeholder="ca-app-pub-..." class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">AdMob Banner ID</label>
+                <input id="cfg-admob-banner" type="text" value="${escapeHtml(cfg.admobBannerId)}" placeholder="ca-app-pub-..." class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">AdMob Interstitial ID</label>
+                <input id="cfg-admob-interstitial" type="text" value="${escapeHtml(cfg.admobInterstitialId)}" placeholder="ca-app-pub-..." class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">AdMob Rewarded ID</label>
+                <input id="cfg-admob-rewarded" type="text" value="${escapeHtml(cfg.admobRewardedId)}" placeholder="ca-app-pub-..." class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">Affiliate Tag (EarnKaro)</label>
+                <input id="cfg-affiliate-tag" type="text" value="${escapeHtml(cfg.affiliateTag)}" class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-amber-300 font-mono" />
+              </div>
+              <div>
+                <label class="text-[10.5px] font-bold text-slate-400">Welcome Bonus (₹)</label>
+                <input id="cfg-welcome-bonus" type="number" min="0" value="${Number(cfg.welcomeBonusRupees || 50)}" class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-emerald-300 font-mono" />
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button onclick="saveAdminAppConfig()" class="flex-1 min-w-[180px] py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 font-extrabold text-xs shadow">💾 Save Config to Firestore</button>
+              <button onclick="UnityAdEngine.showInterstitial('admin_test')" class="px-3 py-2.5 rounded-xl bg-slate-800 text-cyan-300 font-bold text-xs">🧪 Test Interstitial</button>
+              <button onclick="watchRewardedBoost()" class="px-3 py-2.5 rounded-xl bg-slate-800 text-emerald-300 font-bold text-xs">🎬 Test Rewarded</button>
+            </div>
+          </div>
+
+          <!-- Registered Firestore Users Management -->
+          <div class="rounded-2xl p-4 app-card border-amber-400/50 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="font-display font-extrabold text-sm text-amber-300">👥 Registered Firestore Users (${adminUsersState.users.length})</h3>
+              <button onclick="refreshAdminUsers(false)" class="px-3 py-1.5 rounded-lg bg-violet-600 text-white font-bold text-[11px]">${adminUsersState.loading ? '⏳ Loading...' : '🔄 Refresh List'}</button>
+            </div>
+            <input type="text" value="${escapeHtml(adminUsersState.search)}" oninput="adminUsersState.search=this.value;renderOverlay()" placeholder="Search user by name, email, or UID..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
+
+            ${adminUsersState.error ? `
+              <div class="rounded-xl bg-red-950/60 border border-red-500/50 p-3 text-xs text-red-200">${escapeHtml(adminUsersState.error)}</div>
+            ` : adminUsersState.loading ? `
+              <div class="rounded-xl p-4 bg-slate-950/70 text-xs text-cyan-300 font-bold text-center">⏳ Loading real registered users from Cloud Firestore...</div>
+            ` : filteredUsers.length === 0 ? `
+              <div class="rounded-xl p-4 bg-slate-950/70 text-xs text-slate-400 text-center">No matching Firestore user documents loaded. Connect Admin Google (jattalboy91@gmail.com) and tap Refresh List.</div>
+            ` : `
+              <div class="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+                ${filteredUsers.map(u => `
+                  <div class="rounded-xl p-3 bg-slate-950/90 border ${u.isVip ? 'border-amber-400/60' : 'border-slate-800'} space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <span class="font-bold text-xs text-white truncate">${escapeHtml(u.username || 'Creator')}</span>
+                          ${u.isVip ? '<span class="px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 text-[9px] font-extrabold">VIP 👑</span>' : '<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px] font-bold">FREE</span>'}
+                          <span class="px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 text-[9px] font-mono">${escapeHtml(u.role || 'user')}</span>
+                        </div>
+                        <div class="text-[10.5px] text-cyan-300 truncate">${escapeHtml(u.email || u.userContact || 'No email')}</div>
+                        <div class="text-[9.5px] font-mono text-slate-500 truncate">UID: ${escapeHtml(u.uid)}</div>
+                      </div>
+                      <button onclick="removeAdminUser('${escapeHtml(u.uid)}')" class="px-2 py-1 rounded-lg bg-red-950/80 border border-red-500/50 text-red-300 text-[10px] font-bold shrink-0">🗑️ Remove</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5 text-[10.5px]">
+                      <div>
+                        <label class="text-slate-400">₹ Bonus</label>
+                        <input id="adm-u-rupees-${escapeHtml(u.uid)}" type="number" min="0" value="${Number(u.bonusRupees || 0)}" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-2 py-1 text-xs text-emerald-300 font-mono" />
+                      </div>
+                      <div>
+                        <label class="text-slate-400">💎 Diamonds</label>
+                        <input id="adm-u-diamonds-${escapeHtml(u.uid)}" type="number" min="0" value="${Number(u.diamonds || 0)}" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-2 py-1 text-xs text-sky-300 font-mono" />
+                      </div>
+                      <div>
+                        <label class="text-slate-400">🪙 Coins</label>
+                        <input id="adm-u-coins-${escapeHtml(u.uid)}" type="number" min="0" value="${Number(u.coins || 0)}" class="w-full rounded-lg bg-slate-900 border border-slate-700 px-2 py-1 text-xs text-amber-300 font-mono" />
+                      </div>
+                    </div>
+                    <div class="flex gap-2">
+                      <button onclick="saveAdminUserChanges('${escapeHtml(u.uid)}')" class="flex-1 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-[11px]">💾 Save Wallet</button>
+                      <button onclick="toggleAdminUserVip('${escapeHtml(u.uid)}', ${Boolean(!u.isVip)})" class="flex-1 py-1.5 rounded-lg ${u.isVip ? 'bg-slate-800 text-amber-300 border border-amber-400/50' : 'bg-amber-400 text-slate-950'} font-extrabold text-[11px]">
+                        ${u.isVip ? 'Revoke VIP' : 'Grant VIP 👑'}
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- Owner Session Quick Economy Controls -->
           <div class="rounded-2xl p-4 app-card space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-amber-300">⚡ Economy Quick Controls</span>
-              <span class="text-[10.5px] text-emerald-300">Affiliate Tag: ${CONSTANTS.AFFILIATE_TAG}</span>
+              <span class="text-xs font-extrabold text-amber-300">⚡ Own Session Quick Controls</span>
+              <span class="text-[10.5px] text-emerald-300">Affiliate Tag: ${escapeHtml(CONSTANTS.AFFILIATE_TAG)}</span>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <button onclick="creditRewards(50, 250, 'Owner Admin Grant', 'Bonus Credited by Admin', 'ADMIN');showToast('Credited +50 💎 +250 🪙','success')" class="py-2 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs">+50 💎 & +250 🪙</button>
-              <button onclick="state.profile.isVip=!state.profile.isVip;saveState();renderOverlay();showToast('Toggled VIP Status!','info')" class="py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs">Toggle VIP Crown 👑</button>
+              <button onclick="state.profile.isVip=!state.profile.isVip;saveState();syncProfileToCloud();renderOverlay();showToast('Toggled VIP Status!','info')" class="py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs">Toggle Own VIP 👑</button>
             </div>
           </div>
 
@@ -2613,7 +3126,7 @@
 
         if (coverImg && coverImg.complete && coverImg.naturalWidth > 0) {
           ctx.save();
-          ctx.globalAlpha = 0.45;
+          ctx.globalAlpha = 0.82;
           const zoom = 1 + Math.sin(t * 0.7) * 0.04;
           const dw = w * zoom, dh = h * zoom;
           ctx.drawImage(coverImg, (w - dw) / 2, (h - dh) / 2, dw, dh);
@@ -2631,21 +3144,23 @@
         }
         ctx.globalAlpha = 1;
 
-        // Category Emoji & Visualizer bars
-        ctx.font = '56px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(cat.emoji, w / 2, h * 0.36 + Math.sin(t * 2) * 6);
+        // Category Emoji & Visualizer bars (subtle overlay when HD cover image is active)
+        if (!(coverImg && coverImg.complete && coverImg.naturalWidth > 0)) {
+          ctx.font = '56px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(cat.emoji, w / 2, h * 0.36 + Math.sin(t * 2) * 6);
+        }
 
         const bars = 18;
         const bw = (w - 60) / bars;
         for (let b = 0; b < bars; b++) {
-          const bh = 16 + Math.abs(Math.sin(t * 3 + b * 0.6)) * 52;
+          const bh = 16 + Math.abs(Math.sin(t * 3 + b * 0.6)) * 46;
           ctx.fillStyle = b % 2 === 0 ? '#00E5FF' : cat.accent;
           ctx.fillRect(30 + b * bw + 2, h * 0.56 - bh / 2, bw - 5, bh);
         }
 
         // Hook Caption Card Overlay
-        ctx.fillStyle = 'rgba(7, 7, 18, 0.78)';
+        ctx.fillStyle = 'rgba(7, 7, 18, 0.84)';
         ctx.fillRect(18, h * 0.65, w - 36, 98);
         ctx.strokeStyle = cat.accent;
         ctx.lineWidth = 1.5;
@@ -2653,7 +3168,8 @@
 
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 14px "Plus Jakarta Sans", sans-serif';
-        wrapCanvasText(ctx, state.aiStudioState.title || cat.sampleHook, w / 2, h * 0.65 + 30, w - 58, 20);
+        ctx.textAlign = 'center';
+        wrapCanvasText(ctx, state.aiStudioState.title || `${cat.titleHindi} • Tap Live AI Generate`, w / 2, h * 0.65 + 28, w - 58, 20);
 
         if (!state.profile.isVip) {
           ctx.fillStyle = 'rgba(255, 215, 0, 0.85)';
@@ -2677,6 +3193,7 @@
           ctx.fillText(line.trim(), x, cy);
           line = words[n] + ' ';
           cy += lineHeight;
+          if (cy > y + lineHeight * 2.5) break;
         } else {
           line = testLine;
         }
@@ -2816,10 +3333,11 @@
 
     async function callGeminiBackend({ prompt, platform = 'Instagram Reels & YouTube Shorts', tone = 'High-Energy Viral (Hinglish)', contentType = 'REEL_KIT', expectJson = true, history = [] }) {
       const cleanPrompt = String(prompt || '').trim();
+      let lastErrorMsg = '';
 
       // Wait briefly for ES Module Firebase SDK initialization on very first click
       if (window.ViralBoostFirebaseReady) {
-        try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 2500))]); } catch (_) {}
+        try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3500))]); } catch (_) {}
       }
 
       // 1) Primary Production Engine: Official Firebase AI Logic Web SDK + App Check (Zero API Key Exposure)
@@ -2830,15 +3348,16 @@
             return fbRes;
           }
         } catch (fbErr) {
-          const msg = String(fbErr?.message || fbErr || '');
-          console.warn('Firebase AI Logic fallback check:', msg);
-          if (msg.includes('403') || msg.toLowerCase().includes('appcheck') || msg.toLowerCase().includes('forbidden')) {
+          lastErrorMsg = String(fbErr?.message || fbErr || 'Firebase AI Logic request failed');
+          if (lastErrorMsg.includes('403') || lastErrorMsg.toLowerCase().includes('appcheck') || lastErrorMsg.toLowerCase().includes('forbidden')) {
             showToast(`⚠️ App Check / AI 403 on ${window.location.hostname || CONSTANTS.PRODUCTION_HOST}: verify domain in reCAPTCHA Enterprise & Firebase AI Logic.`, 'error');
           }
         }
+      } else {
+        lastErrorMsg = window.ViralBoostFirebase?.lastAiError || 'Firebase AI Logic Web SDK did not initialize.';
       }
 
-      // 2) Secondary Engine: Serverless Proxy (/api/gemini on Vercel/Node)
+      // 2) Secondary Engine: Serverless Proxy (/api/gemini on Vercel/Node if hosted outside GitHub Pages)
       const proxyEndpoint = resolveGeminiProxyEndpoint();
       if (proxyEndpoint) {
         try {
@@ -2853,75 +3372,79 @@
               return { ok: true, source: 'LIVE_GEMINI', data: payload.data };
             }
           }
-        } catch (_) {}
-      }
-
-      // 3) Tertiary Engine: Optional Personal Key for local offline file:// Chrome usage
-      const userKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
-      if (userKey) {
-        try {
-          const sysText = 'You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators.';
-          const promptBody = expectJson
-            ? `Mode: ${contentType}\nPlatform: ${platform}\nTone: ${tone}\nTopic: ${cleanPrompt}\nReturn ONLY valid JSON with keys: {"title":"...","hook":"...","script":"[0-3s HOOK] ...\\n[3-20s BODY] ...\\n[20-30s CTA] ...","cta":"...","hashtags":"#... #...","tips":["..."]}`
-            : cleanPrompt;
-          const contents = history.slice(-6).map(m => ({
-            role: m.sender === 'USER' ? 'user' : 'model',
-            parts: [{ text: String(m.text || '').slice(0, 1200) }]
-          }));
-          contents.push({ role: 'user', parts: [{ text: promptBody }] });
-
-          const cfg = { temperature: 0.85, topP: 0.95, maxOutputTokens: 1200 };
-          if (expectJson) cfg.responseMimeType = 'application/json';
-
-          const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(userKey)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              systemInstruction: { parts: [{ text: sysText }] },
-              contents,
-              generationConfig: cfg
-            })
-          });
-          const raw = await r.json();
-          if (!r.ok) {
-            throw new Error(raw?.error?.message || 'Gemini API Key Error');
-          }
-          const txt = raw?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          if (txt) {
-            if (!expectJson) {
-              return { ok: true, source: 'LIVE_GEMINI', data: { rawText: txt } };
-            }
-            let parsed;
-            try {
-              parsed = JSON.parse(txt.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim());
-            } catch (_) {
-              parsed = { title: `🔥 ${cleanPrompt}`, hook: txt.split('\n')[0] || '', script: txt, cta: 'Share & Comment 🔥', hashtags: '#ViralReels #TrendingShorts #ViralBoostAI' };
-            }
-            return {
-              ok: true,
-              source: 'LIVE_GEMINI',
-              data: {
-                title: String(parsed.title || `🔥 ${cleanPrompt}`),
-                hook: String(parsed.hook || ''),
-                script: String(parsed.script || txt),
-                cta: String(parsed.cta || ''),
-                hashtags: String(parsed.hashtags || '#ViralReels #TrendingShorts #ViralBoostAI'),
-                tips: Array.isArray(parsed.tips) ? parsed.tips : [],
-                rawText: txt
-              }
-            };
-          }
-        } catch (err) {
-          showToast(`⚠️ Gemini Error: ${err.message}`, 'error');
+        } catch (proxyErr) {
+          lastErrorMsg = String(proxyErr?.message || lastErrorMsg);
         }
       }
 
-      // 4) Offline Smart Blueprint Fallback
-      return {
-        ok: false,
-        source: 'OFFLINE_BLUEPRINT',
-        data: generateBilingualBlueprint(cleanPrompt, platform, tone)
-      };
+      // 3) Optional Local Key Fallback (only if explicitly entered by developer for offline file:// testing)
+      const userKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+      if (userKey) {
+        const sysText = 'You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators.';
+        const promptBody = expectJson
+          ? `Mode: ${contentType}\nPlatform: ${platform}\nTone: ${tone}\nTopic: ${cleanPrompt}\nReturn ONLY valid JSON with keys: {"title":"...","hook":"...","script":"[0-3s HOOK] ...\\n[3-20s BODY] ...\\n[20-30s CTA] ...","cta":"...","hashtags":"#... #...","tips":["..."]}`
+          : cleanPrompt;
+        const contents = history.slice(-6).map(m => ({
+          role: m.sender === 'USER' ? 'user' : 'model',
+          parts: [{ text: String(m.text || '').slice(0, 1200) }]
+        }));
+        contents.push({ role: 'user', parts: [{ text: promptBody }] });
+
+        const cfg = { temperature: 0.85, topP: 0.95, maxOutputTokens: 1200 };
+        if (expectJson) cfg.responseMimeType = 'application/json';
+
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(userKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: sysText }] },
+            contents,
+            generationConfig: cfg
+          })
+        });
+        const raw = await r.json();
+        if (!r.ok) {
+          throw new Error(raw?.error?.message || 'Gemini API Key Error');
+        }
+        const txt = raw?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (txt) {
+          if (!expectJson) {
+            return { ok: true, source: 'LIVE_GEMINI', data: { rawText: txt } };
+          }
+          let parsed;
+          try {
+            parsed = JSON.parse(txt.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim());
+          } catch (_) {
+            parsed = { title: `🔥 ${cleanPrompt}`, hook: txt.split('\n')[0] || '', script: txt, cta: 'Share & Comment 🔥', hashtags: '#ViralReels #TrendingShorts #ViralBoostAI' };
+          }
+          return {
+            ok: true,
+            source: 'LIVE_GEMINI',
+            data: {
+              title: String(parsed.title || `🔥 ${cleanPrompt}`),
+              hook: String(parsed.hook || ''),
+              script: String(parsed.script || txt),
+              cta: String(parsed.cta || ''),
+              hashtags: String(parsed.hashtags || '#ViralReels #TrendingShorts #ViralBoostAI'),
+              tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+              rawText: txt
+            }
+          };
+        }
+      }
+
+      // Strictly NO offline/demo fallback — surface actual live AI error
+      throw new Error(lastErrorMsg || 'Live Gemini AI service unavailable. Check internet connection & App Check.');
+    }
+
+    async function callImagenBackend({ prompt, aspectRatio = '9:16' }) {
+      if (window.ViralBoostFirebaseReady) {
+        try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3500))]); } catch (_) {}
+      }
+      if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.generateImage !== 'function') {
+        throw new Error('Firebase AI Logic Imagen 3 SDK is not initialized yet.');
+      }
+      return await window.ViralBoostFirebase.generateImage({ prompt, aspectRatio });
     }
 
     async function exportOneClickReelVideo() {
@@ -2976,12 +3499,16 @@
         } catch (_) {}
 
         const combined = new MediaStream(tracks);
-        const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-          ? 'video/webm;codecs=vp9,opus'
-          : MediaRecorder.isTypeSupported('video/webm')
-            ? 'video/webm'
-            : '';
-        const recorder = mime ? new MediaRecorder(combined, { mimeType: mime }) : new MediaRecorder(combined);
+        const candidates = [
+          { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
+          { mime: 'video/mp4', ext: 'mp4' },
+          { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+          { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+          { mime: 'video/webm', ext: 'webm' }
+        ];
+        const chosen = candidates.find(c => MediaRecorder.isTypeSupported(c.mime)) || { mime: '', ext: 'webm' };
+        exportedReelExt = chosen.ext;
+        const recorder = chosen.mime ? new MediaRecorder(combined, { mimeType: chosen.mime }) : new MediaRecorder(combined);
         const chunks = [];
         recorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) chunks.push(ev.data); };
 
@@ -2996,14 +3523,15 @@
           if (beatInterval) clearInterval(beatInterval);
           isExportingVideo = false;
           exportProgressPct = 100;
-          const blob = new Blob(chunks, { type: mime || 'video/webm' });
+          const finalMime = chosen.mime || 'video/webm';
+          const blob = new Blob(chunks, { type: finalMime });
           exportedReelBlob = blob;
           if (exportedReelUrl) {
             try { URL.revokeObjectURL(exportedReelUrl); } catch (_) {}
           }
           exportedReelUrl = URL.createObjectURL(blob);
           renderOverlay();
-          showToast('🎬 Real 9:16 Video Rendered! Ready to Download & Share!', 'success');
+          showToast(`🎬 Real 9:16 Video (.${exportedReelExt}) Rendered! Ready to Download!`, 'success');
         };
 
         recorder.start(200);
@@ -3022,7 +3550,8 @@
       const s = state.aiStudioState;
       const caption = buildSmartAffiliateCaption(s.title, s.hashtags, s.script);
       try {
-        const file = new File([exportedReelBlob], `viralboost-reel-${Date.now()}.webm`, { type: 'video/webm' });
+        const mimeType = exportedReelExt === 'mp4' ? 'video/mp4' : 'video/webm';
+        const file = new File([exportedReelBlob], `viralboost-reel-${Date.now()}.${exportedReelExt}`, { type: mimeType });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ title: s.title, text: caption, files: [file] });
           creditRewards(0, CONSTANTS.AFFILIATE_SHARE_COINS, 'Shared Rendered Video File', s.title, 'SHARE');
@@ -3035,9 +3564,10 @@
     function selectAiStudioCategory(idx) {
       const cat = AI_VIDEO_CATEGORIES[idx];
       state.aiStudioState.catIdx = idx;
-      state.aiStudioState.title = cat.sampleHook;
-      state.aiStudioState.script = `HOOK (0-3s): ${cat.sampleHook}\nBODY (3-22s): ${cat.defaultPrompt}\nAUDIO SYNC: ${cat.beatTrackName}\nCTA (22-30s): Double tap & share with 3 creators!`;
-      state.aiStudioState.hashtags = `#${cat.id.replace(/[^A-Za-z0-9]/g, '')} #ViralReels #ShortsIndia #Trending2026 #ViralBoostAI`;
+      state.aiStudioState.aiSource = 'IDLE';
+      state.aiStudioState.errorMsg = '';
+      state.aiStudioState.progressStage = '';
+      state.aiStudioState.progressPct = 0;
       if (isAudioPlaying) { stopBeatSynth(); toggleBeatSynth(cat.bpm); }
       saveState();
       renderOverlay();
@@ -3071,46 +3601,80 @@
         return;
       }
       const cat = AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx];
-      const topic = (state.aiStudioState.customTopic || '').trim() || cat.titleHindi;
+      const topic = (state.aiStudioState.customTopic || '').trim() || `${cat.titleHindi} (${cat.titleEnglish})`;
       isStudioGenerating = true;
+      state.aiStudioState.errorMsg = '';
+      state.aiStudioState.progressStage = '1/3 Calling Live Gemini 2.5 Flash for Viral Script & Tags...';
+      state.aiStudioState.progressPct = 25;
       renderOverlay();
 
-      const res = await callGeminiBackend({
-        prompt: `Create a high-retention 30-second viral short video package in Hindi/Hinglish for category "${cat.id}" (${cat.titleHindi}) on topic "${topic}" synced to ${cat.beatTrackName}.`,
-        platform: 'Instagram Reels & YouTube Shorts',
-        tone: cat.titleEnglish,
-        contentType: '1_CLICK_AI_REEL'
-      });
+      try {
+        const res = await callGeminiBackend({
+          prompt: `Create a high-retention 30-second viral short video package in Hindi/Hinglish for category "${cat.id}" (${cat.titleHindi}) on topic "${topic}" synced to ${cat.beatTrackName}.`,
+          platform: 'Instagram Reels & YouTube Shorts',
+          tone: cat.titleEnglish,
+          contentType: '1_CLICK_AI_REEL'
+        });
 
-      isStudioGenerating = false;
-      state.profile.videosUsed += 1;
-      state.aiStudioState.isPlaying = true;
-      state.aiStudioState.aiSource = res.source;
-      state.aiStudioState.title = res.data.title;
-      state.aiStudioState.script = `${res.data.script}\n\n🛍️ Shop Deals (ID ${CONSTANTS.AFFILIATE_TAG}): ${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}`;
-      state.aiStudioState.hashtags = res.data.hashtags;
-      state.aiHistory.unshift({
-        id: 'ai_' + Date.now(),
-        type: 'TEXT_TO_VIDEO',
-        topic: state.aiStudioState.title,
-        platform: 'Instagram Reels & Shorts',
-        content: state.aiStudioState.script,
-        hashtags: state.aiStudioState.hashtags,
-        bookmarked: false,
-        time: Date.now()
-      });
-      saveState();
-      renderOverlay();
-      showToast(
-        res.source === 'LIVE_GEMINI'
-          ? '🟢 Live Gemini AI Video Script & Hashtags Ready!'
-          : '✨ Studio Reel Kit Ready! (Add 🔑 AI Key for Live Gemini Cloud)',
-        'success'
-      );
+        state.aiStudioState.aiSource = res.source;
+        state.aiStudioState.title = res.data.title;
+        state.aiStudioState.script = `${res.data.script}\n\n🛍️ Shop Deals (ID ${CONSTANTS.AFFILIATE_TAG}): ${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}`;
+        state.aiStudioState.hashtags = res.data.hashtags;
+        state.aiStudioState.progressStage = '2/3 Generating HD 9:16 Visual Cover via Imagen 3...';
+        state.aiStudioState.progressPct = 62;
+        renderOverlay();
+
+        // Live Imagen 3 visual cover generation (imagen-3.0-generate-002)
+        try {
+          const imgPrompt = `Vibrant cinematic 9:16 vertical social reel poster art for Indian creator video about "${topic}", category "${cat.titleEnglish}", neon studio lighting, ultra detailed, no text clutter`;
+          const imgRes = await callImagenBackend({ prompt: imgPrompt, aspectRatio: '9:16' });
+          if (imgRes && imgRes.ok && imgRes.dataUrl) {
+            state.aiStudioState.coverDataUrl = imgRes.dataUrl;
+          }
+        } catch (imgErr) {
+          console.warn('Imagen 3 live note:', imgErr);
+          state.aiStudioState.errorMsg = `Script generated live; Imagen 3 visual note: ${imgErr.message || imgErr}`;
+        }
+
+        state.profile.videosUsed += 1;
+        state.aiStudioState.isPlaying = true;
+        state.aiStudioState.progressStage = '3/3 Live AI Package Ready! Rendering playable 9:16 video...';
+        state.aiStudioState.progressPct = 90;
+        state.aiHistory.unshift({
+          id: 'ai_' + Date.now(),
+          type: 'TEXT_TO_VIDEO',
+          topic: state.aiStudioState.title,
+          platform: 'Instagram Reels & Shorts',
+          content: state.aiStudioState.script,
+          hashtags: state.aiStudioState.hashtags,
+          bookmarked: false,
+          time: Date.now()
+        });
+        isStudioGenerating = false;
+        state.aiStudioState.progressStage = '';
+        state.aiStudioState.progressPct = 100;
+        saveState();
+        renderOverlay();
+        showToast('🟢 Live Gemini 2.5 + Imagen 3 Reel Ready!', 'success');
+        setTimeout(() => {
+          if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
+            exportOneClickReelVideo();
+          }
+        }, 350);
+      } catch (err) {
+        isStudioGenerating = false;
+        state.aiStudioState.progressStage = '';
+        state.aiStudioState.progressPct = 0;
+        state.aiStudioState.errorMsg = String(err?.message || err || 'Live AI failed');
+        saveState();
+        renderOverlay();
+        showToast(`⚠️ Live AI Failed: ${state.aiStudioState.errorMsg}`, 'error');
+      }
     }
 
     function saveStudioToHistory() {
       const s = state.aiStudioState;
+      if (!s.title && !s.script) { showToast('Generate live AI content first!', 'error'); return; }
       state.aiHistory.unshift({
         id: 'ai_' + Date.now(),
         type: 'TEXT_TO_VIDEO',
@@ -3127,6 +3691,7 @@
 
     function shareStudioReel() {
       const s = state.aiStudioState;
+      if (!s.title && !s.script) { showToast('Generate live AI content first!', 'error'); return; }
       const full = buildSmartAffiliateCaption(s.title, s.hashtags, s.script);
       creditRewards(0, CONSTANTS.AFFILIATE_SHARE_COINS, 'Shared 1-Click AI Reel', s.title, 'SHARE');
       shareContent(s.title, full, CONSTANTS.APP_URL);
@@ -3155,22 +3720,27 @@
 
     async function runHeroAiAnalyzer() {
       const btn = document.getElementById('hero-ai-analyze-btn');
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ Analyzing with Gemini...'; }
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Calling Live Gemini...'; }
       const connectedNames = SOCIAL_CHANNELS.filter(c => state.channels[c.id]?.connected).map(c => c.name).join(', ') || 'Instagram Reels, YouTube Shorts';
       const topicHint = (state.crossPoster.title || state.crossPoster.videoName || 'Viral Creator Video').replace(/\.[a-z0-9]+$/i, '');
-      const res = await callGeminiBackend({
-        prompt: `Generate a clickable viral title, high-CTR description, and 10 trending hashtags for a video about "${topicHint}" targeting ${connectedNames}.`,
-        platform: connectedNames,
-        tone: 'High-Retention Hinglish',
-        contentType: 'CROSS_POSTER_SEO'
-      });
-      if (btn) { btn.disabled = false; btn.textContent = '✨ AI Auto Title & Tags'; }
-      state.crossPoster.title = res.data.title;
-      state.crossPoster.tags = res.data.hashtags;
-      state.crossPoster.desc = res.data.hook ? `${res.data.hook}\n${res.data.cta || ''}` : res.data.script.slice(0, 180);
-      saveState();
-      if (activeOverlay) renderOverlay(); else renderApp();
-      showToast(res.source === 'LIVE_GEMINI' ? '🟢 Gemini AI Embedded Viral Title & Tags!' : '✨ AI Viral Title, Tags & Description Embedded!', 'success');
+      try {
+        const res = await callGeminiBackend({
+          prompt: `Generate a clickable viral title, high-CTR description, and 10 trending hashtags for a video about "${topicHint}" targeting ${connectedNames}.`,
+          platform: connectedNames,
+          tone: 'High-Retention Hinglish',
+          contentType: 'CROSS_POSTER_SEO'
+        });
+        state.crossPoster.title = res.data.title;
+        state.crossPoster.tags = res.data.hashtags;
+        state.crossPoster.desc = res.data.hook ? `${res.data.hook}\n${res.data.cta || ''}` : res.data.script.slice(0, 180);
+        saveState();
+        if (activeOverlay) renderOverlay(); else renderApp();
+        showToast('🟢 Live Gemini AI Embedded Viral Title & Tags!', 'success');
+      } catch (err) {
+        showToast(`⚠️ Live AI Error: ${err.message}`, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '✨ AI Auto Title & Tags'; }
+      }
     }
 
     function openChannelModal(channelId) {
@@ -3246,66 +3816,61 @@
     }
 
     function watchRewardedBoost() {
-      openModal(`
-        <div class="space-y-3 text-center">
-          <div class="text-3xl">🎬</div>
-          <h3 class="font-display font-extrabold text-base text-white">Sponsored Creator Boost</h3>
-          <p class="text-xs text-slate-300">Unlocking +${CONSTANTS.REWARDED_AD_PAYOUT} 💎 Diamonds & +15 🪙 Coins...</p>
-          <div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div id="rew-bar" class="h-full bg-emerald-400 transition-all duration-1000" style="width:15%"></div></div>
-        </div>
-      `);
-      setTimeout(() => { const b = document.getElementById('rew-bar'); if (b) b.style.width = '100%'; }, 80);
-      setTimeout(() => {
-        closeModal();
-        creditRewards(CONSTANTS.REWARDED_AD_PAYOUT, 15, 'Rewarded Video Boost Completed', 'Instant Creator Wallet Payout', 'REWARDED');
+      UnityAdEngine.showRewarded(() => {
+        creditRewards(
+          CONSTANTS.REWARDED_AD_PAYOUT,
+          15,
+          'Unity Rewarded Ad Completed',
+          `Placement ${appConfigState.unityRewardedPlacementId} (Game ${appConfigState.unityGameId})`,
+          'REWARDED'
+        );
         if (!activeOverlay) renderApp();
-        showToast(`🎉 +${CONSTANTS.REWARDED_AD_PAYOUT} 💎 & +15 🪙 Credited!`, 'success');
-      }, 1250);
+        showToast(`🎉 +${CONSTANTS.REWARDED_AD_PAYOUT} 💎 & +15 🪙 Credited to Firestore!`, 'success');
+      });
     }
 
     async function quickHomeGeminiGenerate() {
-      const kw = (document.getElementById('home-gemini-kw')?.value || '').trim() || 'Viral Shorts Strategy';
+      const kw = (document.getElementById('home-gemini-kw')?.value || '').trim();
+      if (!kw) { showToast('Enter a topic first!', 'error'); return; }
       const box = document.getElementById('home-gemini-output');
       const btn = document.getElementById('home-gemini-btn');
       if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
       if (box) {
         box.classList.remove('hidden');
-        box.innerHTML = `<div class="text-cyan-300 font-bold">⏳ Generating real AI script & hashtags for "${escapeHtml(kw)}"...</div>`;
+        box.innerHTML = `<div class="text-cyan-300 font-bold">⏳ Calling Live Gemini 2.5 Flash for "${escapeHtml(kw)}"...</div>`;
       }
-      const res = await callGeminiBackend({
-        prompt: kw,
-        platform: 'Instagram Reels & YouTube Shorts',
-        tone: 'High-Energy Viral (Hinglish)',
-        contentType: 'GEMINI_QUICK'
-      });
-      if (btn) { btn.disabled = false; btn.textContent = 'Generate ✨'; }
-      const out = res.data;
-      state.profile.textUsed += 1;
-      state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: 'GEMINI_QUICK', topic: kw, platform: 'Multi-Platform', content: out.script, hashtags: out.hashtags, bookmarked: false, time: Date.now() });
-      saveState();
-      if (box) {
-        box.classList.remove('hidden');
-        box.innerHTML = `
-          <div class="flex items-center justify-between gap-2">
-            <div class="font-bold text-cyan-300">✨ ${escapeHtml(out.title)}</div>
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${res.source === 'LIVE_GEMINI' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-amber-300'}">${res.source === 'LIVE_GEMINI' ? '🟢 Gemini Live' : 'Local Kit'}</span>
-          </div>
-          <div class="text-slate-200 whitespace-pre-line">${escapeHtml(out.script)}</div>
-          <div class="text-amber-300 font-semibold">${escapeHtml(out.hashtags)}</div>
-          <button onclick="copyReg('${regCopy(out.title + '\n\n' + out.script + '\n\n' + out.hashtags, 'Gemini Script Copied!')}')" class="mt-1 px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-[11px]">Copy Kit 📋</button>`;
+      try {
+        const res = await callGeminiBackend({
+          prompt: kw,
+          platform: 'Instagram Reels & YouTube Shorts',
+          tone: 'High-Energy Viral (Hinglish)',
+          contentType: 'GEMINI_QUICK'
+        });
+        const out = res.data;
+        state.profile.textUsed += 1;
+        state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: 'GEMINI_QUICK', topic: kw, platform: 'Multi-Platform', content: out.script, hashtags: out.hashtags, bookmarked: false, time: Date.now() });
+        saveState();
+        if (box) {
+          box.classList.remove('hidden');
+          box.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="font-bold text-cyan-300">✨ ${escapeHtml(out.title)}</div>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300">🟢 Gemini Live</span>
+            </div>
+            <div class="text-slate-200 whitespace-pre-line">${escapeHtml(out.script)}</div>
+            <div class="text-amber-300 font-semibold">${escapeHtml(out.hashtags)}</div>
+            <button onclick="copyReg('${regCopy(out.title + '\n\n' + out.script + '\n\n' + out.hashtags, 'Gemini Script Copied!')}')" class="mt-1 px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-[11px]">Copy Kit 📋</button>`;
+        }
+        showToast('🟢 Live Gemini Script & Hashtags Ready!', 'success');
+      } catch (err) {
+        if (box) {
+          box.classList.remove('hidden');
+          box.innerHTML = `<div class="text-red-300 font-bold">⚠️ Live Gemini Error: ${escapeHtml(err.message)}</div>`;
+        }
+        showToast(`⚠️ Live Gemini Error: ${err.message}`, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Generate ✨'; }
       }
-      showToast(res.source === 'LIVE_GEMINI' ? '🟢 Live Gemini Script & Hashtags Ready!' : '✨ Viral Script & Hashtags Ready!', 'success');
-    }
-
-    function generateBilingualBlueprint(topic, platform, tone) {
-      return {
-        title: `🔥 ${topic}: 3 गुप्त तरीके जो व्यूज 10X कर देंगे!`,
-        hook: `रुको! अगर आप भी "${topic}" पर वीडियो बनाते हो तो ये गलती बंद करो!`,
-        script: `🎬 [0-3s HOOK]: रुको! अगर आप भी "${topic}" पर वीडियो बनाते हो तो ये गलती बंद करो!\n⚡ [3-22s VALUE]: 1) पहले 2 सेकंड में Bold Text लगाएं। 2) ट्रेंडिंग बीट पर कट्स सिंक करें।\n🎯 [22-30s CTA]: अभी "${platform}" पर शेयर करें और कमेंट में YES लिखें!\n\nTone: ${tone}`,
-        cta: 'अभी सेव करें और 3 दोस्तों को शेयर करें!',
-        hashtags: `#${topic.replace(/[^A-Za-z0-9]/g, '') || 'ViralReels'} #ViralBoostAI #TrendingShorts #ReelsIndia #CreatorGrowth #ExplorePage`,
-        tips: ['Add 🔑 AI Key in header for personalized Gemini 2.5 Flash scripts']
-      };
     }
 
     function openAiTool(toolId) {
@@ -3316,57 +3881,97 @@
         switchTab('vip');
         return;
       }
+      const isImageMode = toolId === 'THUMBNAIL' || toolId === 'PHOTO_TO_VIDEO';
       openModal(`
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="font-display font-extrabold text-base text-white">⚡ ${toolId.replace(/_/g, ' ')} Engine</h3>
+            <h3 class="font-display font-extrabold text-base text-white">⚡ ${toolId.replace(/_/g, ' ')} ${isImageMode ? '(Imagen 3 HD)' : '(Gemini 2.5)'}</h3>
             <button onclick="closeModal()" class="text-slate-400 font-bold">✕</button>
           </div>
-          <input id="modal-ai-topic" type="text" placeholder="Enter your video topic or product name..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white" onkeydown="if(event.key==='Enter') runModalAiTool('${toolId}')" />
-          <button id="modal-ai-run-btn" onclick="runModalAiTool('${toolId}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs">Generate Now ✨</button>
+          <input id="modal-ai-topic" type="text" placeholder="Enter your topic, scene idea, or product..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white" onkeydown="if(event.key==='Enter') runModalAiTool('${toolId}')" />
+          <button id="modal-ai-run-btn" onclick="runModalAiTool('${toolId}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs">Generate Live ✨</button>
           <div id="modal-ai-out" class="hidden space-y-2"></div>
         </div>
       `);
     }
 
     async function runModalAiTool(toolId) {
-      const topic = (document.getElementById('modal-ai-topic')?.value || '').trim() || 'Desi Creator Growth';
+      const topic = (document.getElementById('modal-ai-topic')?.value || '').trim();
+      if (!topic) { showToast('Please enter a topic first!', 'error'); return; }
       const btn = document.getElementById('modal-ai-run-btn');
       const out = document.getElementById('modal-ai-out');
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ Generating with Gemini...'; }
-      if (out) { out.classList.remove('hidden'); out.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-xs text-cyan-300 font-bold">⏳ Thinking via Gemini AI...</div>`; }
-
-      const res = await callGeminiBackend({
-        prompt: `Tool Mode: ${toolId}. Generate viral content for topic "${topic}".`,
-        platform: 'YouTube Shorts & Instagram Reels',
-        tone: toolId,
-        contentType: toolId
-      });
-      if (btn) { btn.disabled = false; btn.textContent = 'Generate Now ✨'; }
-      const bp = res.data;
-      state.profile.textUsed += 1;
-      if (toolId === 'THUMBNAIL' || toolId === 'PHOTO_TO_VIDEO') state.profile.imagesUsed += 1;
-      state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: toolId, topic, platform: 'Multi-Platform', content: bp.script, hashtags: bp.hashtags, bookmarked: false, time: Date.now() });
-      saveState();
+      const isImageMode = toolId === 'THUMBNAIL' || toolId === 'PHOTO_TO_VIDEO';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Calling Live Firebase AI...'; }
       if (out) {
         out.classList.remove('hidden');
-        out.innerHTML = `
-          <div class="rounded-xl bg-slate-950 border border-emerald-400/50 p-3 text-xs space-y-1.5">
-            <div class="flex items-center justify-between gap-2">
-              <div class="font-bold text-amber-300">${escapeHtml(bp.title)}</div>
-              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${res.source === 'LIVE_GEMINI' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-cyan-300'}">${res.source === 'LIVE_GEMINI' ? '🟢 Gemini' : 'Studio'}</span>
-            </div>
-            <div class="text-slate-200 whitespace-pre-line">${escapeHtml(bp.script)}</div>
-            <div class="text-cyan-300">${escapeHtml(bp.hashtags)}</div>
-            <button onclick="copyReg('${regCopy(bp.title + '\n' + bp.script + '\n' + bp.hashtags, 'Copied!')}')" class="w-full py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold">Copy Result 📋</button>
-          </div>`;
+        out.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-xs text-cyan-300 font-bold">⏳ ${isImageMode ? 'Step 1/2 Generating Gemini prompt & Imagen 3 HD art...' : 'Generating live content via Gemini 2.5 Flash...'}</div>`;
       }
-      if (state.activeTab === 'ai') renderApp();
+
+      try {
+        const res = await callGeminiBackend({
+          prompt: `Tool Mode: ${toolId}. Generate viral content for topic "${topic}".`,
+          platform: 'YouTube Shorts & Instagram Reels',
+          tone: toolId,
+          contentType: toolId
+        });
+        const bp = res.data;
+        let generatedImgUrl = '';
+        let imgWarning = '';
+        if (isImageMode) {
+          if (out) out.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-xs text-cyan-300 font-bold">⏳ Step 2/2 Rendering 9:16 HD Image via Imagen 3 (imagen-3.0-generate-002)...</div>`;
+          try {
+            const imgRes = await callImagenBackend({
+              prompt: `High-CTR vertical 9:16 social media thumbnail / cover artwork for "${topic}", dramatic neon contrast, Indian creator aesthetic, ultra-crisp photography`,
+              aspectRatio: '9:16'
+            });
+            if (imgRes && imgRes.ok && imgRes.dataUrl) {
+              generatedImgUrl = imgRes.dataUrl;
+              state.aiStudioState.coverDataUrl = imgRes.dataUrl;
+            }
+          } catch (imgErr) {
+            imgWarning = String(imgErr?.message || imgErr);
+          }
+        }
+
+        state.profile.textUsed += 1;
+        if (isImageMode) state.profile.imagesUsed += 1;
+        state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: toolId, topic, platform: 'Multi-Platform', content: bp.script, hashtags: bp.hashtags, bookmarked: false, time: Date.now() });
+        saveState();
+        if (out) {
+          out.classList.remove('hidden');
+          out.innerHTML = `
+            <div class="rounded-xl bg-slate-950 border border-emerald-400/50 p-3 text-xs space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="font-bold text-amber-300">${escapeHtml(bp.title)}</div>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300">🟢 Live AI</span>
+              </div>
+              ${generatedImgUrl ? `
+                <div class="space-y-1.5">
+                  <img src="${generatedImgUrl}" alt="Imagen 3 Generated Cover" class="w-40 mx-auto rounded-xl border border-cyan-400/50 aspect-[9/16] object-cover" />
+                  <div class="grid grid-cols-2 gap-2">
+                    <a href="${generatedImgUrl}" download="viralboost-imagen-${Date.now()}.png" class="py-2 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-center">⬇ Download HD Image</a>
+                    <button onclick="closeModal();openOverlay('oneClickAiStudio')" class="py-2 rounded-lg bg-violet-600 text-white font-extrabold">🎬 Video Studio</button>
+                  </div>
+                </div>` : (imgWarning ? `<div class="text-[10.5px] text-amber-300">Imagen 3 notice: ${escapeHtml(imgWarning)}</div>` : '')}
+              <div class="text-slate-200 whitespace-pre-line">${escapeHtml(bp.script)}</div>
+              <div class="text-cyan-300">${escapeHtml(bp.hashtags)}</div>
+              <button onclick="copyReg('${regCopy(bp.title + '\n' + bp.script + '\n' + bp.hashtags, 'Copied!')}')" class="w-full py-2 rounded-lg bg-emerald-500 text-slate-950 font-extrabold">Copy Result 📋</button>
+            </div>`;
+        }
+        if (state.activeTab === 'ai') renderApp();
+      } catch (err) {
+        if (out) {
+          out.classList.remove('hidden');
+          out.innerHTML = `<div class="rounded-xl bg-red-950/60 border border-red-500/60 p-3 text-xs text-red-200">⚠️ Live AI Error: ${escapeHtml(err.message)}</div>`;
+        }
+        showToast(`⚠️ Live AI Error: ${err.message}`, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Generate Live ✨'; }
+      }
     }
 
     async function sendGeminiChat() {
       const inp = document.getElementById('ai-tab-chat-input');
-      const btn = document.getElementById('ai-tab-chat-btn');
       const msg = (inp?.value || '').trim();
       if (!msg) return;
       state.geminiChat.push({ sender: 'USER', text: msg, time: 'Now' });
@@ -3376,23 +3981,35 @@
       const sendBtn = document.getElementById('ai-tab-chat-btn');
       if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '⏳...'; }
 
-      const res = await callGeminiBackend({
-        prompt: msg,
-        platform: 'Instagram Reels & YouTube Shorts',
-        tone: 'Helpful Bilingual Hindi/English Creator Coach',
-        contentType: 'CREATOR_CHAT',
-        expectJson: false,
-        history: state.geminiChat.slice(-6)
-      });
-      const replyText = res.data.rawText || `${res.data.title}\n\n${res.data.script}\n\n${res.data.hashtags}`;
-      state.geminiChat.push({
-        sender: 'GEMINI',
-        text: replyText,
-        source: res.source === 'LIVE_GEMINI' ? '🟢 Live Gemini 2.5 Flash' : 'Local AI',
-        time: 'Now'
-      });
-      saveState();
-      renderApp();
+      try {
+        const res = await callGeminiBackend({
+          prompt: msg,
+          platform: 'Instagram Reels & YouTube Shorts',
+          tone: 'Helpful Bilingual Hindi/English Creator Coach',
+          contentType: 'CREATOR_CHAT',
+          expectJson: false,
+          history: state.geminiChat.slice(-6)
+        });
+        const replyText = res.data.rawText || `${res.data.title}\n\n${res.data.script}\n\n${res.data.hashtags}`;
+        state.geminiChat.push({
+          sender: 'GEMINI',
+          text: replyText,
+          source: '🟢 Live Gemini 2.5 Flash',
+          time: 'Now'
+        });
+        saveState();
+        renderApp();
+      } catch (err) {
+        state.geminiChat.push({
+          sender: 'GEMINI',
+          text: `⚠️ Live Gemini AI Error: ${err.message}`,
+          source: 'Error',
+          time: 'Now'
+        });
+        saveState();
+        renderApp();
+        showToast(`⚠️ Live Gemini Error: ${err.message}`, 'error');
+      }
     }
 
     function toggleAiBookmark(id) {
@@ -3401,30 +4018,38 @@
     }
 
     async function runFullGeminiStudioGenerate() {
-      const topic = (document.getElementById('gem-prompt')?.value || '').trim() || 'Viral Growth Secret';
+      const topic = (document.getElementById('gem-prompt')?.value || '').trim();
+      if (!topic) { showToast('Enter a video topic first!', 'error'); return; }
       const pf = document.getElementById('gem-platform').value;
       const tone = document.getElementById('gem-tone').value;
       const resEl = document.getElementById('gem-studio-result');
       if (resEl) {
-        resEl.innerHTML = `<div class="rounded-2xl p-4 app-card border-cyan-400/50 text-xs text-cyan-300 font-bold">⏳ Contacting Google Gemini 2.5 Flash for ${escapeHtml(pf)}...</div>`;
+        resEl.innerHTML = `<div class="rounded-2xl p-4 app-card border-cyan-400/50 text-xs text-cyan-300 font-bold">⏳ Calling Live Google Gemini 2.5 Flash for ${escapeHtml(pf)}...</div>`;
       }
-      const res = await callGeminiBackend({ prompt: topic, platform: pf, tone, contentType: 'GEMINI_STUDIO' });
-      const bp = res.data;
-      state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: 'GEMINI_STUDIO', topic, platform: pf, content: bp.script, hashtags: bp.hashtags, bookmarked: true, time: Date.now() });
-      saveState();
-      if (resEl) {
-        resEl.innerHTML = `
-          <div class="rounded-2xl p-4 app-card border-cyan-400 space-y-2">
-            <div class="flex items-center justify-between gap-2">
-              <div class="font-bold text-sm text-amber-300">${escapeHtml(bp.title)}</div>
-              <span class="px-2 py-0.5 rounded text-[9.5px] font-bold ${res.source === 'LIVE_GEMINI' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-amber-300'}">${res.source === 'LIVE_GEMINI' ? '🟢 Gemini Live' : 'Studio Kit'}</span>
-            </div>
-            <pre class="text-xs text-slate-200 whitespace-pre-wrap font-sans bg-slate-950/70 p-3 rounded-xl">${escapeHtml(bp.script)}</pre>
-            <div class="text-xs text-cyan-300 font-semibold">${escapeHtml(bp.hashtags)}</div>
-            <button onclick="copyReg('${regCopy(bp.title + '\n\n' + bp.script + '\n\n' + bp.hashtags, 'Studio Kit Copied!')}')" class="w-full py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">Copy Complete Package 📋</button>
-          </div>`;
+      try {
+        const res = await callGeminiBackend({ prompt: topic, platform: pf, tone, contentType: 'GEMINI_STUDIO' });
+        const bp = res.data;
+        state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: 'GEMINI_STUDIO', topic, platform: pf, content: bp.script, hashtags: bp.hashtags, bookmarked: true, time: Date.now() });
+        saveState();
+        if (resEl) {
+          resEl.innerHTML = `
+            <div class="rounded-2xl p-4 app-card border-cyan-400 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="font-bold text-sm text-amber-300">${escapeHtml(bp.title)}</div>
+                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/20 text-emerald-300">🟢 Gemini Live</span>
+              </div>
+              <pre class="text-xs text-slate-200 whitespace-pre-wrap font-sans bg-slate-950/70 p-3 rounded-xl">${escapeHtml(bp.script)}</pre>
+              <div class="text-xs text-cyan-300 font-semibold">${escapeHtml(bp.hashtags)}</div>
+              <button onclick="copyReg('${regCopy(bp.title + '\n\n' + bp.script + '\n\n' + bp.hashtags, 'Studio Kit Copied!')}')" class="w-full py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">Copy Complete Package 📋</button>
+            </div>`;
+        }
+        showToast('🟢 Live Gemini AI Content Generated & Saved!', 'success');
+      } catch (err) {
+        if (resEl) {
+          resEl.innerHTML = `<div class="rounded-2xl p-4 app-card border-red-500/60 text-xs text-red-200">⚠️ Live Gemini Error: ${escapeHtml(err.message)}</div>`;
+        }
+        showToast(`⚠️ Live Gemini Error: ${err.message}`, 'error');
       }
-      showToast(res.source === 'LIVE_GEMINI' ? '🟢 Gemini AI Content Generated & Saved!' : '🤖 Studio Content Generated & Saved!', 'success');
     }
 
     function openUpiPaymentModal(planId) {
@@ -3735,26 +4360,63 @@
       showToast(`💎 +${CONSTANTS.AFFILIATE_BUY_DIAMONDS} Diamonds Credited!`, 'success');
     }
 
-    function addChannelToPool() {
+    async function addChannelToPool() {
       const handle = (document.getElementById('pool-handle-input')?.value || '').trim();
       const plat = document.getElementById('pool-plat-select').value;
-      if (!handle) { showToast('Enter your channel handle first!', 'error'); return; }
-      state.creatorPool.unshift({ id: 'c_' + Date.now(), handle, name: state.profile.username, platform: plat, followers: 'Rising Creator', niche: state.profile.niche, url: CONSTANTS.APP_URL, spotlight: state.profile.isVip, followed: true });
-      saveState();
-      renderOverlay();
-      showToast('🤝 Your channel added to Creator Pool!', 'success');
+      if (!handle) { showToast('Enter your channel handle or link first!', 'error'); return; }
+      if (!cloudUser) {
+        showToast('Connect Google Cloud Sync first to publish your real channel to Firestore!', 'error');
+        triggerGoogleCloudSignIn();
+        return;
+      }
+      try {
+        await window.ViralBoostFirebase.addCommunityCreator({
+          handle,
+          platform: plat,
+          name: state.profile.username || cloudUser.displayName || 'Creator',
+          niche: state.profile.niche || 'Shorts & Reels',
+          spotlight: Boolean(state.profile.isVip)
+        });
+        const inp = document.getElementById('pool-handle-input');
+        if (inp) inp.value = '';
+        showToast('🤝 Published live to Cloud Firestore Creator Pool!', 'success');
+      } catch (err) {
+        showToast(`⚠️ Could not publish channel: ${err.message}`, 'error');
+      }
     }
 
-    function followPoolCreator(id) {
-      const cr = state.creatorPool.find(x => x.id === id);
-      if (!cr || cr.followed) return;
-      cr.followed = true;
-      creditRewards(2, 10, `Followed ${cr.handle}`, `${cr.platform} Growth Exchange`, 'POOL');
+    async function followPoolCreator(id) {
+      const cr = (cloudCommunityCreators || []).find(x => x.id === id);
+      if (!cr) return;
+      state.followedPoolIds = Array.isArray(state.followedPoolIds) ? state.followedPoolIds : [];
+      if (state.followedPoolIds.includes(id)) return;
+      state.followedPoolIds.push(id);
+      creditRewards(2, 10, `Followed ${cr.handle}`, `${cr.platform} Cloud Creator Pool`, 'POOL');
+      if (cr.url && /^https?:\/\//i.test(cr.url)) {
+        try { window.open(cr.url, '_blank', 'noopener'); } catch (_) {}
+      }
+      if (cloudUser && window.ViralBoostFirebase && typeof window.ViralBoostFirebase.followCommunityCreator === 'function') {
+        try {
+          await window.ViralBoostFirebase.followCommunityCreator(id, Number(cr.followersCount || 0) + 1);
+        } catch (err) {
+          console.warn('Creator follow increment error:', err);
+        }
+      }
       showToast(`✅ Followed ${cr.handle}! +2 💎 & +10 🪙`, 'success');
     }
 
+    async function deletePoolCreator(id) {
+      if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.deleteCommunityCreator !== 'function') return;
+      try {
+        await window.ViralBoostFirebase.deleteCommunityCreator(id);
+        showToast('🗑️ Creator listing removed from Firestore.', 'info');
+      } catch (err) {
+        showToast(`⚠️ Remove failed: ${err.message}`, 'error');
+      }
+    }
+
     function shareReferralLink() {
-      const txt = `🚀 Join ViralBoost AI & Claim ₹50 Welcome Bonus + 3-Day Free AI Studio!\nUse Code: ${state.profile.referralCode}\n👉 ${CONSTANTS.APP_URL}`;
+      const txt = `🚀 Join ViralBoost AI & Claim ₹${CONSTANTS.INITIAL_BONUS_RUPEES} Welcome Bonus + 3-Day Free AI Studio!\nUse Code: ${state.profile.referralCode}\n👉 ${CONSTANTS.APP_URL}`;
       creditRewards(4, 10, 'Referral Invite Shared', `Code: ${state.profile.referralCode}`, 'REFERRAL');
       shareContent('ViralBoost AI Invite', txt, CONSTANTS.APP_URL);
       renderApp();
@@ -3769,11 +4431,12 @@
     }
 
     function openWelcomeBonusModal() {
+      const bonus = Number(appConfigState.welcomeBonusRupees || CONSTANTS.INITIAL_BONUS_RUPEES || 50);
       openModal(`
         <div class="space-y-3 text-center">
           <div class="text-4xl">🎁</div>
-          <h3 class="font-display font-extrabold text-lg text-amber-300">₹50 Welcome Bonus Active!</h3>
-          <p class="text-xs text-slate-200 leading-relaxed">आपके वॉलेट में ₹50 वेलकम बोनस, 10 💎 डायमंड और 250 🪙 कॉइन्स क्रेडिट हो चुके हैं! Shopsy 75% OFF मॉल में आप इसका तुरंत इस्तेमाल कर सकते हैं।</p>
+          <h3 class="font-display font-extrabold text-lg text-amber-300">₹${bonus} Welcome Bonus Active!</h3>
+          <p class="text-xs text-slate-200 leading-relaxed">आपके वॉलेट में ₹${bonus} वेलकम बोनस, 10 💎 डायमंड और 250 🪙 कॉइन्स क्रेडिट हो चुके हैं! Shopsy 75% OFF मॉल में आप इसका तुरंत इस्तेमाल कर सकते हैं।</p>
           <button onclick="closeModal();openOverlay('shopsyMall')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-amber-400 text-slate-950 font-extrabold text-xs">Shop at Shopsy 75% OFF 🛍️</button>
         </div>
       `);
@@ -3848,12 +4511,121 @@
         if (!state.profile.legalAgreementTimestamp) {
           state.profile.legalAgreementTimestamp = new Date().toISOString();
         }
+        adminUsersState.loadedOnce = false;
         saveState();
         closeModal();
         renderApp();
         openOverlay('adminPanel');
       } else {
         showToast('Invalid Admin Passkey!', 'error');
+      }
+    }
+
+    async function saveAdminAppConfig() {
+      const payload = {
+        unityGameId: (document.getElementById('cfg-unity-game')?.value || '800427608').trim() || '800427608',
+        unityBannerPlacementId: (document.getElementById('cfg-unity-banner')?.value || 'BP_Banner_Android').trim() || 'BP_Banner_Android',
+        unityInterstitialPlacementId: (document.getElementById('cfg-unity-interstitial')?.value || 'BP_Interstitial_Android').trim() || 'BP_Interstitial_Android',
+        unityRewardedPlacementId: (document.getElementById('cfg-unity-rewarded')?.value || 'BP_Rewarded_Android').trim() || 'BP_Rewarded_Android',
+        webAdTagUrl: (document.getElementById('cfg-web-ad-tag')?.value || '').trim(),
+        admobAppId: (document.getElementById('cfg-admob-app')?.value || '').trim(),
+        admobBannerId: (document.getElementById('cfg-admob-banner')?.value || '').trim(),
+        admobInterstitialId: (document.getElementById('cfg-admob-interstitial')?.value || '').trim(),
+        admobRewardedId: (document.getElementById('cfg-admob-rewarded')?.value || '').trim(),
+        affiliateTag: (document.getElementById('cfg-affiliate-tag')?.value || '5665937').trim() || '5665937',
+        welcomeBonusRupees: Math.max(0, Math.floor(Number(document.getElementById('cfg-welcome-bonus')?.value ?? 50)))
+      };
+      applyLiveAppConfig(payload);
+      if (!cloudUser) {
+        showToast('Saved locally — Sign In as Admin Google (jattalboy91@gmail.com) to publish to Firestore!', 'info');
+        return;
+      }
+      try {
+        await window.ViralBoostFirebase.saveAppConfig(payload);
+        showToast('✅ Global appConfig/settings saved to Cloud Firestore!', 'success');
+      } catch (err) {
+        showToast(`⚠️ Firestore Config Save Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function refreshAdminUsers(silent = false) {
+      if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.fetchAllUsers !== 'function') return;
+      adminUsersState.loading = true;
+      adminUsersState.error = '';
+      if (!silent && activeOverlay === 'adminPanel') renderOverlay();
+      try {
+        const users = await window.ViralBoostFirebase.fetchAllUsers();
+        adminUsersState.users = users;
+        adminUsersState.loadedOnce = true;
+      } catch (err) {
+        adminUsersState.loadedOnce = true;
+        adminUsersState.error = String(err?.message || err || 'Could not load Firestore users (sign in as jattalboy91@gmail.com).');
+      } finally {
+        adminUsersState.loading = false;
+        if (activeOverlay === 'adminPanel') renderOverlay();
+      }
+    }
+
+    async function saveAdminUserChanges(uid) {
+      const bonusRupees = Math.max(0, Math.floor(Number(document.getElementById(`adm-u-rupees-${uid}`)?.value ?? 0)));
+      const diamonds = Math.max(0, Math.floor(Number(document.getElementById(`adm-u-diamonds-${uid}`)?.value ?? 0)));
+      const coins = Math.max(0, Math.floor(Number(document.getElementById(`adm-u-coins-${uid}`)?.value ?? 0)));
+      try {
+        await window.ViralBoostFirebase.updateUserAdmin(uid, { bonusRupees, diamonds, coins });
+        const target = adminUsersState.users.find(x => x.uid === uid);
+        if (target) {
+          target.bonusRupees = bonusRupees;
+          target.diamonds = diamonds;
+          target.coins = coins;
+        }
+        if (cloudUser && cloudUser.uid === uid) {
+          state.profile.bonusRupees = bonusRupees;
+          state.profile.diamonds = diamonds;
+          state.profile.coins = coins;
+          saveState();
+        }
+        renderOverlay();
+        showToast(`✅ Updated wallet for ${target?.username || uid} in Firestore!`, 'success');
+      } catch (err) {
+        showToast(`⚠️ Update failed: ${err.message}`, 'error');
+      }
+    }
+
+    async function toggleAdminUserVip(uid, nextVip) {
+      try {
+        const updates = {
+          isVip: Boolean(nextVip),
+          planTier: nextVip ? 'ADMIN_GRANTED_VIP' : 'FREE_TRIAL',
+          vipExpiryDate: nextVip ? (Date.now() + 30 * 86400000) : 0
+        };
+        await window.ViralBoostFirebase.updateUserAdmin(uid, updates);
+        const target = adminUsersState.users.find(x => x.uid === uid);
+        if (target) Object.assign(target, updates);
+        if (cloudUser && cloudUser.uid === uid) {
+          state.profile.isVip = Boolean(nextVip);
+          state.profile.planTier = updates.planTier;
+          state.profile.vipExpiresAt = updates.vipExpiryDate;
+          saveState();
+        }
+        renderOverlay();
+        showToast(nextVip ? '👑 VIP Granted in Firestore!' : 'VIP Revoked in Firestore!', 'info');
+      } catch (err) {
+        showToast(`⚠️ VIP toggle failed: ${err.message}`, 'error');
+      }
+    }
+
+    async function removeAdminUser(uid) {
+      if (cloudUser && cloudUser.uid === uid) {
+        showToast('Cannot delete currently signed-in Admin user!', 'error');
+        return;
+      }
+      try {
+        await window.ViralBoostFirebase.deleteUserAdmin(uid);
+        adminUsersState.users = adminUsersState.users.filter(x => x.uid !== uid);
+        renderOverlay();
+        showToast('🗑️ User removed from Cloud Firestore.', 'info');
+      } catch (err) {
+        showToast(`⚠️ Remove failed: ${err.message}`, 'error');
       }
     }
 
@@ -3971,11 +4743,11 @@
     renderApp();
   </script>
 
-  <!-- Official Firebase Web SDK v12.6.0: App Check (reCAPTCHA Enterprise) + AI Logic + Google Cloud Sync -->
+  <!-- Official Firebase Web SDK v12.6.0: App Check (reCAPTCHA Enterprise) + AI Logic (Gemini 2.5 + Imagen 3) + Cloud Firestore -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
     import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app-check.js";
-    import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
+    import { getAI, getGenerativeModel, getImagenModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
     import {
       getAuth,
       GoogleAuthProvider,
@@ -3989,7 +4761,10 @@
       getFirestore,
       doc,
       getDoc,
+      getDocs,
       setDoc,
+      updateDoc,
+      deleteDoc,
       addDoc,
       collection,
       query,
@@ -4031,7 +4806,15 @@
       submitPayment: async () => {},
       submitTicket: async () => {},
       recordAffiliateOrder: async () => {},
-      generateContent: async () => null
+      generateContent: async () => null,
+      generateImage: async () => null,
+      addCommunityCreator: async () => {},
+      followCommunityCreator: async () => {},
+      deleteCommunityCreator: async () => {},
+      saveAppConfig: async () => {},
+      fetchAllUsers: async () => [],
+      updateUserAdmin: async () => {},
+      deleteUserAdmin: async () => {}
     };
     window.ViralBoostFirebase = bridge;
 
@@ -4084,6 +4867,14 @@
       const chatModel = getGenerativeModel(ai, {
         model: "gemini-2.5-flash",
         systemInstruction: "You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators."
+      });
+
+      const imagenModelPortrait = getImagenModel(ai, {
+        model: "imagen-3.0-generate-002",
+        generationConfig: {
+          numberOfImages: 1,
+          aspectRatio: "9:16"
+        }
       });
       bridge.aiReady = true;
 
@@ -4163,6 +4954,32 @@
         }
       };
 
+      bridge.generateImage = async ({ prompt, aspectRatio = "9:16" }) => {
+        bridge.lastAiError = "";
+        try {
+          const model = aspectRatio === "9:16"
+            ? imagenModelPortrait
+            : getImagenModel(ai, {
+                model: "imagen-3.0-generate-002",
+                generationConfig: { numberOfImages: 1, aspectRatio }
+              });
+          const res = await model.generateImages(String(prompt || "Vibrant creator studio artwork"));
+          if (res?.images?.length > 0 && res.images[0]?.bytesBase64Encoded) {
+            const img = res.images[0];
+            const mime = img.mimeType || "image/png";
+            return {
+              ok: true,
+              mimeType: mime,
+              dataUrl: `data:${mime};base64,${img.bytesBase64Encoded}`
+            };
+          }
+          throw new Error(res?.filteredReason || "Imagen 3 returned no image output.");
+        } catch (imgErr) {
+          bridge.lastAiError = String(imgErr?.message || imgErr || "Imagen 3 error");
+          throw imgErr;
+        }
+      };
+
       // Initialize Firebase Authentication & Provisioned Named Cloud Firestore
       const auth = getAuth(app);
       const db = getFirestore(app, FIRESTORE_DB_ID);
@@ -4173,6 +4990,23 @@
       getRedirectResult(auth).catch((redirErr) => {
         if (redirErr?.code) bridge.lastAuthError = redirErr.code;
       });
+
+      // Subscribe live to global appConfig/settings (public read enabled in firestore.rules)
+      onSnapshot(doc(db, "appConfig", "settings"), (cfgSnap) => {
+        if (cfgSnap.exists()) {
+          applyLiveAppConfig(cfgSnap.data());
+        }
+      }, (err) => console.warn("appConfig snapshot:", err));
+
+      // Subscribe live to real Cloud Firestore communityCreators (zero dummy creators)
+      const cpQuery = query(collection(db, "communityCreators"), orderBy("createdAt", "desc"), limit(100));
+      onSnapshot(cpQuery, (cpSnap) => {
+        cloudCommunityCreators = cpSnap.docs.map(d => ({
+          id: d.id,
+          ...(d.data() || {})
+        }));
+        if (activeOverlay === "creatorPool") renderOverlay();
+      }, (err) => console.warn("communityCreators snapshot:", err));
 
       bridge.signInWithGoogle = async () => {
         bridge.lastAuthError = "";
@@ -4235,7 +5069,7 @@
             coins: safeCoins,
             diamonds: safeDiamonds,
             lifetimeDiamonds: Math.max(0, Math.floor(Number(profile.lifetimeDiamonds) || 0)),
-            bonusRupees: Math.floor(Number(profile.bonusRupees) || 50),
+            bonusRupees: Math.max(0, Math.floor(Number(profile.bonusRupees ?? 50))),
             streakDays: Math.max(1, Math.floor(Number(profile.streakDays) || 1)),
             isVip: Boolean(profile.isVip),
             planTier: String(profile.planTier || "FREE_TRIAL"),
@@ -4261,6 +5095,110 @@
         } catch (err) {
           console.warn("Firestore sync error:", err);
         }
+      };
+
+      bridge.addCommunityCreator = async ({ handle, platform, name, niche, spotlight }) => {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Google Cloud Sync sign-in required.");
+        const cleanHandle = String(handle || "").trim().slice(0, 100);
+        let url = "";
+        if (/^https?:\/\//i.test(cleanHandle)) {
+          url = cleanHandle;
+        } else {
+          const slug = cleanHandle.replace(/^@/, "");
+          if (platform === "YouTube") url = `https://www.youtube.com/@${slug}`;
+          else if (platform === "Instagram") url = `https://www.instagram.com/${slug}`;
+          else if (platform === "Facebook") url = `https://www.facebook.com/${slug}`;
+          else url = PRODUCTION_WEB_URL;
+        }
+        const now = Date.now();
+        await addDoc(collection(db, "communityCreators"), {
+          userId: user.uid,
+          name: String(name || user.displayName || "Creator").trim().slice(0, 80) || "Creator",
+          handle: cleanHandle,
+          platform: ["YouTube", "Instagram", "GoLiveGram", "Facebook"].includes(platform) ? platform : "YouTube",
+          niche: String(niche || "Shorts & Reels").slice(0, 80),
+          url,
+          followersCount: 0,
+          spotlight: Boolean(spotlight),
+          createdAt: now,
+          updatedAt: now
+        });
+      };
+
+      bridge.followCommunityCreator = async (creatorId, nextFollowersCount) => {
+        const user = auth.currentUser;
+        if (!user || !creatorId) return;
+        await updateDoc(doc(db, "communityCreators", creatorId), {
+          followersCount: Math.max(0, Math.floor(Number(nextFollowersCount) || 0)),
+          updatedAt: Date.now()
+        });
+      };
+
+      bridge.deleteCommunityCreator = async (creatorId) => {
+        const user = auth.currentUser;
+        if (!user || !creatorId) throw new Error("Sign in required.");
+        await deleteDoc(doc(db, "communityCreators", creatorId));
+      };
+
+      bridge.saveAppConfig = async (cfg) => {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Sign in with Admin Google account first.");
+        await setDoc(doc(db, "appConfig", "settings"), {
+          ...cfg,
+          updatedAt: Date.now(),
+          updatedBy: user.email || user.uid
+        }, { merge: true });
+      };
+
+      bridge.fetchAllUsers = async () => {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Sign in with Admin Google (jattalboy91@gmail.com) to load Firestore users.");
+        const snap = await getDocs(query(collection(db, "users"), limit(200)));
+        return snap.docs.map(d => ({ uid: d.id, ...(d.data() || {}) }));
+      };
+
+      bridge.updateUserAdmin = async (uid, updates) => {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Sign in with Admin Google first.");
+        const clean = { updatedAt: Date.now() };
+        if (updates.bonusRupees !== undefined) clean.bonusRupees = Math.max(0, Math.floor(Number(updates.bonusRupees) || 0));
+        if (updates.diamonds !== undefined) clean.diamonds = Math.max(0, Math.floor(Number(updates.diamonds) || 0));
+        if (updates.coins !== undefined) clean.coins = Math.max(0, Math.floor(Number(updates.coins) || 0));
+        if (updates.isVip !== undefined) clean.isVip = Boolean(updates.isVip);
+        if (updates.planTier !== undefined) clean.planTier = String(updates.planTier);
+        if (updates.vipExpiryDate !== undefined) clean.vipExpiryDate = Number(updates.vipExpiryDate) || 0;
+
+        await updateDoc(doc(db, "users", uid), clean);
+
+        // Keep leaderboard doc in sync if present
+        try {
+          const uSnap = await getDoc(doc(db, "users", uid));
+          if (uSnap.exists()) {
+            const ud = uSnap.data();
+            const safeCoins = Math.max(0, Math.floor(Number(ud.coins) || 0));
+            const safeDiamonds = Math.max(0, Math.floor(Number(ud.diamonds) || 0));
+            await setDoc(doc(db, "leaderboard", uid), {
+              uid,
+              name: String(ud.username || "Creator"),
+              handle: "@" + (String(ud.username || "creator").toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 24) || "creator"),
+              niche: String(ud.niche || "Shorts & Reels"),
+              coins: safeCoins,
+              diamonds: safeDiamonds,
+              streakDays: Math.max(1, Math.floor(Number(ud.streakDays) || 1)),
+              viralScore: safeCoins + (safeDiamonds * 10),
+              isVip: Boolean(ud.isVip),
+              updatedAt: Date.now()
+            }, { merge: true });
+          }
+        } catch (_) {}
+      };
+
+      bridge.deleteUserAdmin = async (uid) => {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Sign in with Admin Google first.");
+        await deleteDoc(doc(db, "users", uid));
+        try { await deleteDoc(doc(db, "leaderboard", uid)); } catch (_) {}
       };
 
       bridge.submitPayment = async (pay) => {
@@ -4374,6 +5312,7 @@
                 state.profile.authMethod = "google";
                 state.profile.userContact = user.email || user.uid;
                 state.profile.welcomeClaimed = true;
+                state.profile.bonusRupees = Number(appConfigState.welcomeBonusRupees || CONSTANTS.INITIAL_BONUS_RUPEES);
                 state.legalAuditLogs.unshift({
                   name: state.profile.username,
                   contact: state.profile.userContact,
@@ -4383,6 +5322,7 @@
                 });
                 saveState();
                 await bridge.syncUserProfileAndLeaderboard(state.profile);
+                UnityAdEngine.showInterstitial("post_signup", () => openWelcomeBonusModal());
               } else {
                 // Pre-fill Sign Up form so new Google user confirms Mandatory Legal Terms before entering
                 if (!authUiState.name && user.displayName) authUiState.name = user.displayName;
@@ -4414,6 +5354,10 @@
               });
               if (isUserAuthenticated() && state.activeTab === "ranks" && !activeOverlay) renderApp();
             }, (err) => console.warn("Leaderboard snapshot:", err));
+
+            if (activeOverlay === "adminPanel" && (user.email || "").toLowerCase() === "jattalboy91@gmail.com") {
+              refreshAdminUsers(true);
+            }
           } catch (syncErr) {
             console.warn("Cloud restore warning:", syncErr);
           }
@@ -4421,7 +5365,7 @@
           cloudLeaderboard = [];
         }
         syncHeader();
-        if (!activeOverlay) renderApp();
+        if (activeOverlay) renderOverlay(); else renderApp();
       });
 
       syncHeader();
