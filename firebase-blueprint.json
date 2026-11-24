@@ -19,6 +19,7 @@
         "planTier": { "type": "string", "description": "Current subscription tier" },
         "vipExpiryDate": { "type": "integer", "description": "VIP expiration epoch millis" },
         "role": { "type": "string", "enum": ["user", "admin"], "description": "RBAC role" },
+        "connectedPlatforms": { "type": "object", "description": "Map of user-connected social channels ({ connected, handle })" },
         "updatedAt": { "type": "integer", "description": "Last sync epoch millis" }
       },
       "required": ["uid", "username", "coins", "diamonds", "role"]
