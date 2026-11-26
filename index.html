@@ -115,7 +115,7 @@
   <!-- Mandatory First-Screen Authentication & Legal Terms Gate (Never Auto-Login as Guest) -->
   <div id="auth-gate" class="hidden min-h-screen w-full max-w-lg mx-auto px-3.5 py-6 flex flex-col justify-between overflow-x-hidden"></div>
 
-  <div id="app" class="hidden w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col relative pb-24 overflow-x-hidden">
+  <div id="app" class="hidden w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col relative pb-40 overflow-x-hidden">
     <!-- Persistent Top App Header -->
     <header class="sticky top-0 z-30 w-full max-w-full backdrop-blur-xl bg-[#070712]/90 dark:bg-[#070712]/90 border-b border-slate-800/80 px-3 py-2.5 flex items-center justify-between gap-2 overflow-hidden">
       <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="switchTab('home')">
@@ -138,10 +138,10 @@
           ✨ AI Live
         </button>
         <button onclick="openOverlay('diamondDashboard')" class="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-900 border border-sky-400/40 text-xs font-extrabold text-sky-300 hover:border-sky-400 transition">
-          <span>💎</span><span id="hdr-diamonds">10</span>
+          <span>💎</span><span id="hdr-diamonds">0</span>
         </button>
         <button onclick="openOverlay('diamondDashboard')" class="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-900 border border-amber-400/40 text-xs font-extrabold text-amber-300 hover:border-amber-400 transition">
-          <span>🪙</span><span id="hdr-coins">250</span>
+          <span>🪙</span><span id="hdr-coins">0</span>
         </button>
         <button onclick="switchTab('vip')" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-extrabold text-[11px] shadow hover:brightness-105 transition">
           VIP ⭐
@@ -154,8 +154,8 @@
       <!-- Populated cleanly via JS renderTab() -->
     </main>
 
-    <!-- Permanent Mediated Ad / Sponsored Creator Strip (Hidden when VIP) -->
-    <div id="ad-dock-container" class="px-3.5 mt-4 mb-2"></div>
+    <!-- Anchored Bottom Ad Slot Above Navigation Bar (Zero Overlap, Hidden when VIP) -->
+    <div id="ad-dock-container" class="fixed bottom-[64px] left-0 right-0 z-30 pointer-events-none px-2"></div>
 
     <!-- Bottom Navigation Bar (Exact 6 Tabs matching Android MainActivity) -->
     <nav aria-label="Primary Navigation" class="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800/90 bg-[#0B0D1D]/95 backdrop-blur-xl">
@@ -193,7 +193,7 @@
     <div id="overlay-body" class="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col pb-12 overflow-x-hidden"></div>
   </div>
 
-  <!-- Reusable Action Modal (UPI Payment, Channel Config, Welcome ₹50 Bonus, Order Form, Admin Login, Boost Modal) -->
+  <!-- Reusable Action Modal (UPI Payment, Channel Config, 1-Day VIP Trial, Web Ad Slot, Order Form, Admin Login, Boost Modal) -->
   <div id="modal-host" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3">
     <div id="modal-card" class="w-full max-w-md bg-[#0F172A] border border-slate-700 rounded-2xl p-4 max-h-[90vh] overflow-y-auto shadow-2xl"></div>
   </div>
@@ -212,9 +212,9 @@
       OWNER_PASSKEY: 'admin2653',
       AFFILIATE_TAG: '5665937',
       PERMANENT_OWNER_AFFILIATE_LINK: 'https://bitli.in/Ff4aE3C',
-      INITIAL_COINS: 250,
-      INITIAL_DIAMONDS: 10,
-      INITIAL_BONUS_RUPEES: 50,
+      INITIAL_COINS: 0,
+      INITIAL_DIAMONDS: 0,
+      INITIAL_BONUS_RUPEES: 0,
       DAILY_STREAK_REWARD: 2,
       REWARDED_AD_PAYOUT: 5,
       AFFILIATE_SHARE_COINS: 10,
@@ -230,9 +230,9 @@
       PRODUCTION_HOST: 'jattalboy91-png.github.io',
       ANDROID_PACKAGE_ID: 'com.aistudio.viralboostai.vrbst',
       UNITY_GAME_ID: '800427608',
-      UNITY_BANNER_PLACEMENT: 'BP_Banner_Android',
-      UNITY_INTERSTITIAL_PLACEMENT: 'BP_Interstitial_Android',
-      UNITY_REWARDED_PLACEMENT: 'BP_Rewarded_Android',
+      UNITY_BANNER_PLACEMENT: 'Banner_Android',
+      UNITY_INTERSTITIAL_PLACEMENT: 'Interstitial_Android',
+      UNITY_REWARDED_PLACEMENT: 'Rewarded_Android',
       APP_URL: (window.location.hostname === 'jattalboy91-png.github.io' || window.location.protocol === 'file:')
         ? 'https://jattalboy91-png.github.io/Viralboost-AI-0.2/'
         : (window.location.origin + window.location.pathname).replace(/index\.html$/i, '')
@@ -240,16 +240,16 @@
 
     const DEFAULT_APP_CONFIG = {
       unityGameId: '800427608',
-      unityBannerPlacementId: 'BP_Banner_Android',
-      unityInterstitialPlacementId: 'BP_Interstitial_Android',
-      unityRewardedPlacementId: 'BP_Rewarded_Android',
+      unityBannerPlacementId: 'Banner_Android',
+      unityInterstitialPlacementId: 'Interstitial_Android',
+      unityRewardedPlacementId: 'Rewarded_Android',
       webAdTagUrl: '',
       admobAppId: '',
       admobBannerId: '',
       admobInterstitialId: '',
       admobRewardedId: '',
       affiliateTag: '5665937',
-      welcomeBonusRupees: 50
+      welcomeBonusRupees: 0
     };
 
     let appConfigState = { ...DEFAULT_APP_CONFIG };
@@ -298,12 +298,12 @@
     ];
 
     const SOCIAL_CHANNELS = [
-      { id: 'instagram', name: 'Instagram Reels', short: 'IG', color: '#E1306C', defaultHandle: '@creator_pro', hint: '@username' },
-      { id: 'facebook', name: 'Facebook Reels', short: 'FB', color: '#1877F2', defaultHandle: 'Viral Page', hint: 'Page Name' },
-      { id: 'youtube', name: 'YouTube Shorts', short: 'YT', color: '#FF0000', defaultHandle: 'Viral Studio', hint: '@handle' },
-      { id: 'golivegram', name: 'GoLivegram', short: 'GL', color: '#8A2BE2', defaultHandle: '@golive_official', hint: '@handle' },
-      { id: 'telegram', name: 'Telegram', short: 'TG', color: '#229ED9', defaultHandle: 't.me/viral_creators', hint: 't.me/channel' },
-      { id: 'whatsapp', name: 'WhatsApp Status', short: 'WA', color: '#25D366', defaultHandle: '+91 98765 43210', hint: '+91 Phone' }
+      { id: 'instagram', name: 'Instagram Reels', short: 'IG', color: '#E1306C', hint: 'Enter your @instagram handle' },
+      { id: 'facebook', name: 'Facebook Reels', short: 'FB', color: '#1877F2', hint: 'Enter your Facebook Page name or link' },
+      { id: 'youtube', name: 'YouTube Shorts', short: 'YT', color: '#FF0000', hint: 'Enter your YouTube @channel' },
+      { id: 'golivegram', name: 'GoLivegram', short: 'GL', color: '#8A2BE2', hint: 'Enter your GoLivegram @handle' },
+      { id: 'telegram', name: 'Telegram', short: 'TG', color: '#229ED9', hint: 'Enter t.me/yourchannel' },
+      { id: 'whatsapp', name: 'WhatsApp Status', short: 'WA', color: '#25D366', hint: 'Enter your +91 WhatsApp number' }
     ];
 
     const AI_VIDEO_CATEGORIES = [
@@ -472,16 +472,47 @@
     ];
 
     const TICKER_MESSAGES = [
-      '🔥 Welcome Bonus ₹50 & +10 💎 Credited on Verified Sign Up!',
-      '🛍️ Shopsy 75% OFF Mega Mall: +10 💎 & +15 🪙 on Every Order (Tag 5665937)!',
-      '🤖 1-Click Live AI Studio: Gemini 3.8 Flash Scripts + HD Video Export Ready!',
-      '🚀 Real Creator Reels & Community Pool — Publish Your Channel Live!'
+      '🔥 Cloud Synced Creator Account: Earn Real Coins & Diamonds via Unity Rewarded Ads!',
+      '🛍️ Shopsy 75% OFF Mega Mall: +10 💎 & +15 🪙 on Every Verified Order (Tag 5665937)!',
+      '🤖 1-Click Live AI Studio: Gemini 3.8 Flash Scripts + 9:16 30FPS HD Video Export Ready!',
+      '🚀 Real Creator Reels & Community Pool — Publish Your Channel Live to Firestore!'
     ];
 
     // =========================================================================
-    // 2. PERSISTENT APP STATE (LOCALSTORAGE)
+    // 2. PERSISTENT APP STATE (LOCALSTORAGE + CLOUD FIRESTORE)
     // =========================================================================
     const STORAGE_KEY = 'viralboost_ai_web_state_v2';
+    const LEGACY_FAKE_HANDLES = new Set([
+      '@creator_pro', 'Viral Page', 'Viral Studio', '@golive_official',
+      't.me/viral_creators', '+91 98765 43210', '@creator'
+    ]);
+
+    function emptyChannelsState() {
+      return {
+        instagram: { connected: false, handle: '' },
+        facebook: { connected: false, handle: '' },
+        youtube: { connected: false, handle: '' },
+        golivegram: { connected: false, handle: '' },
+        telegram: { connected: false, handle: '' },
+        whatsapp: { connected: false, handle: '' }
+      };
+    }
+
+    function sanitizeChannelsMap(rawMap) {
+      const base = emptyChannelsState();
+      if (!rawMap || typeof rawMap !== 'object') return base;
+      for (const ch of SOCIAL_CHANNELS) {
+        const entry = rawMap[ch.id];
+        if (!entry || typeof entry !== 'object') continue;
+        const h = String(entry.handle || '').trim();
+        if (!h || LEGACY_FAKE_HANDLES.has(h)) {
+          base[ch.id] = { connected: false, handle: '' };
+        } else {
+          base[ch.id] = { connected: Boolean(entry.connected), handle: h };
+        }
+      }
+      return base;
+    }
 
     function defaultState() {
       const today = new Date().toISOString().slice(0, 10);
@@ -489,8 +520,8 @@
         activeTab: 'home',
         theme: 'dark',
         profile: {
-          username: 'ViralCreator_99',
-          email: 'creator@viralboost.ai',
+          username: '',
+          email: '',
           userContact: '',
           authMethod: '',
           isLoggedIn: false,
@@ -499,13 +530,13 @@
           legalAgreementTimestamp: '',
           isOwner: false,
           niche: 'Shorts & Reels',
-          displayUserId: '74829156',
-          coins: CONSTANTS.INITIAL_COINS,
-          diamonds: CONSTANTS.INITIAL_DIAMONDS,
-          lifetimeDiamonds: 10,
-          bonusRupees: CONSTANTS.INITIAL_BONUS_RUPEES,
+          displayUserId: String(Math.floor(10000000 + Math.random() * 89999999)),
+          coins: 0,
+          diamonds: 0,
+          lifetimeDiamonds: 0,
+          bonusRupees: 0,
           welcomeClaimed: false,
-          streakDays: 3,
+          streakDays: 0,
           lastStreakClaimDate: '',
           isVip: false,
           planTier: 'FREE_TRIAL',
@@ -516,6 +547,7 @@
           videosUsed: 0,
           imagesUsed: 0,
           textUsed: 0,
+          aiGenCount: 0,
           referralCode: 'VB-5665937',
           personalAffiliateLink: '',
           reminderTime: '09:00',
@@ -528,22 +560,11 @@
           ordersLogged: 0,
           estimatedCommissionRupees: 0
         },
-        channels: {
-          instagram: { connected: true, handle: '@creator_pro' },
-          facebook: { connected: true, handle: 'Viral Page' },
-          youtube: { connected: false, handle: 'Viral Studio' },
-          golivegram: { connected: false, handle: '@golive_official' },
-          telegram: { connected: false, handle: 't.me/viral_creators' },
-          whatsapp: { connected: true, handle: '+91 98765 43210' }
-        },
-        transactions: [
-          { id: 't_welcome', title: 'Welcome Creator Bonus', subtitle: '₹50 Bonus + Wallet Activation', diamonds: 10, coins: 250, earned: true, tag: 'WELCOME', time: Date.now() - 3600000 }
-        ],
+        channels: emptyChannelsState(),
+        transactions: [],
         aiHistory: [],
         payments: [],
-        tickets: [
-          { id: 'TKT-1024', category: 'General Inquiry', subject: 'Welcome to Support Desk', message: 'Ask anything about 12-digit UTR VIP verification, Affiliate Tag 5665937, or AI Tools.', status: 'RESOLVED', reply: 'Team ViralBoost AI: Always ready 24/7 to help creators scale faster! 🚀', time: Date.now() - 86400000 }
-        ],
+        tickets: [],
         referrals: [],
         followedPoolIds: [],
         watchedReels: [],
@@ -607,10 +628,20 @@
           mergedProfile.legalAccepted = false;
           mergedProfile.isOwner = false;
         }
-        // Strip legacy dummy creatorPool & legacy demo ai_sample_1 from cached state
+        if (mergedProfile.username === 'ViralCreator_99') mergedProfile.username = '';
+        if (mergedProfile.email === 'creator@viralboost.ai') mergedProfile.email = '';
+
+        // Strip legacy dummy aiHistory, fake transactions, fake tickets & legacy mock channels
         const cleanAiHistory = Array.isArray(parsed.aiHistory)
           ? parsed.aiHistory.filter(x => x && x.id !== 'ai_sample_1')
           : [];
+        const cleanTransactions = Array.isArray(parsed.transactions)
+          ? parsed.transactions.filter(t => t && t.id !== 't_welcome')
+          : [];
+        const cleanTickets = Array.isArray(parsed.tickets)
+          ? parsed.tickets.filter(t => t && t.id !== 'TKT-1024')
+          : [];
+
         const cleanAiStudio = { ...def.aiStudioState, ...(parsed.aiStudioState || {}) };
         if (cleanAiStudio.aiSource === 'READY' || cleanAiStudio.aiSource === 'OFFLINE_BLUEPRINT') {
           cleanAiStudio.aiSource = 'IDLE';
@@ -627,10 +658,12 @@
           ...parsed,
           profile: mergedProfile,
           aiHistory: cleanAiHistory,
+          transactions: cleanTransactions,
+          tickets: cleanTickets,
           followedPoolIds: Array.isArray(parsed.followedPoolIds) ? parsed.followedPoolIds : [],
           legalAuditLogs: Array.isArray(parsed.legalAuditLogs) ? parsed.legalAuditLogs : def.legalAuditLogs,
           affiliateStats: { ...def.affiliateStats, ...(parsed.affiliateStats || {}) },
-          channels: { ...def.channels, ...(parsed.channels || {}) },
+          channels: sanitizeChannelsMap(parsed.channels),
           aiStudioState: cleanAiStudio,
           crossPoster: { ...def.crossPoster, ...(parsed.crossPoster || {}) }
         };
@@ -697,7 +730,7 @@
     };
 
     // =========================================================================
-    // 2B. PRIMARY UNITY ADS ENGINE (WEB + NATIVE ANDROID APK BRIDGE READY)
+    // 2B. HYBRID REAL ADS ENGINE (UNITY ADS 800427608 APK + REAL WEB AD SLOTS)
     // =========================================================================
     const UnityAdEngine = {
       initialized: false,
@@ -708,7 +741,7 @@
       lastInterstitialAt: 0,
 
       getBridge() {
-        return window.UnityAdsBridge || window.AndroidUnityAds || null;
+        return window.AndroidUnityAds || window.UnityAdsInterface || window.UnityAdsBridge || null;
       },
 
       isNativeApk() {
@@ -716,16 +749,20 @@
       },
 
       init() {
-        const gameId = appConfigState.unityGameId || CONSTANTS.UNITY_GAME_ID;
+        const gameId = appConfigState.unityGameId || CONSTANTS.UNITY_GAME_ID || '800427608';
         CONSTANTS.UNITY_GAME_ID = gameId;
-        CONSTANTS.UNITY_BANNER_PLACEMENT = appConfigState.unityBannerPlacementId || CONSTANTS.UNITY_BANNER_PLACEMENT;
-        CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT = appConfigState.unityInterstitialPlacementId || CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT;
-        CONSTANTS.UNITY_REWARDED_PLACEMENT = appConfigState.unityRewardedPlacementId || CONSTANTS.UNITY_REWARDED_PLACEMENT;
+        CONSTANTS.UNITY_BANNER_PLACEMENT = appConfigState.unityBannerPlacementId || 'Banner_Android';
+        CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT = appConfigState.unityInterstitialPlacementId || 'Interstitial_Android';
+        CONSTANTS.UNITY_REWARDED_PLACEMENT = appConfigState.unityRewardedPlacementId || 'Rewarded_Android';
 
         const bridge = this.getBridge();
-        if (bridge && typeof bridge.initialize === 'function' && !this.initialized) {
+        if (bridge && !this.initialized) {
           try {
-            bridge.initialize(String(gameId), false);
+            if (typeof bridge.initialize === 'function') {
+              bridge.initialize(String(gameId), false);
+            } else if (typeof bridge.init === 'function') {
+              bridge.init(String(gameId), false);
+            }
           } catch (e) {}
         }
         this.initialized = true;
@@ -733,6 +770,7 @@
       },
 
       injectOptionalWebAdTag() {
+        if (this.isNativeApk()) return;
         const url = String(appConfigState.webAdTagUrl || '').trim();
         if (!url || url === this.injectedWebTagUrl) return;
         try {
@@ -762,7 +800,7 @@
         }
         if (bridge && typeof bridge.showBanner === 'function' && !this.bannerRequested) {
           try {
-            bridge.showBanner(appConfigState.unityBannerPlacementId, appConfigState.unityGameId);
+            bridge.showBanner(CONSTANTS.UNITY_BANNER_PLACEMENT, CONSTANTS.UNITY_GAME_ID);
             this.bannerRequested = true;
           } catch (_) {}
         }
@@ -775,7 +813,7 @@
           return;
         }
         const now = Date.now();
-        if (reason !== 'post_signup' && reason !== 'admin_test' && now - this.lastInterstitialAt < 45000) {
+        if (reason !== 'post_export' && reason !== 'post_signup' && reason !== 'admin_test' && now - this.lastInterstitialAt < 45000) {
           if (typeof onComplete === 'function') onComplete();
           return;
         }
@@ -783,175 +821,161 @@
         this.pendingInterstitialCallback = onComplete;
 
         const bridge = this.getBridge();
-        if (bridge && typeof bridge.showInterstitial === 'function') {
+        if (bridge) {
+          const fn = bridge.showInterstitial || bridge.showInterstitialAd;
+          if (typeof fn === 'function') {
+            try {
+              fn.call(bridge, CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT, CONSTANTS.UNITY_GAME_ID);
+              return;
+            } catch (_) {}
+          }
+        }
+
+        // Real Browser H5 Ad Placement API (when configured via AdSense H5 / webAdTagUrl)
+        if (typeof window.adBreak === 'function') {
           try {
-            bridge.showInterstitial(appConfigState.unityInterstitialPlacementId, appConfigState.unityGameId);
+            window.adBreak({
+              type: 'next',
+              name: reason,
+              adBreakDone: () => {
+                const cb = this.pendingInterstitialCallback;
+                this.pendingInterstitialCallback = null;
+                if (typeof cb === 'function') cb();
+              }
+            });
             return;
           } catch (_) {}
         }
 
-        // Web Unity Interstitial Ad Modal (BP_Interstitial_Android)
-        let remaining = 5;
-        openModal(`
-          <div class="space-y-3.5 text-center" data-unity-placement="${escapeHtml(appConfigState.unityInterstitialPlacementId)}">
-            <div class="flex items-center justify-between text-[10px]">
-              <span class="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 font-extrabold">UNITY ADS • GAME ${escapeHtml(appConfigState.unityGameId)}</span>
-              <span class="font-mono text-slate-400">${escapeHtml(appConfigState.unityInterstitialPlacementId)}</span>
-            </div>
-            <div class="rounded-2xl p-5 bg-gradient-to-br from-[#171236] via-[#0B1733] to-[#1D0F2F] border border-cyan-400/50 space-y-2 shadow-xl">
-              <div class="text-4xl float-soft">🚀</div>
-              <h3 class="font-display font-extrabold text-base text-white">Sponsored Creator Partner • ViralBoost Network</h3>
-              <p class="text-xs text-cyan-200 leading-relaxed">Scale Reels & Shorts 10x faster with Gemini 3.8 Flash + Imagen 3 AI Video Studio & Affiliate Deals (Tag ${escapeHtml(CONSTANTS.AFFILIATE_TAG)}).</p>
-              <div class="pt-1">
-                <button onclick="UnityAdEngine.finishInterstitial();switchTab('vip')" class="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs shadow">Remove All Ads with VIP 👑</button>
-              </div>
-            </div>
-            <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div id="unity-int-bar" class="h-full bg-cyan-400 transition-all duration-1000" style="width:10%"></div>
-            </div>
-            <button id="unity-int-close-btn" disabled onclick="UnityAdEngine.finishInterstitial()" class="w-full py-2.5 rounded-xl bg-slate-800 text-slate-400 font-extrabold text-xs disabled:opacity-70">
-              Skip Ad in ${remaining}s...
-            </button>
-          </div>
-        `);
-        setTimeout(() => {
-          const bar = document.getElementById('unity-int-bar');
-          if (bar) bar.style.width = '100%';
-        }, 60);
-
-        if (window.__unityIntTimer) clearInterval(window.__unityIntTimer);
-        window.__unityIntTimer = setInterval(() => {
-          remaining -= 1;
-          const btn = document.getElementById('unity-int-close-btn');
-          if (!btn) {
-            clearInterval(window.__unityIntTimer);
-            return;
-          }
-          if (remaining <= 0) {
-            clearInterval(window.__unityIntTimer);
-            btn.disabled = false;
-            btn.className = 'w-full py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs shadow cursor-pointer';
-            btn.textContent = 'Continue to App ✕';
-          } else {
-            btn.textContent = `Skip Ad in ${remaining}s...`;
-          }
-        }, 1000);
+        // Browser mode without active H5 tag: complete cleanly with zero fake countdown modal
+        const cb = this.pendingInterstitialCallback;
+        this.pendingInterstitialCallback = null;
+        if (typeof cb === 'function') cb();
       },
 
       finishInterstitial() {
-        if (window.__unityIntTimer) { clearInterval(window.__unityIntTimer); window.__unityIntTimer = null; }
         closeModal();
         const cb = this.pendingInterstitialCallback;
         this.pendingInterstitialCallback = null;
         if (typeof cb === 'function') cb();
       },
 
-      showRewarded(onRewardEarned) {
+      showRewarded(onRewardEarned, rewardLabel = `+${CONSTANTS.REWARDED_AD_PAYOUT} 💎 & +15 🪙`) {
         this.init();
         this.pendingRewardCallback = onRewardEarned;
 
         const bridge = this.getBridge();
-        if (bridge && typeof bridge.showRewarded === 'function') {
+        if (bridge) {
+          const fn = bridge.showRewarded || bridge.showRewardedAd;
+          if (typeof fn === 'function') {
+            try {
+              fn.call(bridge, CONSTANTS.UNITY_REWARDED_PLACEMENT, CONSTANTS.UNITY_GAME_ID);
+              return;
+            } catch (_) {}
+          }
+        }
+
+        // Real Browser H5 Ad Placement API (credits ONLY inside real adViewed callback)
+        if (typeof window.adBreak === 'function') {
           try {
-            bridge.showRewarded(appConfigState.unityRewardedPlacementId, appConfigState.unityGameId);
+            let triggered = false;
+            window.adBreak({
+              type: 'reward',
+              name: 'viralboost_rewarded',
+              beforeReward: (showAdFn) => {
+                triggered = true;
+                showAdFn();
+              },
+              adViewed: () => {
+                const cb = this.pendingRewardCallback;
+                this.pendingRewardCallback = null;
+                if (typeof cb === 'function') cb();
+              },
+              adDismissed: () => {
+                this.pendingRewardCallback = null;
+                showToast('Ad closed before completion — reward not credited.', 'info');
+              },
+              adBreakDone: (placementInfo) => {
+                if (!triggered && placementInfo && placementInfo.breakStatus !== 'viewed') {
+                  this.openBrowserWebAdSlotModal(rewardLabel);
+                }
+              }
+            });
             return;
           } catch (_) {}
         }
 
-        // Timed Interactive Unity Rewarded Ad Player (BP_Rewarded_Android)
-        let secondsLeft = 5;
+        // No native Android Unity bridge & no live Web H5 rewarded fill: show honest APK / Web Ad Slot modal (ZERO fake timer/reward)
+        this.openBrowserWebAdSlotModal(rewardLabel);
+      },
+
+      openBrowserWebAdSlotModal(rewardLabel) {
+        this.pendingRewardCallback = null;
         openModal(`
-          <div class="space-y-3.5 text-center" data-unity-placement="${escapeHtml(appConfigState.unityRewardedPlacementId)}">
+          <div id="viralboost-web-rewarded-modal" data-unity-game="${escapeHtml(CONSTANTS.UNITY_GAME_ID)}" data-unity-placement="${escapeHtml(CONSTANTS.UNITY_REWARDED_PLACEMENT)}" class="space-y-3.5 text-center">
             <div class="flex items-center justify-between text-[10px]">
-              <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-extrabold">UNITY REWARDED • GAME ${escapeHtml(appConfigState.unityGameId)}</span>
-              <span class="font-mono text-slate-400">${escapeHtml(appConfigState.unityRewardedPlacementId)}</span>
+              <span class="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 font-extrabold">UNITY ADS ${escapeHtml(CONSTANTS.UNITY_GAME_ID)} • ${escapeHtml(CONSTANTS.UNITY_REWARDED_PLACEMENT)}</span>
+              <button onclick="closeModal()" class="text-slate-400 font-bold text-sm">✕</button>
             </div>
-            <div class="rounded-2xl p-5 bg-gradient-to-br from-emerald-950/90 via-[#0B172A] to-violet-950/80 border border-emerald-400/50 space-y-2 shadow-2xl">
-              <div class="text-4xl float-soft">💎</div>
-              <h3 class="font-display font-extrabold text-base text-white">Unity Ads Rewarded Boost</h3>
-              <p class="text-xs text-emerald-200">Watch full 5-second Unity sponsor boost to unlock <strong>+${CONSTANTS.REWARDED_AD_PAYOUT} 💎 Diamonds & +15 🪙 Coins</strong> synced to Cloud Firestore!</p>
-              <div id="unity-rew-countdown" class="inline-block px-3 py-1 rounded-full bg-slate-900 border border-emerald-400/40 font-mono text-xs font-extrabold text-amber-300">
-                ⏱️ Reward unlocks in ${secondsLeft}s
+            <div class="rounded-2xl p-4 bg-gradient-to-br from-[#13112E] via-[#0B172A] to-[#1A1030] border border-cyan-400/50 space-y-2">
+              <div class="text-3xl">📱</div>
+              <h3 class="font-display font-extrabold text-sm text-white">Real Native Unity Rewarded Ads (${escapeHtml(rewardLabel)})</h3>
+              <p class="text-[11px] text-slate-300 leading-relaxed">
+                Unity Ads SDK (<span class="font-mono text-cyan-300">${escapeHtml(CONSTANTS.UNITY_REWARDED_PLACEMENT)}</span>) runs natively inside the official <strong>ViralBoost AI Android APK</strong> (<span class="font-mono text-amber-300">${escapeHtml(CONSTANTS.ANDROID_PACKAGE_ID)}</span>) and credits Firestore ONLY after a verified <span class="font-mono">onUnityAdsShowComplete</span> ad impression.
+              </p>
+              <div id="viralboost-web-rewarded-slot" class="rounded-xl bg-slate-950/90 border border-slate-800 p-2.5 text-[10.5px] text-slate-400">
+                ${appConfigState.webAdTagUrl
+                  ? `Web Ad Tag Loaded: <span class="text-emerald-300 font-mono">Active</span> (Waiting for ad network fill)`
+                  : `Browser Web Ad Slot Ready — Configure AdSense H5 / Adsterra / Monetag script URL in Owner Admin → App Config, or use Android APK.`}
               </div>
             </div>
-            <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-              <div id="rew-bar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-1000" style="width:8%"></div>
-            </div>
             <div class="flex gap-2">
-              <button id="unity-rew-claim-btn" disabled onclick="UnityAdEngine.claimWebReward()" class="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-extrabold text-xs disabled:opacity-60">
-                🔒 Watching Ad (${secondsLeft}s)...
-              </button>
-              <button onclick="UnityAdEngine.cancelRewarded()" class="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-400 font-bold text-xs">Cancel</button>
+              <a href="${escapeHtml(CONSTANTS.PRODUCTION_WEB_URL)}" target="_blank" rel="noopener" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs text-center">📲 Get Official Android APK</a>
+              <button onclick="closeModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs">Close</button>
             </div>
           </div>
         `);
-        setTimeout(() => {
-          const b = document.getElementById('rew-bar');
-          if (b) b.style.width = '20%';
-        }, 60);
-
-        if (window.__unityRewTimer) clearInterval(window.__unityRewTimer);
-        window.__unityRewTimer = setInterval(() => {
-          secondsLeft -= 1;
-          const pct = Math.min(100, Math.round(((5 - secondsLeft) / 5) * 100));
-          const bar = document.getElementById('rew-bar');
-          const cd = document.getElementById('unity-rew-countdown');
-          const btn = document.getElementById('unity-rew-claim-btn');
-          if (!btn) {
-            clearInterval(window.__unityRewTimer);
-            return;
-          }
-          if (bar) bar.style.width = pct + '%';
-          if (secondsLeft <= 0) {
-            clearInterval(window.__unityRewTimer);
-            if (cd) cd.textContent = '✅ Unity Ad Completed — Reward Ready!';
-            btn.disabled = false;
-            btn.className = 'flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-extrabold text-xs shadow cursor-pointer';
-            btn.textContent = `🎁 Claim +${CONSTANTS.REWARDED_AD_PAYOUT} 💎 & +15 🪙`;
-          } else {
-            if (cd) cd.textContent = `⏱️ Reward unlocks in ${secondsLeft}s`;
-            btn.textContent = `🔒 Watching Ad (${secondsLeft}s)...`;
-          }
-        }, 1000);
-      },
-
-      claimWebReward() {
-        if (window.__unityRewTimer) { clearInterval(window.__unityRewTimer); window.__unityRewTimer = null; }
-        closeModal();
-        const cb = this.pendingRewardCallback;
-        this.pendingRewardCallback = null;
-        if (typeof cb === 'function') cb();
-      },
-
-      cancelRewarded() {
-        if (window.__unityRewTimer) { clearInterval(window.__unityRewTimer); window.__unityRewTimer = null; }
-        this.pendingRewardCallback = null;
-        closeModal();
-        showToast('Rewarded Ad closed before completion — no diamonds credited.', 'info');
       }
     };
 
-    // Native Android APK WebView callbacks for real Unity Ads SDK integration
-    window.onUnityAdRewarded = function(placementId) {
-      if (typeof UnityAdEngine.pendingRewardCallback === 'function') {
-        const cb = UnityAdEngine.pendingRewardCallback;
-        UnityAdEngine.pendingRewardCallback = null;
-        closeModal();
-        cb();
+    // Official Native Android APK WebView Callback: credits Firestore ONLY when Unity Ads reports COMPLETED
+    window.onUnityAdsShowComplete = function(placementId, completionState) {
+      const stateStr = String(completionState || 'COMPLETED').toUpperCase();
+      if (stateStr === 'COMPLETED') {
+        if (typeof UnityAdEngine.pendingRewardCallback === 'function') {
+          const cb = UnityAdEngine.pendingRewardCallback;
+          UnityAdEngine.pendingRewardCallback = null;
+          closeModal();
+          cb();
+        } else if (typeof UnityAdEngine.pendingInterstitialCallback === 'function') {
+          UnityAdEngine.finishInterstitial();
+        }
       } else {
-        creditRewards(CONSTANTS.REWARDED_AD_PAYOUT, 15, 'Unity Rewarded Ad Completed', `Placement: ${placementId || appConfigState.unityRewardedPlacementId}`, 'REWARDED');
+        UnityAdEngine.pendingRewardCallback = null;
+        if (typeof UnityAdEngine.pendingInterstitialCallback === 'function') {
+          UnityAdEngine.finishInterstitial();
+        }
+        showToast('Unity Ad skipped before completion — no reward credited.', 'info');
       }
     };
-    window.onUnityAdClosed = function(placementId) {
+    window.onUnityAdsShowFailure = function(placementId, err) {
+      UnityAdEngine.pendingRewardCallback = null;
+      if (typeof UnityAdEngine.pendingInterstitialCallback === 'function') {
+        UnityAdEngine.finishInterstitial();
+      }
+      showToast(`Unity Ad unavailable (${placementId || 'Ad'}): ${err || 'No fill right now'}`, 'info');
+    };
+    // Backwards-compatible aliases
+    window.onUnityAdRewarded = function(placementId) {
+      window.onUnityAdsShowComplete(placementId, 'COMPLETED');
+    };
+    window.onUnityAdClosed = function() {
       if (typeof UnityAdEngine.pendingInterstitialCallback === 'function') {
         UnityAdEngine.finishInterstitial();
       }
     };
     window.onUnityAdFailed = function(placementId, err) {
-      showToast(`Unity Ad Notice (${placementId}): ${err || 'Retrying web fallback'}`, 'info');
-      if (typeof UnityAdEngine.pendingInterstitialCallback === 'function') {
-        UnityAdEngine.finishInterstitial();
-      }
+      window.onUnityAdsShowFailure(placementId, err);
     };
 
     function applyLiveAppConfig(cfg) {
@@ -959,12 +983,12 @@
       appConfigState = {
         ...DEFAULT_APP_CONFIG,
         ...cfg,
-        welcomeBonusRupees: Number(cfg.welcomeBonusRupees ?? DEFAULT_APP_CONFIG.welcomeBonusRupees) || 50
+        welcomeBonusRupees: Math.max(0, Number(cfg.welcomeBonusRupees ?? DEFAULT_APP_CONFIG.welcomeBonusRupees) || 0)
       };
       CONSTANTS.UNITY_GAME_ID = appConfigState.unityGameId || '800427608';
-      CONSTANTS.UNITY_BANNER_PLACEMENT = appConfigState.unityBannerPlacementId || 'BP_Banner_Android';
-      CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT = appConfigState.unityInterstitialPlacementId || 'BP_Interstitial_Android';
-      CONSTANTS.UNITY_REWARDED_PLACEMENT = appConfigState.unityRewardedPlacementId || 'BP_Rewarded_Android';
+      CONSTANTS.UNITY_BANNER_PLACEMENT = appConfigState.unityBannerPlacementId || 'Banner_Android';
+      CONSTANTS.UNITY_INTERSTITIAL_PLACEMENT = appConfigState.unityInterstitialPlacementId || 'Interstitial_Android';
+      CONSTANTS.UNITY_REWARDED_PLACEMENT = appConfigState.unityRewardedPlacementId || 'Rewarded_Android';
       CONSTANTS.AFFILIATE_TAG = appConfigState.affiliateTag || '5665937';
       CONSTANTS.INITIAL_BONUS_RUPEES = appConfigState.welcomeBonusRupees;
       UnityAdEngine.init();
@@ -974,7 +998,7 @@
 
     function syncProfileToCloud() {
       if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser) {
-        window.ViralBoostFirebase.syncUserProfileAndLeaderboard(state.profile);
+        window.ViralBoostFirebase.syncUserProfileAndLeaderboard(state.profile, state.channels);
       }
     }
 
@@ -1017,25 +1041,30 @@
           triEl.textContent = p.trialExpired ? 'Expired' : `Day ${p.trialDay}/3`;
         }
       }
+      const appShell = document.getElementById('app');
       const adDock = document.getElementById('ad-dock-container');
+      if (appShell) {
+        appShell.classList.toggle('pb-40', !p.isVip);
+        appShell.classList.toggle('pb-24', Boolean(p.isVip));
+      }
       if (adDock) {
         if (p.isVip) {
           adDock.innerHTML = '';
         } else {
           UnityAdEngine.syncBanner();
-          const hasTag = Boolean((appConfigState.webAdTagUrl || '').trim());
+          const hasWebTag = Boolean((appConfigState.webAdTagUrl || '').trim());
+          const isApk = UnityAdEngine.isNativeApk();
           adDock.innerHTML = `
-            <div id="unity-banner-slot" data-unity-game="${escapeHtml(appConfigState.unityGameId)}" data-unity-placement="${escapeHtml(appConfigState.unityBannerPlacementId)}" class="rounded-xl bg-gradient-to-r from-[#0F172A] via-[#171236] to-[#0B1F33] border border-cyan-500/40 px-3 py-2 flex items-center justify-between gap-2 text-[11px] shadow-lg">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-extrabold text-[9px] shrink-0">UNITY AD • ${escapeHtml(appConfigState.unityGameId)}</span>
-                <span class="text-slate-200 font-semibold truncate">${UnityAdEngine.isNativeApk() ? `Native Unity Banner Active (${escapeHtml(appConfigState.unityBannerPlacementId)})` : 'Watch Rewarded Unity Ad for +5 💎 or Go Ad-Free VIP'}</span>
+            <div id="viralboost-web-banner-ad" data-unity-game="${escapeHtml(CONSTANTS.UNITY_GAME_ID)}" data-unity-placement="${escapeHtml(CONSTANTS.UNITY_BANNER_PLACEMENT)}" class="pointer-events-auto max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto rounded-xl bg-[#0D1326]/95 backdrop-blur-md border border-cyan-500/40 px-2.5 py-1.5 flex items-center justify-between gap-2 text-[10.5px] shadow-xl">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-extrabold text-[9px] shrink-0">${isApk ? `UNITY ${escapeHtml(CONSTANTS.UNITY_GAME_ID)}` : 'WEB AD SLOT'}</span>
+                <span class="text-slate-200 font-semibold truncate">${isApk ? `Live Unity Banner (${escapeHtml(CONSTANTS.UNITY_BANNER_PLACEMENT)})` : (hasWebTag ? 'Live Web Ad Network Active' : 'Get Android APK for Native Unity Ads or Go VIP')}</span>
               </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                <button onclick="watchRewardedBoost()" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-[10px]">+5 💎</button>
-                <button onclick="switchTab('vip')" class="px-2 py-1 rounded-lg bg-amber-400 text-slate-950 font-extrabold text-[10px]">Go VIP</button>
+              <div class="flex items-center gap-1 shrink-0">
+                <button onclick="watchRewardedBoost()" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-[10px]">Earn +5 💎</button>
+                <button onclick="switchTab('vip')" class="px-2 py-1 rounded-lg bg-amber-400 text-slate-950 font-extrabold text-[10px]">VIP</button>
               </div>
-            </div>
-            ${hasTag ? `<div id="web-ad-tag-slot" class="mt-1 text-center text-[9.5px] text-cyan-400/80 font-mono">Web Ad Tag Active</div>` : ''}`;
+            </div>`;
         }
       }
     }
@@ -1228,17 +1257,20 @@
     });
 
     // =========================================================================
-    // 5. MANDATORY SECURE SIGN-UP GATE & MAIN 6-TAB SCREEN RENDERER
+    // 5. MANDATORY REAL FIREBASE SIGN-UP GATE & MAIN 6-TAB SCREEN RENDERER
     // =========================================================================
     const authUiState = {
       method: 'mobile', // 'mobile' | 'email'
+      emailMode: 'signup', // 'signup' | 'signin'
       name: '',
       contact: '',
+      password: '',
       e164: '',
       otp: '',
       otpSent: false,
       otpLoading: false,
       otpConfirming: false,
+      emailLoading: false,
       errorMsg: '',
       agreed: false,
       googleLoading: false,
@@ -1247,18 +1279,21 @@
 
     function isUserAuthenticated() {
       const p = state.profile;
-      return Boolean((p.isLoggedIn === true && p.hasAgreedToTerms === true) || p.isOwner === true);
+      return Boolean(p.isLoggedIn === true && p.hasAgreedToTerms === true && (cloudUser || p.authMethod));
     }
 
     function renderSecureSignupScreen() {
       const a = authUiState;
       const isMobile = a.method === 'mobile';
+      const isEmailSignup = !isMobile && a.emailMode === 'signup';
       const canSendOtp = isMobile && !a.otpSent && !a.otpLoading && a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10;
       const canCompleteSignup = a.agreed &&
         !a.otpLoading &&
         !a.otpConfirming &&
-        a.name.trim().length >= 2 &&
-        (isMobile ? (a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length === 6) : a.contact.trim().length >= 5);
+        !a.emailLoading &&
+        (isMobile
+          ? (a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length === 6)
+          : (a.contact.trim().length >= 5 && a.password.length >= 6 && (!isEmailSignup || a.name.trim().length >= 2)));
       const canSubmit = (isMobile && !a.otpSent) ? canSendOtp : canCompleteSignup;
 
       return `
@@ -1270,15 +1305,15 @@
               <div style="display:none" class="text-4xl">🚀</div>
             </div>
             <h1 class="font-display font-extrabold text-2xl text-white mt-3 tracking-tight">ViralBoost AI - Secure Sign Up</h1>
-            <p class="text-xs text-cyan-400 font-semibold mt-0.5">Zero-Drop Creator Growth Engine & Rewards Hub</p>
+            <p class="text-xs text-cyan-400 font-semibold mt-0.5">Zero-Drop Creator Growth Engine • Live Cloud Sync</p>
           </div>
 
-          <!-- ₹50 Instant Welcome Bonus Card -->
-          <div class="rounded-2xl p-3.5 bg-[#16102E] border border-amber-400/60 flex items-center gap-3 shadow-lg">
-            <span class="text-2xl shrink-0">✨</span>
+          <!-- Real Cloud Account Notice -->
+          <div class="rounded-2xl p-3.5 bg-[#16102E] border border-cyan-400/50 flex items-center gap-3 shadow-lg">
+            <span class="text-2xl shrink-0">🔐</span>
             <div>
-              <div class="text-xs font-extrabold text-amber-300">🎁 ₹50 Instant Welcome Bonus Unlocked</div>
-              <div class="text-[11px] text-slate-300 mt-0.5">₹50 Cash Bonus + 10 Diamonds 💎 & 250 Coins 🪙 credited upon signup</div>
+              <div class="text-xs font-extrabold text-cyan-300">Verified Firebase Account Required</div>
+              <div class="text-[11px] text-slate-300 mt-0.5">New creators start with ₹0 / 0 💎 / 0 🪙 in Cloud Firestore and earn rewards through real Unity Ads &amp; creator tools.</div>
             </div>
           </div>
 
@@ -1303,31 +1338,49 @@
 
             <div class="flex items-center gap-2 text-[11px] text-slate-400">
               <div class="h-px flex-1 bg-slate-800"></div>
-              <span class="font-semibold">Select Registration Method</span>
+              <span class="font-semibold">Or Sign In / Sign Up with Firebase</span>
               <div class="h-px flex-1 bg-slate-800"></div>
             </div>
 
-            <!-- Mobile OTP vs Google / Email Toggle -->
+            <!-- Mobile +91 SMS OTP vs Email/Password Toggle -->
             <div class="grid grid-cols-2 gap-2">
               <button type="button" onclick="selectAuthMethod('mobile')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition min-h-[44px] ${isMobile ? 'bg-violet-600 border-violet-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300'}">
-                <span>📱</span><span>Mobile (SMS OTP)</span>
+                <span>📱</span><span>Mobile (+91 OTP)</span>
               </button>
               <button type="button" onclick="selectAuthMethod('email')" class="py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition min-h-[44px] ${!isMobile ? 'bg-violet-600 border-violet-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300'}">
-                <span>✉️</span><span>Google / Email</span>
+                <span>✉️</span><span>Email &amp; Password</span>
               </button>
             </div>
 
-            <!-- Full Name Input -->
-            <div>
-              <label for="auth-fullname-input" class="block text-[11px] font-bold text-slate-300 mb-1">Your Full Name</label>
-              <input id="auth-fullname-input" type="text" value="${escapeHtml(a.name)}" oninput="authUiState.name=this.value;updateAuthSubmitButtonState()" placeholder="e.g. Aarav Sharma" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
-            </div>
+            ${!isMobile ? `
+              <div class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800 text-[11px]">
+                <button type="button" onclick="authUiState.emailMode='signup';authUiState.errorMsg='';renderApp()" class="py-1.5 rounded-lg font-extrabold ${isEmailSignup ? 'bg-cyan-400 text-slate-950' : 'text-slate-400'}">Create Account</button>
+                <button type="button" onclick="authUiState.emailMode='signin';authUiState.errorMsg='';renderApp()" class="py-1.5 rounded-lg font-extrabold ${!isEmailSignup ? 'bg-cyan-400 text-slate-950' : 'text-slate-400'}">Sign In</button>
+              </div>
+            ` : ''}
+
+            ${(isMobile || isEmailSignup) ? `
+              <div>
+                <label for="auth-fullname-input" class="block text-[11px] font-bold text-slate-300 mb-1">Your Full Name</label>
+                <input id="auth-fullname-input" type="text" value="${escapeHtml(a.name)}" oninput="authUiState.name=this.value;updateAuthSubmitButtonState()" placeholder="e.g. Aarav Sharma" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
+              </div>
+            ` : ''}
 
             <!-- Mobile Number or Email Input -->
             <div>
-              <label for="auth-contact-input" class="block text-[11px] font-bold text-slate-300 mb-1">${isMobile ? 'Enter Mobile Number (+91 or country code)' : 'Enter Google / Email ID'}</label>
+              <label for="auth-contact-input" class="block text-[11px] font-bold text-slate-300 mb-1">${isMobile ? 'Enter Mobile Number (+91)' : 'Enter Email Address'}</label>
               <input id="auth-contact-input" type="${isMobile ? 'tel' : 'email'}" value="${escapeHtml(a.contact)}" oninput="authUiState.contact=this.value;authUiState.errorMsg='';updateAuthSubmitButtonState()" placeholder="${isMobile ? 'e.g. 9876543210 or +919876543210' : 'e.g. creator@gmail.com'}" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
             </div>
+
+            ${!isMobile ? `
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="auth-password-input" class="block text-[11px] font-bold text-slate-300">Password (min 6 characters)</label>
+                  <button type="button" onclick="sendEmailPasswordReset()" class="text-[10.5px] font-bold text-cyan-400 underline">Forgot Password?</button>
+                </div>
+                <input id="auth-password-input" type="password" value="${escapeHtml(a.password)}" oninput="authUiState.password=this.value;authUiState.errorMsg='';updateAuthSubmitButtonState()" placeholder="Enter password..." class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-white outline-none focus:border-cyan-400" />
+              </div>
+            ` : ''}
 
             <!-- Real Firebase Phone Auth 6-Digit SMS OTP Verification Box -->
             ${isMobile && a.otpSent ? `
@@ -1335,7 +1388,7 @@
                 <label for="auth-otp-input" class="block text-[11px] font-bold text-amber-300">🔐 Enter Real 6-Digit SMS OTP</label>
                 <input id="auth-otp-input" type="tel" maxlength="6" inputmode="numeric" value="${escapeHtml(a.otp)}" oninput="authUiState.otp=this.value.replace(/\\D/g,'').slice(0,6);authUiState.errorMsg='';updateAuthSubmitButtonState()" placeholder="Enter 6-digit SMS OTP" class="w-full rounded-xl bg-slate-900 border border-amber-400/50 px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:border-cyan-400" />
                 <div class="flex items-center justify-between text-[10.5px]">
-                  <span class="text-emerald-300 font-semibold">✓ SMS OTP requested for ${escapeHtml(a.e164 || a.contact)}</span>
+                  <span class="text-emerald-300 font-semibold">✓ SMS OTP sent to ${escapeHtml(a.e164 || a.contact)}</span>
                   <button type="button" onclick="sendMobileSignupOtp()" ${a.otpLoading ? 'disabled' : ''} class="text-cyan-300 font-bold underline shrink-0 ml-2 disabled:opacity-50">Resend SMS</button>
                 </div>
               </div>
@@ -1360,7 +1413,7 @@
                     I Agree to Terms & Conditions. I understand rewards and deals are provided as-is, releasing the owner from any liability or false claims.
                   </p>
                   <p class="text-[10px] text-cyan-300 font-semibold">
-                    🔒 One-time legal agreement proof is timestamped and recorded in backend audit logs.
+                    🔒 One-time legal agreement proof is timestamped and recorded in Cloud Firestore.
                   </p>
                 </div>
               </div>
@@ -1368,16 +1421,7 @@
 
             <!-- Primary CTA Button -->
             <button id="auth-submit-btn" type="button" onclick="${isMobile && !a.otpSent ? 'sendMobileSignupOtp()' : 'completeSecureSignup()'}" ${canSubmit ? '' : 'disabled'} class="w-full py-3 rounded-xl font-display font-extrabold text-xs min-h-[48px] transition shadow-lg ${canSubmit ? (isMobile && !a.otpSent ? 'bg-violet-600 hover:bg-violet-500 text-white' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950') : 'bg-slate-800 text-slate-500 cursor-not-allowed'}">
-              ${a.otpLoading ? '⏳ Sending Real SMS OTP...' : a.otpConfirming ? '⏳ Verifying SMS OTP...' : (isMobile && !a.otpSent ? '📱 Send Real SMS OTP' : '✅ Verify & Complete Sign Up')}
-            </button>
-          </div>
-
-          <!-- Owner Admin Quick-Gate -->
-          <div class="rounded-2xl p-3.5 bg-[#130D2E] border border-amber-400/40 text-center space-y-2">
-            <div class="text-xs font-extrabold text-amber-300">🛡️ Owner Admin Quick-Gate</div>
-            <div class="text-[10.5px] text-slate-400">Restricted to ${CONSTANTS.OWNER_UPI_ID} administrator rights</div>
-            <button type="button" onclick="openAdminLoginModal()" class="w-full py-2.5 rounded-xl border border-amber-400/80 text-amber-300 font-extrabold text-xs hover:bg-amber-400/10 transition">
-              👑 Owner Bypass (${CONSTANTS.OWNER_UPI_ID})
+              ${a.otpLoading ? '⏳ Sending Real SMS OTP...' : a.otpConfirming ? '⏳ Verifying SMS OTP...' : a.emailLoading ? '⏳ Authenticating with Firebase...' : (isMobile && !a.otpSent ? '📱 Send Real SMS OTP' : (isMobile ? '✅ Verify OTP & Complete Sign Up' : (isEmailSignup ? '✅ Create Account & Sign Up' : '🔓 Sign In to Account')))}
             </button>
           </div>
 
@@ -1394,12 +1438,15 @@
       if (!btn) return;
       const a = authUiState;
       const isMobile = a.method === 'mobile';
+      const isEmailSignup = !isMobile && a.emailMode === 'signup';
       const canSendOtp = isMobile && !a.otpSent && !a.otpLoading && a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10;
       const canCompleteSignup = a.agreed &&
         !a.otpLoading &&
         !a.otpConfirming &&
-        a.name.trim().length >= 2 &&
-        (isMobile ? (a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length === 6) : a.contact.trim().length >= 5);
+        !a.emailLoading &&
+        (isMobile
+          ? (a.name.trim().length >= 2 && a.contact.replace(/\D/g, '').length >= 10 && a.otpSent && a.otp.trim().length === 6)
+          : (a.contact.trim().length >= 5 && a.password.length >= 6 && (!isEmailSignup || a.name.trim().length >= 2)));
       const canSubmit = (isMobile && !a.otpSent) ? canSendOtp : canCompleteSignup;
       btn.disabled = !canSubmit;
       btn.className = `w-full py-3 rounded-xl font-display font-extrabold text-xs min-h-[48px] transition shadow-lg ${
@@ -1418,6 +1465,21 @@
       renderApp();
     }
 
+    async function sendEmailPasswordReset() {
+      const email = (authUiState.contact || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Enter your registered email address above first!', 'error');
+        return;
+      }
+      try {
+        if (window.ViralBoostFirebaseReady) await window.ViralBoostFirebaseReady;
+        await window.ViralBoostFirebase.resetPasswordEmail(email);
+        showToast(`📩 Password reset link sent to ${email}`, 'success');
+      } catch (err) {
+        showToast(`⚠️ Reset failed: ${err.message}`, 'error');
+      }
+    }
+
     function handleAuthGoogleClick() {
       if (cloudUser) {
         if (!authUiState.agreed) {
@@ -1431,7 +1493,7 @@
           return;
         }
         const ts = new Date().toISOString();
-        const gName = (authUiState.name || cloudUser.displayName || 'ViralCreator').trim();
+        const gName = (authUiState.name || cloudUser.displayName || 'Creator').trim();
         const gEmail = (authUiState.contact || cloudUser.email || cloudUser.uid).trim();
         state.profile.username = gName;
         state.profile.email = gEmail;
@@ -1449,16 +1511,14 @@
           timestamp: ts,
           status: 'AGREED_AND_VERIFIED'
         });
-        state.profile.bonusRupees = Number(appConfigState.welcomeBonusRupees || CONSTANTS.INITIAL_BONUS_RUPEES);
         saveState();
         syncProfileToCloud();
         renderApp();
-        UnityAdEngine.showInterstitial('post_signup', () => openWelcomeBonusModal());
-        showToast(`🟢 Google Cloud Sync Verified! ₹${state.profile.bonusRupees} Welcome Bonus Active!`, 'success');
+        showToast('🟢 Google Cloud Sync Verified! Connected to Firestore.', 'success');
         return;
       }
       if (!authUiState.agreed) {
-        showToast('Signing in with Google — new accounts must tick Legal Terms before entering.', 'info');
+        showToast('Signing in with Google — tick Legal Terms to unlock Cloud Sync.', 'info');
       }
       authUiState.pendingGoogleSignup = true;
       authUiState.googleLoading = true;
@@ -1511,10 +1571,11 @@
     async function completeSecureSignup() {
       const a = authUiState;
       const isMobile = a.method === 'mobile';
+      const isEmailSignup = !isMobile && a.emailMode === 'signup';
       const name = a.name.trim();
       const contact = a.contact.trim();
 
-      if (name.length < 2) {
+      if ((isMobile || isEmailSignup) && name.length < 2) {
         showToast('Please enter your full name!', 'error');
         return;
       }
@@ -1522,6 +1583,8 @@
         showToast('Mandatory Legal Terms & Liability Waiver must be accepted!', 'error');
         return;
       }
+
+      let fbUser = null;
       if (isMobile) {
         if (contact.replace(/\D/g, '').length < 10) {
           showToast('Please enter a valid 10-digit mobile number!', 'error');
@@ -1542,7 +1605,7 @@
           if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.confirmPhoneOtp !== 'function') {
             throw new Error('Firebase Phone Auth SDK not ready.');
           }
-          await window.ViralBoostFirebase.confirmPhoneOtp(a.otp.trim());
+          fbUser = await window.ViralBoostFirebase.confirmPhoneOtp(a.otp.trim());
         } catch (otpErr) {
           const msg = String(otpErr?.message || otpErr || 'Invalid or expired SMS OTP.');
           authUiState.otpConfirming = false;
@@ -1557,52 +1620,80 @@
           showToast('Please enter a valid email address!', 'error');
           return;
         }
+        if (a.password.length < 6) {
+          showToast('Password must be at least 6 characters!', 'error');
+          return;
+        }
+        authUiState.emailLoading = true;
+        authUiState.errorMsg = '';
+        renderApp();
+        try {
+          if (window.ViralBoostFirebaseReady) await window.ViralBoostFirebaseReady;
+          if (isEmailSignup) {
+            fbUser = await window.ViralBoostFirebase.signUpWithEmail(contact, a.password, name);
+          } else {
+            fbUser = await window.ViralBoostFirebase.signInWithEmail(contact, a.password);
+          }
+        } catch (emailErr) {
+          const msg = String(emailErr?.message || emailErr || 'Email authentication failed.');
+          authUiState.emailLoading = false;
+          authUiState.errorMsg = msg;
+          renderApp();
+          showToast(`⚠️ Email Auth Failed: ${msg}`, 'error');
+          return;
+        }
+        authUiState.emailLoading = false;
       }
 
       const ts = new Date().toISOString();
-      state.profile.username = name;
+      const resolvedName = name || fbUser?.displayName || contact.split('@')[0] || 'Creator';
+      state.profile.username = resolvedName;
       state.profile.userContact = isMobile ? (a.e164 || contact) : contact;
       if (!isMobile || contact.includes('@')) state.profile.email = contact;
-      else if (cloudUser?.email) state.profile.email = cloudUser.email;
-      state.profile.authMethod = isMobile ? 'mobile_otp' : (cloudUser ? 'google' : 'email');
+      else if (fbUser?.email || cloudUser?.email) state.profile.email = fbUser?.email || cloudUser.email;
+      state.profile.authMethod = isMobile ? 'mobile_otp' : 'email_password';
       state.profile.isLoggedIn = true;
       state.profile.hasAgreedToTerms = true;
       state.profile.legalAccepted = true;
       state.profile.legalAgreementTimestamp = ts;
       state.profile.welcomeClaimed = true;
       state.legalAuditLogs.unshift({
-        name,
+        name: resolvedName,
         contact: state.profile.userContact,
         method: state.profile.authMethod,
         timestamp: ts,
         status: 'AGREED_AND_VERIFIED'
       });
 
-      state.profile.bonusRupees = Number(appConfigState.welcomeBonusRupees || CONSTANTS.INITIAL_BONUS_RUPEES);
       saveState();
       syncProfileToCloud();
       renderApp();
-      UnityAdEngine.showInterstitial('post_signup', () => openWelcomeBonusModal());
-      showToast(`🎉 Sign Up Verified! ₹${state.profile.bonusRupees} Welcome Bonus + 10 💎 + 250 🪙 Active!`, 'success');
+      showToast('🟢 Firebase Account Verified & Synced to Cloud Firestore!', 'success');
     }
 
     function logoutViralBoostAccount() {
-      state.profile.isLoggedIn = false;
-      state.profile.isOwner = false;
+      const fresh = defaultState();
+      state.profile = fresh.profile;
+      state.channels = emptyChannelsState();
+      state.transactions = [];
+      state.payments = [];
+      state.tickets = [];
       activeOverlay = null;
       const overlayHost = document.getElementById('overlay-host');
       if (overlayHost) overlayHost.classList.add('hidden');
       closeModal();
       authUiState.otp = '';
+      authUiState.password = '';
       authUiState.otpSent = false;
       authUiState.agreed = false;
       authUiState.pendingGoogleSignup = false;
+      authUiState.errorMsg = '';
       saveState();
       if (window.ViralBoostFirebase && window.ViralBoostFirebase.currentUser && window.ViralBoostFirebase.signOutGoogle) {
         window.ViralBoostFirebase.signOutGoogle();
       }
       renderApp();
-      showToast('🚪 Signed out. Please sign up or log in to continue.', 'info');
+      showToast('🚪 Signed out. Please sign in to continue.', 'info');
     }
 
     function renderApp() {
@@ -1646,17 +1737,9 @@
       const q = getTrialQuotas();
       const today = new Date().toISOString().slice(0, 10);
       const streakClaimed = p.lastStreakClaimDate === today;
-      const connectedCount = Object.values(state.channels).filter(c => c.connected).length;
+      const connectedCount = SOCIAL_CHANNELS.filter(c => state.channels[c.id]?.connected && (state.channels[c.id]?.handle || '').trim()).length;
       const cp = state.crossPoster;
-      const insightsPresets = [
-        { title: "✨ AI Pattern-Interrupt Reel: 'Stop Doing This in 2026'", platform: 'Instagram Reels', views: 184500, low: 148000, high: 242000, score: 96, ret: 98, dm: 21.4, save: 14.8, trend: [24,38,46,64,78,89,97], base: [15,22,29,36,44,51,58] },
-        { title: "🚀 5 Secret Gemini AI Workflows for 10x Faster Growth", platform: 'YouTube Shorts', views: 312800, low: 260000, high: 410000, score: 98, ret: 99, dm: 24.9, save: 18.2, trend: [30,45,59,72,84,93,100], base: [18,25,33,41,48,55,63] },
-        { title: "🔥 Seamless 60s Storytelling Loop + High-CTR Hashtags", platform: 'TikTok & Shorts', views: 129400, low: 98000, high: 175000, score: 92, ret: 95, dm: 18.6, save: 12.9, trend: [20,31,49,57,71,83,92], base: [14,19,26,31,38,45,52] }
-      ];
-      const tfMult = [0.45, 1, 2.8, 6.4][state.insightTfIdx];
-      const pr = insightsPresets[state.insightPresetIdx];
-      const predViews = Math.round(pr.views * tfMult) + state.insightBoostCount * 18500;
-      const shareScore = Math.min(100, pr.score + state.insightBoostCount);
+      const displayName = (p.username || cloudUser?.displayName || cloudUser?.email || 'Creator').trim();
 
       return `
         <!-- #1 HERO TOP: One-Click to Share Video Multi-Platform (Front & Center) -->
@@ -1670,18 +1753,19 @@
             <button onclick="openOverlay('crossPoster')" class="px-2.5 py-1.5 rounded-xl bg-cyan-400/15 border border-cyan-400/50 text-cyan-300 text-[10.5px] font-extrabold shrink-0">Full Studio ↗</button>
           </div>
 
-          <!-- 6 Social Channels Quick Selector -->
+          <!-- 6 Social Channels Quick Selector (All Start Disconnected Until User Connects) -->
           <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mt-3">
             ${SOCIAL_CHANNELS.map(ch => {
-              const st = state.channels[ch.id] || { connected: false, handle: ch.defaultHandle };
+              const st = state.channels[ch.id] || { connected: false, handle: '' };
+              const isConn = Boolean(st.connected && (st.handle || '').trim());
               return `
-                <button onclick="openChannelModal('${ch.id}')" class="p-2 rounded-xl border text-left transition ${st.connected ? 'bg-slate-900/90 border-emerald-400/60' : 'bg-slate-900/40 border-slate-700/70 opacity-75'}">
+                <button onclick="openChannelModal('${ch.id}')" class="p-2 rounded-xl border text-left transition ${isConn ? 'bg-slate-900/90 border-emerald-400/60' : 'bg-slate-900/40 border-slate-700/70 opacity-85 hover:border-cyan-400/50'}">
                   <div class="flex items-center justify-between">
                     <span class="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold text-white" style="background:${ch.color}">${ch.short}</span>
-                    <span class="text-[10px]">${st.connected ? '✅' : '➕'}</span>
+                    <span class="text-[10px]">${isConn ? '✅' : '➕'}</span>
                   </div>
                   <div class="text-[10px] font-bold text-white truncate mt-1">${ch.name.split(' ')[0]}</div>
-                  <div class="text-[9px] text-slate-400 truncate">${escapeHtml(st.handle)}</div>
+                  <div class="text-[9px] ${isConn ? 'text-emerald-300' : 'text-slate-400'} truncate">${isConn ? escapeHtml(st.handle) : 'Tap + to connect'}</div>
                 </button>`;
             }).join('')}
           </div>
@@ -1695,7 +1779,7 @@
                 <input type="file" accept="video/*" class="hidden" onchange="handleHeroVideoUpload(event)" />
               </label>
               <button id="hero-ai-analyze-btn" onclick="runHeroAiAnalyzer()" class="flex-1 min-w-[140px] py-2.5 px-3 rounded-xl bg-violet-600/30 border border-violet-400/60 hover:bg-violet-600/50 text-xs font-extrabold text-amber-300 transition">
-                ✨ AI Auto Title & Tags
+                ✨ AI Auto Title &amp; Tags
               </button>
             </div>
 
@@ -1711,12 +1795,12 @@
             </div>
 
             <button onclick="broadcastMultiPlatform()" class="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-500 text-white font-display font-extrabold text-sm shadow-lg shadow-cyan-500/20 active:scale-[0.99] transition">
-              🚀 1-Click Broadcast to ${connectedCount} Connected Platforms (+10 🪙)
+              🚀 1-Click Broadcast to ${connectedCount} Connected Platforms
             </button>
           </div>
         </section>
 
-        <!-- 0A: Live Earning & Reward Ticker -->
+        <!-- 0A: Live Ticker -->
         <div class="rounded-xl bg-[#1E1B4B] border border-indigo-500/60 px-3 py-2 flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
           <p id="live-ticker-text" class="text-[11.5px] font-semibold text-indigo-100 truncate ticker-anim">${TICKER_MESSAGES[tickerIdx]}</p>
@@ -1728,15 +1812,15 @@
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-400 flex items-center justify-center text-slate-950 font-bold text-lg shrink-0">✨</div>
               <div class="min-w-0">
-                <h3 class="font-display font-extrabold text-[15px] text-white truncate">🔥 One Click AI Video & Viral हैशटैग</h3>
-                <p class="text-[11px] font-semibold text-cyan-400 truncate">Full-Screen AI Reel Studio • Auto Viral Hashtags</p>
+                <h3 class="font-display font-extrabold text-[15px] text-white truncate">🔥 One Click AI Video &amp; Viral हैशटैग</h3>
+                <p class="text-[11px] font-semibold text-cyan-400 truncate">Gemini 3.8 Flash Studio • 1080×1920 30FPS Export</p>
               </div>
             </div>
             <span class="px-2 py-0.5 rounded bg-amber-400/20 border border-amber-400 text-amber-300 text-[9px] font-extrabold shrink-0">FULL PAGE</span>
           </div>
           <p class="text-xs text-slate-200 mt-2 leading-relaxed">कॉमेडी, हरियाणवी रैप, मोटिवेशन या शॉर्ट्स बनाएं — 1-क्लिक में ऑटो-वायरल टाइटल, स्क्रिप्ट और ट्रेंडिंग हैशटैग्स के साथ!</p>
           <button onclick="event.stopPropagation(); openOverlay('oneClickAiStudio')" class="mt-3 w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow">
-            🚀 Launch AI Video & Hashtag Hub
+            🚀 Launch AI Video &amp; Hashtag Hub
           </button>
         </section>
 
@@ -1745,65 +1829,47 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="text-lg">💎</span>
-              <h3 class="font-display font-extrabold text-sm text-amber-300">Diamond & Wallet Dashboard</h3>
+              <h3 class="font-display font-extrabold text-sm text-amber-300">Diamond &amp; Wallet Dashboard</h3>
             </div>
             <span class="px-2.5 py-0.5 rounded-lg bg-sky-400/15 text-sky-300 text-xs font-extrabold">${p.diamonds} 💎</span>
           </div>
           <p class="text-xs font-semibold text-cyan-300 mt-1.5">Wallet Balance: ₹${p.bonusRupees} | 💎 Diamonds: ${p.diamonds} | 🪙 Coins: ${p.coins}</p>
           <button onclick="event.stopPropagation(); openOverlay('diamondDashboard')" class="mt-2.5 w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition">
-            💎 Open Diamond Dashboard (Balance, History & Earn)
+            💎 Open Diamond Dashboard (Balance, History &amp; Earn)
           </button>
         </section>
 
-        <!-- 0C & 0D: Growth Stats & Growth Insights (Predicted Views, Shareability Score Gauge & Multi-Series Chart) -->
+        <!-- 0C: Real Creator Studio Activity Telemetry -->
         <section class="rounded-2xl p-4 app-card space-y-3">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <div>
-              <h3 class="font-display font-extrabold text-sm">📊 Growth Insights & Predictive Telemetry</h3>
-              <p class="text-[11px] text-slate-400 truncate max-w-[260px]">${escapeHtml(pr.title)}</p>
+              <h3 class="font-display font-extrabold text-sm">📊 Live Creator Activity &amp; Studio Stats</h3>
+              <p class="text-[11px] text-slate-400">Real synced activity for ${escapeHtml(displayName)}</p>
             </div>
-            <div class="flex gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-700">
-              ${['24H','7D','30D','90D'].map((tf, i) => `
-                <button onclick="state.insightTfIdx=${i};saveState();renderApp()" class="px-2 py-0.5 rounded text-[10px] font-bold ${state.insightTfIdx===i ? 'bg-cyan-400 text-slate-950' : 'text-slate-400'}">${tf}</button>
-              `).join('')}
-            </div>
-          </div>
-
-          <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
-            ${['Instagram Reels', 'YouTube Shorts', 'TikTok Loop'].map((lbl, i) => `
-              <button onclick="state.insightPresetIdx=${i};saveState();renderApp()" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold shrink-0 border ${state.insightPresetIdx===i ? 'bg-violet-600 border-violet-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-300'}">${lbl}</button>
-            `).join('')}
+            <span class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-[10px] font-bold">Cloud Synced</span>
           </div>
 
           <div class="grid grid-cols-3 gap-2">
             <div class="rounded-xl app-elevated p-2.5 text-center">
-              <div class="text-[10px] text-slate-400 font-semibold">Predicted Views</div>
-              <div class="font-display font-extrabold text-base text-cyan-300 mt-0.5">${formatCompact(predViews)}</div>
-              <div class="text-[9.5px] text-emerald-400 font-bold">+${140 + state.insightBoostCount * 12}% Surge</div>
-            </div>
-            <div class="rounded-xl app-elevated p-2.5 flex flex-col items-center justify-center">
-              <div class="text-[10px] text-slate-400 font-semibold">Shareability</div>
-              <div class="font-display font-extrabold text-base text-amber-300 mt-0.5">${shareScore}/100</div>
-              <div class="text-[9.5px] text-cyan-300 font-bold">DM Vel: ${pr.dm}%</div>
+              <div class="text-[10px] text-slate-400 font-semibold">AI Kits</div>
+              <div class="font-display font-extrabold text-base text-cyan-300 mt-0.5">${state.aiHistory.length}</div>
+              <div class="text-[9.5px] text-emerald-400 font-bold">Saved</div>
             </div>
             <div class="rounded-xl app-elevated p-2.5 text-center">
-              <div class="text-[10px] text-slate-400 font-semibold">Hook Retention</div>
-              <div class="font-display font-extrabold text-base text-emerald-400 mt-0.5">${pr.ret}%</div>
-              <div class="text-[9.5px] text-pink-300 font-bold">Saves: ${pr.save}%</div>
+              <div class="text-[10px] text-slate-400 font-semibold">Channels</div>
+              <div class="font-display font-extrabold text-base text-amber-300 mt-0.5">${connectedCount}/6</div>
+              <div class="text-[9.5px] text-cyan-300 font-bold">Connected</div>
             </div>
-          </div>
-
-          <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-2.5">
-            <div class="flex items-center justify-between text-[10px] mb-1">
-              <span class="font-bold text-slate-300">Engagement Trend (AI Viral vs Baseline)</span>
-              <span class="text-cyan-400 font-semibold">● AI Boost &nbsp;<span class="text-slate-500">● Normal</span></span>
+            <div class="rounded-xl app-elevated p-2.5 text-center">
+              <div class="text-[10px] text-slate-400 font-semibold">Reels Watched</div>
+              <div class="font-display font-extrabold text-base text-emerald-400 mt-0.5">${state.watchedReels.length}</div>
+              <div class="text-[9.5px] text-pink-300 font-bold">Verified</div>
             </div>
-            <canvas id="insights-trend-canvas" height="110" class="w-full h-[110px]"></canvas>
           </div>
 
           <div class="flex gap-2">
-            <button onclick="state.insightBoostCount++;saveState();renderApp();showToast('🚀 AI Optimization Applied! Shareability boosted','success')" class="flex-1 py-2 rounded-xl bg-violet-600/30 border border-violet-500/60 text-xs font-bold text-violet-200 hover:bg-violet-600/50">
-              ⚡ Simulate AI Hook Boost
+            <button onclick="openOverlay('oneClickAiStudio')" class="flex-1 py-2 rounded-xl bg-violet-600/30 border border-violet-500/60 text-xs font-bold text-violet-200 hover:bg-violet-600/50">
+              🎬 Open 9:16 Studio
             </button>
             <button onclick="openOverlay('geminiStudio')" class="flex-1 py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-extrabold">
               Optimize with Gemini ✨
@@ -1818,7 +1884,7 @@
               <div class="w-11 h-11 rounded-full bg-gradient-to-br from-violet-600 to-cyan-400 flex items-center justify-center text-white text-xl shrink-0">🚀</div>
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
-                  <span class="font-bold text-sm truncate">${escapeHtml(p.username)}</span>
+                  <span class="font-bold text-sm truncate">${escapeHtml(displayName)}</span>
                   ${p.isVip ? '<span class="px-1.5 py-0.5 text-[9px] rounded bg-amber-400/20 text-amber-300 border border-amber-400 font-extrabold">VIP CREATOR</span>' : ''}
                 </div>
                 <div class="text-[11px] text-cyan-400 font-medium">${escapeHtml(p.niche)} • <span class="text-amber-300 font-bold">ID: #${p.displayUserId}</span></div>
@@ -1910,7 +1976,7 @@
             </div>
           </div>
           <div class="flex gap-2">
-            <input id="home-gemini-kw" type="text" placeholder="Enter topic (e.g. Street Food, AI Tools, Fitness)..." class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') quickHomeGeminiGenerate()" />
+            <input id="home-gemini-kw" type="text" placeholder="Enter topic (e.g. Street Food, AI Tools, Fitness)..." class="flex-1 min-w-0 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') quickHomeGeminiGenerate()" />
             <button id="home-gemini-btn" onclick="quickHomeGeminiGenerate()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs shrink-0">Generate ✨</button>
           </div>
           <div id="home-gemini-output" class="hidden mt-3 rounded-xl bg-slate-950/90 border border-cyan-500/40 p-3 text-xs space-y-1.5"></div>
@@ -1922,12 +1988,12 @@
             <div>
               <span class="px-2 py-0.5 rounded bg-pink-500 text-white text-[9.5px] font-extrabold">🔥 75% OFF MEGA SALE</span>
               <h3 class="font-display font-extrabold text-base text-white mt-1">🛍️ Shopsy Shopping Now — 75% OFF</h3>
-              <p class="text-[11px] text-amber-300 font-semibold mt-0.5">₹50 वेलकम डिस्काउंट + प्रति ऑर्डर +10 💎 और +15 🪙 (ID: ${CONSTANTS.AFFILIATE_TAG})</p>
+              <p class="text-[11px] text-amber-300 font-semibold mt-0.5">प्रति ऑर्डर +10 💎 और +15 🪙 रिवार्ड (Affiliate Tag: ${CONSTANTS.AFFILIATE_TAG})</p>
             </div>
             <span class="text-3xl float-soft">🛍️</span>
           </div>
           <button onclick="event.stopPropagation(); openOverlay('shopsyMall')" class="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-amber-400 text-slate-950 font-extrabold text-xs">
-            Explore Shopsy Mega Mall & Earn +10 💎 →
+            Explore Shopsy Mega Mall &amp; Earn +10 💎 →
           </button>
         </section>
 
@@ -1953,17 +2019,16 @@
           </button>
         </section>
 
-        <!-- 4: Referral & Rewards 1-Day VIP Banner -->
+        <!-- 4: Unity Rewarded 1-Day VIP Unlock & Share Invite -->
         <section class="rounded-2xl p-4 bg-[#181230] border border-violet-500/50 space-y-2.5">
           <div class="flex items-center justify-between">
-            <h3 class="font-display font-extrabold text-sm text-amber-300">🤝 Refer a Friend = 1-Day Free VIP Pro!</h3>
+            <h3 class="font-display font-extrabold text-sm text-amber-300">👑 Unlock 1-Day VIP Trial via Unity Ad</h3>
             <span class="px-2 py-0.5 rounded bg-violet-500/30 text-violet-200 text-[10px] font-mono font-bold">${p.referralCode}</span>
           </div>
-          <p class="text-[11px] text-slate-300 leading-relaxed">दोस्त को लिंक शेयर करें (+10 🪙 +4 💎)। दोस्त 1 मिनट ऐप एक्सप्लोर करेगा तो आपको तुरंत **1 दिन का फ्री VIP प्रो** मिलेगा!</p>
+          <p class="text-[11px] text-slate-300 leading-relaxed">Watch a verified Unity Rewarded Ad (<span class="font-mono text-cyan-300">${escapeHtml(CONSTANTS.UNITY_REWARDED_PLACEMENT)}</span>) in the Android APK to unlock a 1-Day VIP Pro Trial, or invite fellow creators!</p>
           <div class="flex flex-wrap gap-2">
-            <button onclick="shareReferralLink()" class="flex-1 py-2 rounded-xl bg-violet-600 text-white text-xs font-extrabold">📤 Share Invite Link</button>
-            <button onclick="openWelcomeBonusModal()" class="flex-1 py-2 rounded-xl bg-emerald-600/30 border border-emerald-400/60 text-emerald-200 text-xs font-bold">🎁 ₹50 Bonus Details</button>
-            <button onclick="simulateFriendVipUnlock()" class="w-full py-2 rounded-xl bg-slate-900 border border-amber-400/50 text-amber-300 text-[11px] font-bold">⚡ Verify Friend Activity (+1 Day VIP & +10 💎)</button>
+            <button onclick="unlockVipTrialWithRewardedAd()" class="flex-1 min-w-[150px] py-2 rounded-xl bg-amber-400 text-slate-950 text-xs font-extrabold">🎬 Watch Ad → 1-Day VIP</button>
+            <button onclick="shareReferralLink()" class="flex-1 min-w-[140px] py-2 rounded-xl bg-violet-600 text-white text-xs font-extrabold">📤 Share Invite Link</button>
           </div>
         </section>
 
@@ -2028,24 +2093,24 @@
           </div>
         </section>
 
-        <!-- 8: Your Growth Telemetry -->
+        <!-- 8: Your Cloud Activity Summary -->
         <section class="rounded-2xl p-4 app-card">
-          <h3 class="font-display font-bold text-sm mb-3">Your Growth Telemetry</h3>
+          <h3 class="font-display font-bold text-sm mb-3">Your Real Creator Stats</h3>
           <div class="grid grid-cols-3 text-center">
             <div>
-              <div class="font-display font-extrabold text-base">${p.isVip ? '84.2%' : '62.4%'}</div>
-              <div class="text-[10px] text-slate-400">Retention Rate</div>
-              <div class="text-[9.5px] text-cyan-400 font-semibold">+18% Boost</div>
+              <div class="font-display font-extrabold text-base">${Number(p.aiGenCount || state.aiHistory.length || 0)}</div>
+              <div class="text-[10px] text-slate-400">AI Creations</div>
+              <div class="text-[9.5px] text-cyan-400 font-semibold">Gemini 3.8</div>
             </div>
             <div>
               <div class="font-display font-extrabold text-base">${p.lifetimeDiamonds}</div>
               <div class="text-[10px] text-slate-400">Lifetime 💎</div>
-              <div class="text-[9.5px] text-cyan-400 font-semibold">Earned</div>
+              <div class="text-[9.5px] text-cyan-400 font-semibold">Firestore</div>
             </div>
             <div>
               <div class="font-display font-extrabold text-base">${p.streakDays} Days</div>
               <div class="text-[10px] text-slate-400">Current Streak</div>
-              <div class="text-[9.5px] text-cyan-400 font-semibold">Active</div>
+              <div class="text-[9.5px] text-cyan-400 font-semibold">Synced</div>
             </div>
           </div>
         </section>
@@ -2120,8 +2185,8 @@
             `).join('')}
           </div>
           <div class="flex gap-2">
-            <input id="ai-tab-chat-input" type="text" placeholder="Ask Gemini: e.g. 'Comedy reel script on exam tension'..." class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') sendGeminiChat()" />
-            <button id="ai-tab-chat-btn" onclick="sendGeminiChat()" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs">Send 🚀</button>
+            <input id="ai-tab-chat-input" type="text" placeholder="Ask Gemini: e.g. 'Comedy reel script on exam tension'..." class="flex-1 min-w-0 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') sendGeminiChat()" />
+            <button id="ai-tab-chat-btn" onclick="sendGeminiChat()" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shrink-0">Send 🚀</button>
           </div>
         </section>
 
@@ -2223,8 +2288,9 @@
     // -------------------------------------------------------------------------
     function renderRanksTab() {
       const p = state.profile;
+      const myName = (p.username || cloudUser?.displayName || cloudUser?.email || 'Creator').trim();
       const myScore = p.coins + p.diamonds * 10;
-      const myEntry = { id: 'self', name: `${p.username} (You)`, niche: p.niche, coins: p.coins, diamonds: p.diamonds, isVip: p.isVip, isSelf: true };
+      const myEntry = { id: 'self', name: `${myName} (You)`, niche: p.niche, coins: p.coins, diamonds: p.diamonds, isVip: p.isVip, isSelf: true };
       const cloudOthers = (cloudLeaderboard || []).filter(c => !cloudUser || c.uid !== cloudUser.uid);
       const all = [...cloudOthers, myEntry];
       all.sort((a, b) => {
@@ -2270,7 +2336,7 @@
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center font-extrabold text-sm text-white">#${myRank}</div>
               <div>
-                <div class="font-bold text-sm text-white">${escapeHtml(p.username)} (You)</div>
+                <div class="font-bold text-sm text-white">${escapeHtml(myName)} (You)</div>
                 <div class="text-[10.5px] text-cyan-300">${escapeHtml(p.niche)} • Score: ${myScore} pts</div>
               </div>
             </div>
@@ -2284,15 +2350,15 @@
 
         <div class="space-y-2">
           ${all.map((c, idx) => `
-            <div class="rounded-xl p-3 app-card flex items-center justify-between ${c.isSelf ? 'border-cyan-400' : ''}">
-              <div class="flex items-center gap-2.5">
-                <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold ${idx===0 ? 'bg-amber-400 text-slate-950' : idx===1 ? 'bg-slate-300 text-slate-950' : idx===2 ? 'bg-orange-400 text-slate-950' : 'bg-slate-800 text-slate-300'}">${idx+1}</span>
-                <div>
-                  <div class="text-xs font-bold flex items-center gap-1">${escapeHtml(c.name)} ${c.isVip ? '👑' : ''}</div>
-                  <div class="text-[10px] text-slate-400">${escapeHtml(c.niche)}</div>
+            <div class="rounded-xl p-3 app-card flex items-center justify-between gap-2 ${c.isSelf ? 'border-cyan-400' : ''}">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-extrabold ${idx===0 ? 'bg-amber-400 text-slate-950' : idx===1 ? 'bg-slate-300 text-slate-950' : idx===2 ? 'bg-orange-400 text-slate-950' : 'bg-slate-800 text-slate-300'}">${idx+1}</span>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold flex items-center gap-1 truncate">${escapeHtml(c.name)} ${c.isVip ? '👑' : ''}</div>
+                  <div class="text-[10px] text-slate-400 truncate">${escapeHtml(c.niche)}</div>
                 </div>
               </div>
-              <div class="text-right text-xs font-bold">
+              <div class="text-right text-xs font-bold shrink-0">
                 <span class="text-amber-300">${c.coins} 🪙</span> &nbsp;
                 <span class="text-sky-300">${c.diamonds} 💎</span>
               </div>
@@ -2902,10 +2968,10 @@
       const cats = ['All', 'Ethnic Fashion', 'Footwear', 'Audio & Tech', 'Smart Gadgets', 'Creator Gear', 'Home & Kitchen'];
       const items = SHOPSY_MEGA_CATALOG.filter(x => state.shopsyCat === 'All' || x.category === state.shopsyCat);
       return `
-        ${overlayHeader('🛍️ Shopsy Mega Mall — 75% OFF', `₹50 Welcome Discount Active • Tag: ${CONSTANTS.AFFILIATE_TAG}`)}
+        ${overlayHeader('🛍️ Shopsy Mega Mall — 75% OFF', `Verified Affiliate Deals • Tag: ${CONSTANTS.AFFILIATE_TAG}`)}
         <div class="p-3.5 space-y-3.5">
           <div class="rounded-2xl p-3.5 bg-violet-900/40 border border-violet-400/60 text-xs font-bold text-violet-100 leading-relaxed">
-            🎉 ₹50 वेलकम डिस्काउंट सक्रिय! 💎 आर्डर करने पर पाएँ: +${CONSTANTS.SHOPSY_ORDER_DIAMONDS} डायमंड और +${CONSTANTS.SHOPSY_ORDER_COINS} कॉइन्स (Affiliate ID: ${CONSTANTS.AFFILIATE_TAG})
+            🛍️ Shopsy 75% OFF Mega Mall! 💎 आर्डर लॉग करने पर पाएँ: +${CONSTANTS.SHOPSY_ORDER_DIAMONDS} डायमंड और +${CONSTANTS.SHOPSY_ORDER_COINS} कॉइन्स (Affiliate ID: ${CONSTANTS.AFFILIATE_TAG})
           </div>
 
           <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
@@ -2985,7 +3051,7 @@
           <div class="rounded-2xl p-3.5 app-card border-cyan-400/40 space-y-2">
             <div class="text-xs font-extrabold text-cyan-300">⚡ Smart Store Link Tagger (Amazon / Flipkart / Meesho / Shopsy)</div>
             <div class="flex gap-2">
-              <input id="aff-raw-url-input" type="url" placeholder="Paste any Amazon/Flipkart/Meesho product link..." class="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
+              <input id="aff-raw-url-input" type="url" placeholder="Paste any Amazon/Flipkart/Meesho product link..." class="flex-1 min-w-0 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
               <button onclick="convertAnyAffiliateUrl()" class="px-3 py-2 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs shrink-0">Tag URL 🔗</button>
             </div>
             ${state.affiliateLastConvertedUrl ? `
@@ -3133,18 +3199,19 @@
         ${overlayHeader('🚀 Multi-Platform Video Cross-Poster', '1-Click Broadcast Across All 6 Creator Channels')}
         <div class="p-3.5 space-y-4">
           <div class="rounded-2xl p-4 app-card space-y-3">
-            <h3 class="font-bold text-sm">Connected Channels (Tap to Edit Handle or Toggle)</h3>
+            <h3 class="font-bold text-sm">Connected Channels (Tap + to Connect Real Handle)</h3>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               ${SOCIAL_CHANNELS.map(ch => {
-                const st = state.channels[ch.id];
+                const st = state.channels[ch.id] || { connected: false, handle: '' };
+                const isConn = Boolean(st.connected && (st.handle || '').trim());
                 return `
-                  <button onclick="openChannelModal('${ch.id}')" class="p-3 rounded-xl border text-left ${st.connected ? 'bg-slate-900 border-emerald-400/60' : 'bg-slate-950 border-slate-800 opacity-70'}">
+                  <button onclick="openChannelModal('${ch.id}')" class="p-3 rounded-xl border text-left ${isConn ? 'bg-slate-900 border-emerald-400/60' : 'bg-slate-950 border-slate-800 opacity-85 hover:border-cyan-400/50'}">
                     <div class="flex items-center justify-between">
                       <span class="px-1.5 py-0.5 rounded text-[10px] font-bold text-white" style="background:${ch.color}">${ch.short}</span>
-                      <span>${st.connected ? '✅' : '⚪'}</span>
+                      <span>${isConn ? '✅' : '➕'}</span>
                     </div>
                     <div class="text-xs font-bold mt-1.5">${ch.name}</div>
-                    <div class="text-[10px] text-slate-400 truncate">${escapeHtml(st.handle)}</div>
+                    <div class="text-[10px] ${isConn ? 'text-emerald-300' : 'text-slate-400'} truncate">${isConn ? escapeHtml(st.handle) : 'Tap + to connect'}</div>
                   </button>`;
               }).join('')}
             </div>
@@ -3244,7 +3311,7 @@
               </div>
               <div>
                 <label class="text-[10.5px] font-bold text-slate-400">Welcome Bonus (₹)</label>
-                <input id="cfg-welcome-bonus" type="number" min="0" value="${Number(cfg.welcomeBonusRupees || 50)}" class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-emerald-300 font-mono" />
+                <input id="cfg-welcome-bonus" type="number" min="0" value="${Number(cfg.welcomeBonusRupees || 0)}" class="w-full mt-0.5 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-emerald-300 font-mono" />
               </div>
             </div>
 
@@ -4011,6 +4078,7 @@
           };
           renderOverlay();
           showToast(`🎬 1080×1920 HD Video (${renderedFrames} frames @ ${effectiveFps} FPS) Ready!`, 'success');
+          setTimeout(() => { UnityAdEngine.showInterstitial('post_export'); }, 600);
         };
 
         recorder.onerror = (ev) => {
@@ -4299,6 +4367,7 @@
         }
 
         state.profile.videosUsed += 1;
+        state.profile.aiGenCount = (state.profile.aiGenCount || 0) + 1;
         state.aiStudioState.isPlaying = true;
         state.aiStudioState.progressStep = 3;
         state.aiStudioState.progressStage = '3. Ready to Render (1080×1920 @ 30FPS)';
@@ -4315,13 +4384,22 @@
         });
         isStudioGenerating = false;
         saveState();
+        syncProfileToCloud();
         renderOverlay();
         showToast('🟢 Live Gemini 3.8 Flash + 9:16 HD Visual Ready!', 'success');
-        setTimeout(() => {
-          if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
-            exportOneClickReelVideo();
-          }
-        }, 350);
+        if (state.profile.aiGenCount % 3 === 0) {
+          UnityAdEngine.showInterstitial('ai_gen', () => {
+            if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
+              exportOneClickReelVideo();
+            }
+          });
+        } else {
+          setTimeout(() => {
+            if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
+              exportOneClickReelVideo();
+            }
+          }, 350);
+        }
       } catch (err) {
         isStudioGenerating = false;
         state.aiStudioState.progressStep = 0;
@@ -4383,21 +4461,28 @@
     async function runHeroAiAnalyzer() {
       const btn = document.getElementById('hero-ai-analyze-btn');
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Calling Live Gemini...'; }
-      const connectedNames = SOCIAL_CHANNELS.filter(c => state.channels[c.id]?.connected).map(c => c.name).join(', ') || 'Instagram Reels, YouTube Shorts';
-      const topicHint = (state.crossPoster.title || state.crossPoster.videoName || 'Viral Creator Video').replace(/\.[a-z0-9]+$/i, '');
+      const connectedNames = SOCIAL_CHANNELS.filter(c => state.channels[c.id]?.connected && (state.channels[c.id]?.handle || '').trim()).map(c => c.name).join(', ') || 'Instagram Reels, YouTube Shorts';
+      const rawTitle = (state.crossPoster.title || '').trim();
+      const rawFile = (state.crossPoster.videoName || '').replace(/\.[a-z0-9]+$/i, '').trim();
+      const topicHint = rawTitle || rawFile || 'Trending Creator Reel & Shorts Growth';
       try {
         const res = await callGeminiBackend({
-          prompt: `Generate a clickable viral title, high-CTR description, and 10 trending hashtags for a video about "${topicHint}" targeting ${connectedNames}.`,
+          prompt: topicHint,
           platform: connectedNames,
-          tone: 'High-Retention Hinglish',
+          tone: 'High-Retention Hinglish SEO Title & Tags',
           contentType: 'CROSS_POSTER_SEO'
         });
         state.crossPoster.title = res.data.title;
         state.crossPoster.tags = res.data.hashtags;
         state.crossPoster.desc = res.data.hook ? `${res.data.hook}\n${res.data.cta || ''}` : res.data.script.slice(0, 180);
+        state.profile.aiGenCount = (state.profile.aiGenCount || 0) + 1;
         saveState();
+        syncProfileToCloud();
         if (activeOverlay) renderOverlay(); else renderApp();
-        showToast('🟢 Live Gemini AI Embedded Viral Title & Tags!', 'success');
+        showToast('🟢 Live Gemini 3.8 Flash Embedded Viral Title & Tags!', 'success');
+        if (state.profile.aiGenCount % 3 === 0) {
+          UnityAdEngine.showInterstitial('ai_gen');
+        }
       } catch (err) {
         showToast(`⚠️ Live AI Error: ${err.message}`, 'error');
       } finally {
@@ -4407,41 +4492,60 @@
 
     function openChannelModal(channelId) {
       const ch = SOCIAL_CHANNELS.find(c => c.id === channelId);
-      const cur = state.channels[channelId];
+      const cur = state.channels[channelId] || { connected: false, handle: '' };
+      const isConn = Boolean(cur.connected && (cur.handle || '').trim());
       openModal(`
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="font-display font-extrabold text-base text-white">${ch.name} Settings</h3>
+            <h3 class="font-display font-extrabold text-base text-white">Connect ${ch.name}</h3>
             <button onclick="closeModal()" class="text-slate-400 font-bold">✕</button>
           </div>
           <label class="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold">
-            <span>Enable 1-Click Broadcast</span>
-            <input id="ch-conn-toggle" type="checkbox" ${cur.connected ? 'checked' : ''} class="w-4 h-4 accent-cyan-400" />
+            <span>Mark Platform as Connected (✅)</span>
+            <input id="ch-conn-toggle" type="checkbox" ${isConn ? 'checked' : 'checked'} class="w-4 h-4 accent-cyan-400" />
           </label>
           <div>
             <label class="text-[11px] text-slate-400">${ch.hint}</label>
-            <input id="ch-handle-input" type="text" value="${escapeHtml(cur.handle)}" class="w-full mt-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
+            <input id="ch-handle-input" type="text" value="${escapeHtml(cur.handle)}" placeholder="${escapeHtml(ch.hint)}" class="w-full mt-1 rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
           </div>
-          <button onclick="saveChannelModal('${channelId}')" class="w-full py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">Save Channel ✅</button>
+          <div class="flex gap-2">
+            <button onclick="saveChannelModal('${channelId}')" class="flex-1 py-2.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">Save to Profile ✅</button>
+            ${isConn ? `<button onclick="disconnectChannelModal('${channelId}')" class="px-3 py-2.5 rounded-xl bg-red-950/70 border border-red-500/50 text-red-300 font-bold text-xs">Disconnect</button>` : ''}
+          </div>
         </div>
       `);
     }
 
     function saveChannelModal(channelId) {
-      state.channels[channelId] = {
-        connected: document.getElementById('ch-conn-toggle').checked,
-        handle: document.getElementById('ch-handle-input').value.trim() || '@creator'
-      };
+      const connected = Boolean(document.getElementById('ch-conn-toggle')?.checked);
+      const handle = (document.getElementById('ch-handle-input')?.value || '').trim();
+      if (connected && (!handle || LEGACY_FAKE_HANDLES.has(handle))) {
+        showToast('Enter your real channel handle, page link, or WhatsApp number first!', 'error');
+        return;
+      }
+      state.channels[channelId] = connected
+        ? { connected: true, handle }
+        : { connected: false, handle: '' };
       saveState();
+      syncProfileToCloud();
       closeModal();
       if (activeOverlay) renderOverlay(); else renderApp();
-      showToast('✅ Channel Updated!', 'success');
+      showToast(connected ? '✅ Platform Connected & Synced to Firestore!' : 'Platform Disconnected.', connected ? 'success' : 'info');
+    }
+
+    function disconnectChannelModal(channelId) {
+      state.channels[channelId] = { connected: false, handle: '' };
+      saveState();
+      syncProfileToCloud();
+      closeModal();
+      if (activeOverlay) renderOverlay(); else renderApp();
+      showToast('Platform Disconnected.', 'info');
     }
 
     function broadcastMultiPlatform() {
-      const connected = SOCIAL_CHANNELS.filter(c => state.channels[c.id]?.connected).map(c => c.name);
+      const connected = SOCIAL_CHANNELS.filter(c => state.channels[c.id]?.connected && (state.channels[c.id]?.handle || '').trim()).map(c => c.name);
       if (connected.length === 0) {
-        showToast('Select at least 1 social channel first!', 'error');
+        showToast('Tap + on any platform card to connect your real channel first!', 'error');
         return;
       }
       const caption = buildSmartAffiliateCaption(state.crossPoster.title, state.crossPoster.tags, state.crossPoster.desc);
@@ -4510,8 +4614,10 @@
         });
         const out = res.data;
         state.profile.textUsed += 1;
+        state.profile.aiGenCount = (state.profile.aiGenCount || 0) + 1;
         state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: 'GEMINI_QUICK', topic: kw, platform: 'Multi-Platform', content: out.script, hashtags: out.hashtags, bookmarked: false, time: Date.now() });
         saveState();
+        syncProfileToCloud();
         if (box) {
           box.classList.remove('hidden');
           box.innerHTML = `
@@ -4524,6 +4630,9 @@
             <button onclick="copyReg('${regCopy(out.title + '\n\n' + out.script + '\n\n' + out.hashtags, 'Gemini Script Copied!')}')" class="mt-1 px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 font-extrabold text-[11px]">Copy Kit 📋</button>`;
         }
         showToast('🟢 Live Gemini Script & Hashtags Ready!', 'success');
+        if (state.profile.aiGenCount % 3 === 0) {
+          UnityAdEngine.showInterstitial('ai_gen');
+        }
       } catch (err) {
         if (box) {
           box.classList.remove('hidden');
@@ -4571,7 +4680,7 @@
 
       try {
         const res = await callGeminiBackend({
-          prompt: `Tool Mode: ${toolId}. Generate viral content for topic "${topic}".`,
+          prompt: topic,
           platform: 'YouTube Shorts & Instagram Reels',
           tone: toolId,
           contentType: toolId
@@ -4598,9 +4707,14 @@
         }
 
         state.profile.textUsed += 1;
+        state.profile.aiGenCount = (state.profile.aiGenCount || 0) + 1;
         if (isImageMode) state.profile.imagesUsed += 1;
         state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: toolId, topic, platform: 'Multi-Platform', content: bp.script, hashtags: bp.hashtags, bookmarked: false, time: Date.now() });
         saveState();
+        syncProfileToCloud();
+        if (state.profile.aiGenCount % 3 === 0) {
+          UnityAdEngine.showInterstitial('ai_gen');
+        }
         if (out) {
           out.classList.remove('hidden');
           out.innerHTML = `
@@ -4693,8 +4807,11 @@
       try {
         const res = await callGeminiBackend({ prompt: topic, platform: pf, tone, contentType: 'GEMINI_STUDIO' });
         const bp = res.data;
+        state.profile.textUsed += 1;
+        state.profile.aiGenCount = (state.profile.aiGenCount || 0) + 1;
         state.aiHistory.unshift({ id: 'ai_' + Date.now(), type: 'GEMINI_STUDIO', topic, platform: pf, content: bp.script, hashtags: bp.hashtags, bookmarked: true, time: Date.now() });
         saveState();
+        syncProfileToCloud();
         if (resEl) {
           resEl.innerHTML = `
             <div class="rounded-2xl p-4 app-card border-cyan-400 space-y-2">
@@ -4708,6 +4825,9 @@
             </div>`;
         }
         showToast('🟢 Live Gemini AI Content Generated & Saved!', 'success');
+        if (state.profile.aiGenCount % 3 === 0) {
+          UnityAdEngine.showInterstitial('ai_gen');
+        }
       } catch (err) {
         if (resEl) {
           resEl.innerHTML = `<div class="rounded-2xl p-4 app-card border-red-500/60 text-xs text-red-200">⚠️ Live Gemini Error: ${escapeHtml(err.message)}</div>`;
@@ -4988,10 +5108,10 @@
             <h3 class="font-display font-extrabold text-sm text-white">🛍️ Express Shopsy Order (${price})</h3>
             <button onclick="closeModal()" class="text-slate-400 font-bold">✕</button>
           </div>
-          <p class="text-[11px] text-emerald-300 font-bold">🎁 ₹50 Welcome Bonus Applied • +10 💎 & +15 🪙 Reward on Order!</p>
+          <p class="text-[11px] text-emerald-300 font-bold">🛍️ Shopsy Verified Deal • +10 💎 &amp; +15 🪙 Reward on Order!</p>
           <input id="ord-name" type="text" placeholder="Full Name" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
           <input id="ord-phone" type="tel" placeholder="Mobile Number" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white" />
-          <button onclick="completeShopsyOrder('${escapeHtml(title)}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-amber-400 text-slate-950 font-extrabold text-xs">Confirm & Claim +10 💎 +15 🪙 →</button>
+          <button onclick="completeShopsyOrder('${escapeHtml(title)}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-amber-400 text-slate-950 font-extrabold text-xs">Confirm &amp; Claim +10 💎 +15 🪙 →</button>
         </div>
       `);
     }
@@ -5155,30 +5275,21 @@
     }
 
     function shareReferralLink() {
-      const txt = `🚀 Join ViralBoost AI & Claim ₹${CONSTANTS.INITIAL_BONUS_RUPEES} Welcome Bonus + 3-Day Free AI Studio!\nUse Code: ${state.profile.referralCode}\n👉 ${CONSTANTS.APP_URL}`;
+      const txt = `🚀 Join ViralBoost AI — 1-Click Gemini 3.8 Flash AI Video Studio & Multi-Platform Creator Growth!\nUse Code: ${state.profile.referralCode}\n👉 ${CONSTANTS.APP_URL}`;
       creditRewards(4, 10, 'Referral Invite Shared', `Code: ${state.profile.referralCode}`, 'REFERRAL');
       shareContent('ViralBoost AI Invite', txt, CONSTANTS.APP_URL);
       renderApp();
     }
 
-    function simulateFriendVipUnlock() {
-      state.profile.isVip = true;
-      state.profile.planTier = 'REFERRAL_1_DAY_VIP';
-      creditRewards(10, 0, 'Friend 1-Min Active Referral Bonus', 'Unlocked 1-Day Full VIP Pro!', 'REFERRAL');
-      renderApp();
-      showToast('🎉 Friend Verified! 1-Day VIP Pro + 10 💎 Unlocked!', 'success');
-    }
-
-    function openWelcomeBonusModal() {
-      const bonus = Number(appConfigState.welcomeBonusRupees || CONSTANTS.INITIAL_BONUS_RUPEES || 50);
-      openModal(`
-        <div class="space-y-3 text-center">
-          <div class="text-4xl">🎁</div>
-          <h3 class="font-display font-extrabold text-lg text-amber-300">₹${bonus} Welcome Bonus Active!</h3>
-          <p class="text-xs text-slate-200 leading-relaxed">आपके वॉलेट में ₹${bonus} वेलकम बोनस, 10 💎 डायमंड और 250 🪙 कॉइन्स क्रेडिट हो चुके हैं! Shopsy 75% OFF मॉल में आप इसका तुरंत इस्तेमाल कर सकते हैं।</p>
-          <button onclick="closeModal();openOverlay('shopsyMall')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-amber-400 text-slate-950 font-extrabold text-xs">Shop at Shopsy 75% OFF 🛍️</button>
-        </div>
-      `);
+    function unlockVipTrialWithRewardedAd() {
+      UnityAdEngine.showRewarded(() => {
+        state.profile.isVip = true;
+        state.profile.planTier = 'AD_REWARDED_1_DAY_VIP';
+        state.profile.vipExpiresAt = Date.now() + 86400000;
+        creditRewards(5, 15, 'Unity Rewarded 1-Day VIP Trial', `Placement ${CONSTANTS.UNITY_REWARDED_PLACEMENT}`, 'VIP_TRIAL');
+        if (!activeOverlay) renderApp();
+        showToast('👑 Verified Unity Ad Complete! 1-Day VIP Pro + 5 💎 Unlocked!', 'success');
+      }, '1-Day VIP Trial');
     }
 
     function submitSupportTicket() {
@@ -5202,12 +5313,14 @@
     }
 
     function saveProfileForm() {
-      state.profile.username = (document.getElementById('prof-name')?.value || '').trim() || 'ViralCreator_99';
-      state.profile.email = (document.getElementById('prof-email')?.value || '').trim() || 'creator@viralboost.ai';
+      const nextName = (document.getElementById('prof-name')?.value || '').trim();
+      const nextEmail = (document.getElementById('prof-email')?.value || '').trim();
+      if (nextName) state.profile.username = nextName;
+      if (nextEmail) state.profile.email = nextEmail;
       saveState();
       syncProfileToCloud();
       renderApp();
-      showToast('✅ Creator Profile Saved!', 'success');
+      showToast('✅ Creator Profile Saved & Synced!', 'success');
     }
 
     function enableBrowserReminder() {
@@ -5263,16 +5376,16 @@
     async function saveAdminAppConfig() {
       const payload = {
         unityGameId: (document.getElementById('cfg-unity-game')?.value || '800427608').trim() || '800427608',
-        unityBannerPlacementId: (document.getElementById('cfg-unity-banner')?.value || 'BP_Banner_Android').trim() || 'BP_Banner_Android',
-        unityInterstitialPlacementId: (document.getElementById('cfg-unity-interstitial')?.value || 'BP_Interstitial_Android').trim() || 'BP_Interstitial_Android',
-        unityRewardedPlacementId: (document.getElementById('cfg-unity-rewarded')?.value || 'BP_Rewarded_Android').trim() || 'BP_Rewarded_Android',
+        unityBannerPlacementId: (document.getElementById('cfg-unity-banner')?.value || 'Banner_Android').trim() || 'Banner_Android',
+        unityInterstitialPlacementId: (document.getElementById('cfg-unity-interstitial')?.value || 'Interstitial_Android').trim() || 'Interstitial_Android',
+        unityRewardedPlacementId: (document.getElementById('cfg-unity-rewarded')?.value || 'Rewarded_Android').trim() || 'Rewarded_Android',
         webAdTagUrl: (document.getElementById('cfg-web-ad-tag')?.value || '').trim(),
         admobAppId: (document.getElementById('cfg-admob-app')?.value || '').trim(),
         admobBannerId: (document.getElementById('cfg-admob-banner')?.value || '').trim(),
         admobInterstitialId: (document.getElementById('cfg-admob-interstitial')?.value || '').trim(),
         admobRewardedId: (document.getElementById('cfg-admob-rewarded')?.value || '').trim(),
         affiliateTag: (document.getElementById('cfg-affiliate-tag')?.value || '5665937').trim() || '5665937',
-        welcomeBonusRupees: Math.max(0, Math.floor(Number(document.getElementById('cfg-welcome-bonus')?.value ?? 50)))
+        welcomeBonusRupees: Math.max(0, Math.floor(Number(document.getElementById('cfg-welcome-bonus')?.value ?? 0)))
       };
       applyLiveAppConfig(payload);
       if (!cloudUser) {
@@ -5413,47 +5526,6 @@
       showToast('📤 Admin Reply Sent!', 'success');
     }
 
-    function drawInsightsCharts() {
-      const canvas = document.getElementById('insights-trend-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = (rect.width || 340) * dpr;
-      canvas.height = 110 * dpr;
-      ctx.scale(dpr, dpr);
-      const w = rect.width || 340, h = 110;
-      const presetTrends = [
-        [24, 38, 46, 64, 78, 89, 97],
-        [30, 45, 59, 72, 84, 93, 100],
-        [20, 31, 49, 57, 71, 83, 92]
-      ];
-      const presetBases = [
-        [15, 22, 29, 36, 44, 51, 58],
-        [18, 25, 33, 41, 48, 55, 63],
-        [14, 19, 26, 31, 38, 45, 52]
-      ];
-      const trend = presetTrends[state.insightPresetIdx] || presetTrends[0];
-      const base = presetBases[state.insightPresetIdx] || presetBases[0];
-      const plot = (arr, color, fill) => {
-        ctx.beginPath();
-        arr.forEach((v, i) => {
-          const x = 14 + (i * (w - 28)) / (arr.length - 1);
-          const y = h - 18 - (v / 100) * (h - 32);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.stroke();
-        if (fill) {
-          ctx.lineTo(w - 14, h - 18); ctx.lineTo(14, h - 18); ctx.closePath();
-          const g = ctx.createLinearGradient(0, 0, 0, h);
-          g.addColorStop(0, 'rgba(0, 229, 255, 0.28)'); g.addColorStop(1, 'rgba(0, 229, 255, 0.0)');
-          ctx.fillStyle = g; ctx.fill();
-        }
-      };
-      plot(base, '#475569', false);
-      plot(trend, '#00E5FF', true);
-    }
-
     // =========================================================================
     // 8. BOOTSTRAP & TICKER LOOP
     // =========================================================================
@@ -5475,23 +5547,23 @@
       }
     });
 
-    window.addEventListener('resize', () => {
-      if (state.activeTab === 'home' && !activeOverlay) drawInsightsCharts();
-    });
-
     renderApp();
   </script>
 
-  <!-- Official Firebase Web SDK v12.6.0: App Check (reCAPTCHA Enterprise + 401 Resilience) + Phone & Google Auth + AI Logic + Cloud Firestore -->
+  <!-- Official Firebase Web SDK v12.6.0: Instant AI Logic (`window.firebaseAI`) + Real Auth (Phone OTP, Email/Password, Google) + Cloud Firestore -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
     import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app-check.js";
-    import { getAI, getGenerativeModel, getImagenModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
+    import * as FirebaseAI from "https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
     import {
       getAuth,
       GoogleAuthProvider,
       RecaptchaVerifier,
       signInWithPhoneNumber,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      sendPasswordResetEmail,
+      updateProfile,
       signInWithPopup,
       signInWithRedirect,
       getRedirectResult,
@@ -5513,6 +5585,8 @@
       limit,
       onSnapshot
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    const { getAI, getGenerativeModel, GoogleAIBackend, Schema } = FirebaseAI;
 
     const firebaseConfig = {
       apiKey: "AIzaSyAzOys4B3Jq8DX1_6AGeCljNedGkBx0yhM",
@@ -5545,6 +5619,9 @@
       signOutGoogle: async () => {},
       sendPhoneOtp: async () => {},
       confirmPhoneOtp: async () => {},
+      signUpWithEmail: async () => {},
+      signInWithEmail: async () => {},
+      resetPasswordEmail: async () => {},
       syncUserProfileAndLeaderboard: async () => {},
       submitPayment: async () => {},
       submitTicket: async () => {},
@@ -5566,10 +5643,15 @@
 
     try {
       const app = initializeApp(firebaseConfig);
-      // Secondary AI-direct app instance without App Check attachment for [401]/[403] WebView/browser resilience
       const aiDirectApp = initializeApp(firebaseConfig, "ai-direct-fallback");
 
-      // Configure Firebase App Check with ReCaptchaEnterpriseProvider and verify token non-blockingly
+      // Synchronously initialize Firebase AI Logic immediately after initializeApp() without blocking on App Check
+      const primaryAi = getAI(app, { backend: new GoogleAIBackend() });
+      const directAi = getAI(aiDirectApp, { backend: new GoogleAIBackend() });
+      window.firebaseAI = primaryAi;
+      bridge.aiReady = true;
+
+      // Non-blocking background App Check setup (never delays or blocks Firebase AI Logic)
       let appCheckTokenOk = false;
       if (window.location.protocol.startsWith("http")) {
         try {
@@ -5577,30 +5659,25 @@
             provider: new ReCaptchaEnterpriseProvider(recaptchaEnterpriseSiteKey),
             isTokenAutoRefreshEnabled: true
           });
-          try {
-            const tok = await Promise.race([
-              getToken(appCheck, false),
-              new Promise((_, rej) => setTimeout(() => rej(new Error("App Check token timeout")), 3500))
-            ]);
+          Promise.race([
+            getToken(appCheck, false),
+            new Promise((_, rej) => setTimeout(() => rej(new Error("App Check token timeout")), 3500))
+          ]).then((tok) => {
             if (tok && tok.token) {
               appCheckTokenOk = true;
               bridge.appCheckReady = true;
             }
-          } catch (tokErr) {
+          }).catch((tokErr) => {
             appCheckTokenOk = false;
             bridge.appCheckReady = false;
-            console.warn("AppCheck token check bypassed (using direct AI fallback):", tokErr);
-          }
+            console.warn("AppCheck background check skipped (direct AI active):", tokErr);
+          });
         } catch (acErr) {
           appCheckTokenOk = false;
           bridge.appCheckReady = false;
           console.warn("AppCheck init warning:", acErr);
         }
       }
-
-      // Initialize Firebase AI Logic Web SDK (Gemini Developer API Backend) on both App Check & Direct instances
-      const primaryAi = getAI(app, { backend: new GoogleAIBackend() });
-      const directAi = getAI(aiDirectApp, { backend: new GoogleAIBackend() });
 
       const socialContentSchema = Schema.object({
         properties: {
@@ -5636,13 +5713,15 @@
             model: "gemini-3.8-flash",
             systemInstruction: SYSTEM_PROMPT
           }),
-          getImagen: (aspectRatio = "9:16") => getImagenModel(aiInstance, {
-            model: "imagen-3.0-generate-002",
-            generationConfig: {
-              numberOfImages: 1,
-              aspectRatio
-            }
-          }),
+          getImagen: typeof FirebaseAI.getImagenModel === "function"
+            ? (aspectRatio = "9:16") => FirebaseAI.getImagenModel(aiInstance, {
+                model: "imagen-3.0-generate-002",
+                generationConfig: {
+                  numberOfImages: 1,
+                  aspectRatio
+                }
+              })
+            : null,
           getGeminiImage: () => getGenerativeModel(aiInstance, {
             model: "gemini-3.8-flash",
             generationConfig: {
@@ -5672,8 +5751,6 @@
         return await task(buildAiModels(directAi));
       }
 
-      bridge.aiReady = true;
-
       bridge.generateContent = async ({ prompt, platform, tone, contentType, expectJson = true, history = [] }) => {
         bridge.lastAiError = "";
         try {
@@ -5693,12 +5770,13 @@
               };
             }
 
+            const cleanTopic = String(prompt || "").trim();
             const fullPrompt = [
               `Content Mode: ${contentType}`,
               `Target Platform: ${platform}`,
               `Tone / Style: ${tone}`,
-              `Topic / Request: ${prompt}`,
-              "Generate a high-retention viral short-form video package in Hindi/Hinglish/English with trending #hashtags."
+              `Topic: ${cleanTopic}`,
+              "Return a high-retention viral short-form video package in Hindi/Hinglish/English with a clickable viral title, scroll-stopping hook, timestamped script, CTA, and 10 trending #hashtags."
             ].join("\n");
 
             try {
@@ -5715,7 +5793,7 @@
                 ok: true,
                 source: "LIVE_GEMINI",
                 data: {
-                  title: String(parsed.title || `🔥 ${prompt}`),
+                  title: String(parsed.title || `🔥 ${cleanTopic.slice(0, 70)}`),
                   hook: String(parsed.hook || ""),
                   script: String(parsed.script || jsonText),
                   cta: String(parsed.cta || ""),
@@ -5726,17 +5804,49 @@
               };
             } catch (structErr) {
               if (isAppCheckFailure(structErr)) throw structErr;
-              const fallbackRes = await chatModel.generateContent(fullPrompt);
+              const fallbackRes = await chatModel.generateContent(
+                `${fullPrompt}\nRespond ONLY as valid JSON: {"title":"...","hook":"...","script":"...","cta":"...","hashtags":["#..."]}`
+              );
               const rawText = fallbackRes.response.text();
+              let parsed = null;
+              try {
+                const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+                parsed = JSON.parse(cleaned);
+              } catch (_) {}
+              if (parsed && typeof parsed === "object") {
+                const tagsArr = Array.isArray(parsed.hashtags)
+                  ? parsed.hashtags
+                  : String(parsed.hashtags || "").split(/\s+/);
+                const hashtags = tagsArr
+                  .map(t => String(t || "").trim())
+                  .filter(Boolean)
+                  .map(t => (t.startsWith("#") ? t : `#${t}`))
+                  .join(" ") || "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia";
+                return {
+                  ok: true,
+                  source: "LIVE_GEMINI",
+                  data: {
+                    title: String(parsed.title || rawText.split("\n")[0] || cleanTopic.slice(0, 70)),
+                    hook: String(parsed.hook || ""),
+                    script: String(parsed.script || rawText),
+                    cta: String(parsed.cta || "Save & Share 🔥"),
+                    hashtags,
+                    tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+                    rawText
+                  }
+                };
+              }
+              const lines = rawText.split("\n").map(l => l.trim()).filter(Boolean);
+              const extractedTags = (rawText.match(/#[A-Za-z0-9_]+/g) || []).slice(0, 12).join(" ");
               return {
                 ok: true,
                 source: "LIVE_GEMINI",
                 data: {
-                  title: `🔥 ${prompt.slice(0, 60)}`,
-                  hook: rawText.split("\n")[0] || "",
+                  title: (lines[0] || `🔥 ${cleanTopic.slice(0, 60)}`).replace(/^#+\s*/, "").slice(0, 90),
+                  hook: lines[1] || lines[0] || "",
                   script: rawText,
                   cta: "अभी सेव करें और शेयर करें!",
-                  hashtags: "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia",
+                  hashtags: extractedTags || "#ViralReels #TrendingShorts #ViralBoostAI #ReelsIndia",
                   tips: [],
                   rawText
                 }
@@ -5754,32 +5864,32 @@
         const imgPrompt = String(prompt || "Vibrant creator studio artwork");
         try {
           return await runWithAiFallback(async ({ getImagen, getGeminiImage }) => {
-            try {
-              const res = await getImagen(aspectRatio).generateImages(imgPrompt);
-              if (res?.images?.length > 0 && res.images[0]?.bytesBase64Encoded) {
-                const img = res.images[0];
-                const mime = img.mimeType || "image/png";
-                return {
-                  ok: true,
-                  mimeType: mime,
-                  dataUrl: `data:${mime};base64,${img.bytesBase64Encoded}`
-                };
+            if (typeof getImagen === "function") {
+              try {
+                const res = await getImagen(aspectRatio).generateImages(imgPrompt);
+                if (res?.images?.length > 0 && res.images[0]?.bytesBase64Encoded) {
+                  const img = res.images[0];
+                  const mime = img.mimeType || "image/png";
+                  return {
+                    ok: true,
+                    mimeType: mime,
+                    dataUrl: `data:${mime};base64,${img.bytesBase64Encoded}`
+                  };
+                }
+              } catch (imErr) {
+                if (isAppCheckFailure(imErr)) throw imErr;
               }
-            } catch (imErr) {
-              if (isAppCheckFailure(imErr)) throw imErr;
-              // Fallback to Gemini native image output model if Imagen endpoint isn't enabled on project tier
-              const gRes = await getGeminiImage().generateContent(imgPrompt);
-              const parts = gRes?.response?.candidates?.[0]?.content?.parts || [];
-              const inline = parts.find(p => p?.inlineData?.data);
-              if (inline?.inlineData?.data) {
-                const mime = inline.inlineData.mimeType || "image/png";
-                return {
-                  ok: true,
-                  mimeType: mime,
-                  dataUrl: `data:${mime};base64,${inline.inlineData.data}`
-                };
-              }
-              throw imErr;
+            }
+            const gRes = await getGeminiImage().generateContent(imgPrompt);
+            const parts = gRes?.response?.candidates?.[0]?.content?.parts || [];
+            const inline = parts.find(p => p?.inlineData?.data);
+            if (inline?.inlineData?.data) {
+              const mime = inline.inlineData.mimeType || "image/png";
+              return {
+                ok: true,
+                mimeType: mime,
+                dataUrl: `data:${mime};base64,${inline.inlineData.data}`
+              };
             }
             throw new Error("Live AI returned no image output.");
           });
@@ -5800,6 +5910,27 @@
       getRedirectResult(auth).catch((redirErr) => {
         if (redirErr?.code) bridge.lastAuthError = redirErr.code;
       });
+
+      // Real Firebase Email & Password Auth
+      bridge.signUpWithEmail = async (email, password, fullName) => {
+        bridge.lastAuthError = "";
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        if (fullName && cred.user) {
+          try { await updateProfile(cred.user, { displayName: fullName }); } catch (_) {}
+        }
+        return cred.user;
+      };
+
+      bridge.signInWithEmail = async (email, password) => {
+        bridge.lastAuthError = "";
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        return cred.user;
+      };
+
+      bridge.resetPasswordEmail = async (email) => {
+        await sendPasswordResetEmail(auth, email);
+        return true;
+      };
 
       // Real Firebase Phone SMS OTP Sign-In
       bridge.sendPhoneOtp = async (e164Phone) => {
@@ -5894,13 +6025,13 @@
       bridge.signOutGoogle = async () => {
         try {
           await signOut(auth);
-          showToast("Signed out of Google Cloud Sync", "info");
+          showToast("Signed out of Firebase Auth", "info");
         } catch (err) {
           showToast(`Sign-out error: ${err.message}`, "error");
         }
       };
 
-      bridge.syncUserProfileAndLeaderboard = async (profile) => {
+      bridge.syncUserProfileAndLeaderboard = async (profile, channels) => {
         const user = auth.currentUser;
         if (!user || !profile) return;
         try {
@@ -5908,17 +6039,18 @@
           const userRef = doc(db, "users", uid);
           const existingSnap = await getDoc(userRef);
           const existingRole = existingSnap.exists() && existingSnap.data()?.role ? existingSnap.data().role : "user";
-          const safeName = String(profile.username || user.displayName || "ViralCreator").trim().slice(0, 80) || "ViralCreator";
+          const safeName = String(profile.username || user.displayName || user.email || "Creator").trim().slice(0, 80) || "Creator";
           const safeCoins = Math.max(0, Math.floor(Number(profile.coins) || 0));
           const safeDiamonds = Math.max(0, Math.floor(Number(profile.diamonds) || 0));
+          const safeChannels = sanitizeChannelsMap(channels || state.channels);
           const now = Date.now();
 
           await setDoc(userRef, {
             uid,
-            displayUserId: String(profile.displayUserId || "74829156"),
+            displayUserId: String(profile.displayUserId || "10000000"),
             username: safeName,
             email: String(profile.email || user.email || "").trim(),
-            userContact: String(profile.userContact || user.email || "").trim(),
+            userContact: String(profile.userContact || user.email || user.phoneNumber || "").trim(),
             authMethod: String(profile.authMethod || "google"),
             isLoggedIn: Boolean(profile.isLoggedIn),
             hasAgreedToTerms: Boolean(profile.hasAgreedToTerms),
@@ -5927,11 +6059,12 @@
             coins: safeCoins,
             diamonds: safeDiamonds,
             lifetimeDiamonds: Math.max(0, Math.floor(Number(profile.lifetimeDiamonds) || 0)),
-            bonusRupees: Math.max(0, Math.floor(Number(profile.bonusRupees ?? 50))),
-            streakDays: Math.max(1, Math.floor(Number(profile.streakDays) || 1)),
+            bonusRupees: Math.max(0, Math.floor(Number(profile.bonusRupees ?? 0))),
+            streakDays: Math.max(0, Math.floor(Number(profile.streakDays) || 0)),
             isVip: Boolean(profile.isVip),
             planTier: String(profile.planTier || "FREE_TRIAL"),
             vipExpiryDate: Number(profile.vipExpiresAt || 0),
+            connectedPlatforms: safeChannels,
             role: existingRole,
             updatedAt: now
           });
@@ -5945,7 +6078,7 @@
             niche: String(profile.niche || "Shorts & Reels"),
             coins: safeCoins,
             diamonds: safeDiamonds,
-            streakDays: Math.max(1, Math.floor(Number(profile.streakDays) || 1)),
+            streakDays: Math.max(0, Math.floor(Number(profile.streakDays) || 0)),
             viralScore: safeCoins + (safeDiamonds * 10),
             isVip: Boolean(profile.isVip),
             updatedAt: now
@@ -5957,7 +6090,7 @@
 
       bridge.addCommunityCreator = async ({ handle, platform, name, niche, spotlight }) => {
         const user = auth.currentUser;
-        if (!user) throw new Error("Google Cloud Sync sign-in required.");
+        if (!user) throw new Error("Firebase sign-in required.");
         const cleanHandle = String(handle || "").trim().slice(0, 100);
         let url = "";
         if (/^https?:\/\//i.test(cleanHandle)) {
@@ -6064,7 +6197,6 @@
 
         await updateDoc(doc(db, "users", uid), clean);
 
-        // Keep leaderboard doc in sync if present
         try {
           const uSnap = await getDoc(doc(db, "users", uid));
           if (uSnap.exists()) {
@@ -6078,7 +6210,7 @@
               niche: String(ud.niche || "Shorts & Reels"),
               coins: safeCoins,
               diamonds: safeDiamonds,
-              streakDays: Math.max(1, Math.floor(Number(ud.streakDays) || 1)),
+              streakDays: Math.max(0, Math.floor(Number(ud.streakDays) || 0)),
               viralScore: safeCoins + (safeDiamonds * 10),
               isVip: Boolean(ud.isVip),
               updatedAt: Date.now()
@@ -6179,8 +6311,12 @@
               if (d.email) state.profile.email = d.email;
               if (d.niche) state.profile.niche = d.niche;
               if (d.displayUserId) state.profile.displayUserId = d.displayUserId;
+              if (d.connectedPlatforms && typeof d.connectedPlatforms === "object") {
+                state.channels = sanitizeChannelsMap(d.connectedPlatforms);
+              } else {
+                state.channels = emptyChannelsState();
+              }
 
-              // Only unlock app automatically if user explicitly agreed to terms in Cloud Firestore
               if (d.hasAgreedToTerms === true) {
                 state.profile.hasAgreedToTerms = true;
                 state.profile.legalAccepted = true;
@@ -6190,10 +6326,10 @@
               }
               saveState();
             } else {
-              if (user.displayName && (!state.profile.username || state.profile.username === "ViralCreator_99")) {
+              if (user.displayName && !state.profile.username) {
                 state.profile.username = user.displayName;
               }
-              if (user.email && (!state.profile.email || state.profile.email === "creator@viralboost.ai")) {
+              if (user.email && !state.profile.email) {
                 state.profile.email = user.email;
               }
               if (authUiState.pendingGoogleSignup && authUiState.agreed) {
@@ -6205,19 +6341,21 @@
                 state.profile.authMethod = "google";
                 state.profile.userContact = user.email || user.uid;
                 state.profile.welcomeClaimed = true;
-                state.profile.bonusRupees = Number(appConfigState.welcomeBonusRupees || CONSTANTS.INITIAL_BONUS_RUPEES);
+                state.profile.coins = 0;
+                state.profile.diamonds = 0;
+                state.profile.bonusRupees = 0;
+                state.channels = emptyChannelsState();
                 state.legalAuditLogs.unshift({
-                  name: state.profile.username,
+                  name: state.profile.username || user.displayName || "Creator",
                   contact: state.profile.userContact,
                   method: "google",
                   timestamp: ts,
                   status: "AGREED_AND_VERIFIED"
                 });
                 saveState();
-                await bridge.syncUserProfileAndLeaderboard(state.profile);
-                UnityAdEngine.showInterstitial("post_signup", () => openWelcomeBonusModal());
+                await bridge.syncUserProfileAndLeaderboard(state.profile, state.channels);
+                showToast("🟢 Google Cloud Sync Verified! Connected to Firestore.", "success");
               } else {
-                // Pre-fill Sign Up form so new Google user confirms Mandatory Legal Terms before entering
                 if (!authUiState.name && user.displayName) authUiState.name = user.displayName;
                 if (!authUiState.contact && user.email) {
                   authUiState.contact = user.email;
