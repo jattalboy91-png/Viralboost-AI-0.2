@@ -64,18 +64,31 @@
       --text-secondary: #475569;
     }
     *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body {
+    html {
       width: 100%;
       max-width: 100vw;
-      overflow-x: hidden;
+      overflow-x: clip;
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
     body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: clip;
+      overflow-y: visible;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      touch-action: pan-y;
       background-color: var(--bg-main);
       color: var(--text-primary);
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+    .overflow-x-clip { overflow-x: clip !important; }
+    #overlay-host, #modal-card {
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       overscroll-behavior-y: contain;
     }
     img, video, canvas, svg { max-width: 100%; }
@@ -113,9 +126,9 @@
   <div id="firebase-recaptcha-container" style="position:fixed;bottom:0;right:0;z-index:999;"></div>
 
   <!-- Mandatory First-Screen Authentication & Legal Terms Gate (Never Auto-Login as Guest) -->
-  <div id="auth-gate" class="hidden min-h-screen w-full max-w-lg mx-auto px-3.5 py-6 flex flex-col justify-between overflow-x-hidden"></div>
+  <div id="auth-gate" class="hidden min-h-screen w-full max-w-lg mx-auto px-3.5 py-6 flex flex-col justify-between overflow-x-clip"></div>
 
-  <div id="app" class="hidden w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col relative pb-40 overflow-x-hidden">
+  <div id="app" class="hidden w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col relative pb-40 overflow-x-clip">
     <!-- Persistent Top App Header -->
     <header class="sticky top-0 z-30 w-full max-w-full backdrop-blur-xl bg-[#070712]/90 dark:bg-[#070712]/90 border-b border-slate-800/80 px-3 py-2.5 flex items-center justify-between gap-2 overflow-hidden">
       <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="switchTab('home')">
@@ -150,7 +163,7 @@
     </header>
 
     <!-- Main Dynamic View Root (6 Bottom Tabs) -->
-    <main id="main-content" class="flex-1 w-full min-w-0 px-3 sm:px-3.5 pt-3 space-y-4 overflow-x-hidden">
+    <main id="main-content" class="flex-1 w-full min-w-0 px-3 sm:px-3.5 pt-3 space-y-4 overflow-x-clip">
       <!-- Populated cleanly via JS renderTab() -->
     </main>
 
@@ -189,13 +202,13 @@
   </div>
 
   <!-- Full-Screen Overlay Host (1-Click AI Video Studio, Diamond Dashboard, Reels Hub, Shopsy Mall, Affiliate Hub, Creator Pool, Gemini Studio, Cross-Poster, Admin Panel) -->
-  <div id="overlay-host" class="hidden fixed inset-0 z-50 w-full max-w-[100vw] bg-[#070712] overflow-y-auto overflow-x-hidden">
-    <div id="overlay-body" class="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto min-h-screen flex flex-col pb-12 overflow-x-hidden"></div>
+  <div id="overlay-host" class="hidden fixed inset-0 z-50 w-full h-[100dvh] max-h-[100dvh] max-w-[100vw] bg-[#070712] overflow-y-auto overflow-x-clip">
+    <div id="overlay-body" class="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col pb-24 overflow-x-clip"></div>
   </div>
 
   <!-- Reusable Action Modal (UPI Payment, Channel Config, 1-Day VIP Trial, Web Ad Slot, Order Form, Admin Login, Boost Modal) -->
   <div id="modal-host" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3">
-    <div id="modal-card" class="w-full max-w-md bg-[#0F172A] border border-slate-700 rounded-2xl p-4 max-h-[90vh] overflow-y-auto shadow-2xl"></div>
+    <div id="modal-card" class="w-full max-w-md bg-[#0F172A] border border-slate-700 rounded-2xl p-4 max-h-[90dvh] overflow-y-auto overflow-x-clip shadow-2xl"></div>
   </div>
 
   <!-- Toast Host -->
@@ -654,6 +667,13 @@
         cleanAiStudio.progressStage = '';
         cleanAiStudio.progressPct = 0;
 
+        const cleanCrossPoster = { ...def.crossPoster, ...(parsed.crossPoster || {}) };
+        if (String(cleanCrossPoster.title || '').includes('Generate a clickable viral title')) {
+          cleanCrossPoster.title = '';
+          cleanCrossPoster.tags = '';
+          cleanCrossPoster.desc = '';
+        }
+
         const cleaned = {
           ...def,
           ...parsed,
@@ -666,7 +686,7 @@
           affiliateStats: { ...def.affiliateStats, ...(parsed.affiliateStats || {}) },
           channels: sanitizeChannelsMap(parsed.channels),
           aiStudioState: cleanAiStudio,
-          crossPoster: { ...def.crossPoster, ...(parsed.crossPoster || {}) },
+          crossPoster: cleanCrossPoster,
           reelsSort: ['date', 'views', 'likes'].includes(parsed.reelsSort) ? parsed.reelsSort : 'date'
         };
         delete cleaned.creatorPool;
@@ -1231,7 +1251,9 @@
       activeOverlay = name;
       const host = document.getElementById('overlay-host');
       host.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
       renderOverlay();
+      host.scrollTop = 0;
     }
 
     function closeOverlay() {
@@ -1240,6 +1262,7 @@
       if (canvasRaf) { cancelAnimationFrame(canvasRaf); canvasRaf = null; }
       const host = document.getElementById('overlay-host');
       if (host) host.classList.add('hidden');
+      document.body.style.overflow = '';
       renderApp();
     }
 
@@ -1248,10 +1271,13 @@
       const card = document.getElementById('modal-card');
       card.innerHTML = html;
       host.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      card.scrollTop = 0;
     }
 
     function closeModal() {
       document.getElementById('modal-host').classList.add('hidden');
+      document.body.style.overflow = activeOverlay ? 'hidden' : '';
     }
 
     document.getElementById('modal-host').addEventListener('click', (e) => {
@@ -1700,6 +1726,10 @@
 
     function renderApp() {
       applyTheme();
+      const modalHostEl = document.getElementById('modal-host');
+      if (!activeOverlay && (!modalHostEl || modalHostEl.classList.contains('hidden'))) {
+        document.body.style.overflow = '';
+      }
       const gate = document.getElementById('auth-gate');
       const appShell = document.getElementById('app');
       if (!isUserAuthenticated()) {
@@ -1722,7 +1752,7 @@
       });
       const main = document.getElementById('main-content');
       switch (state.activeTab) {
-        case 'home': main.innerHTML = renderHomeTab(); drawInsightsCharts(); break;
+        case 'home': main.innerHTML = renderHomeTab(); break;
         case 'ai': main.innerHTML = renderAiTab(); break;
         case 'vip': main.innerHTML = renderVipTab(); break;
         case 'ranks': main.innerHTML = renderRanksTab(); break;
@@ -2597,7 +2627,7 @@
 
       return `
         ${overlayHeader('1-Click AI Video & Viral Hashtags', 'Pro Creator Studio • Gemini 3.8 Flash + Imagen 3 • 1080×1920 @ 30FPS', `<span class="px-2 py-1 rounded-lg bg-gradient-to-r from-amber-400/20 to-cyan-400/20 border border-amber-400/60 text-amber-300 text-[9.5px] font-extrabold whitespace-nowrap">${state.profile.isVip ? '👑 VIP HD' : '⚡ PRO'}</span>`)}
-        <div class="w-full max-w-5xl mx-auto px-3 py-3.5 sm:p-5 space-y-3.5 sm:space-y-4 min-w-0 overflow-x-hidden">
+        <div class="w-full max-w-5xl mx-auto px-3 py-3.5 sm:p-5 space-y-3.5 sm:space-y-4 min-w-0 overflow-x-clip">
 
           <!-- 1. TOP CONTROL CARD -->
           <div class="w-full max-w-full min-w-0 rounded-3xl bg-[#110F26]/95 border border-white/10 p-3.5 sm:p-4 shadow-2xl space-y-3 overflow-hidden">
