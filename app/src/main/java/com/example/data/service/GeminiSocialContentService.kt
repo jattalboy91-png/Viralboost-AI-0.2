@@ -200,7 +200,7 @@ class GeminiSocialContentService {
         for (modelName in TEXT_MODEL_CASCADE) {
             try {
                 val model = structuredModelFor(modelName)
-                val response = withTimeout(60_000L) {
+                val response = withTimeout(14_000L) {
                     model.generateContent(fullPrompt)
                 }
                 val jsonString = response.text
@@ -267,7 +267,7 @@ class GeminiSocialContentService {
         for (modelName in TEXT_MODEL_CASCADE) {
             try {
                 val model = studioModelFor(modelName)
-                val response = withTimeout(60_000L) {
+                val response = withTimeout(14_000L) {
                     if (mode == "photo" && scaledPhoto != null) {
                         model.generateContent(
                             content {
@@ -316,7 +316,7 @@ class GeminiSocialContentService {
         for ((idx, scene) in scenes.take(4).withIndex()) {
             try {
                 val prompt = "Vertical 9:16 cinematic film still, scene ${idx + 1}, $categoryTitle, ${scene.visualPrompt}, dramatic lighting, photorealistic, no text"
-                val response = withTimeout(60_000L) {
+                val response = withTimeout(10_000L) {
                     imageModel.generateContent(prompt)
                 }
                 val bmp = response.candidates.firstOrNull()
