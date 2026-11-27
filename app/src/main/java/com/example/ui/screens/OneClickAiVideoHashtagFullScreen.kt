@@ -5,14 +5,15 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.runtime.collectAsState
-import com.example.monetization.AdFormat
-import com.example.monetization.AdNetwork
-import com.example.ui.components.UniversalMediatedAdDock
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -25,6 +26,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +40,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,7 +60,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -71,8 +73,8 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.RocketLaunch
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Tv
@@ -94,7 +96,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -108,6 +112,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -121,11 +128,20 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.data.service.GeminiSocialContentService
 import com.example.data.service.SocialContentResult
+import com.example.data.service.StudioSceneItem
+import com.example.data.service.StudioVideoPackage
+import com.example.monetization.AdFormat
 import com.example.monetization.AdManager
+import com.example.monetization.AdNetwork
 import com.example.monetization.MonetizationConstants
-import com.example.ui.components.BannerAdView
+import com.example.ui.components.UniversalMediatedAdDock
+import com.example.util.AndroidReelVideoRenderer
+import com.example.util.RenderedReelOutput
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 data class ViralVideoCategoryOption(
     val id: String,
@@ -214,6 +230,39 @@ fun OneClickAiVideoHashtagFullScreen(
                 beatTrackName = "Lo-Fi Sunset Chill • 110 BPM"
             ),
             ViralVideoCategoryOption(
+                id = "Story & Moral",
+                titleHindi = "दिल छूने वाली कहानी",
+                titleEnglish = "Heartwarming Story",
+                emoji = "📖",
+                accentColor = Color(0xFFF59E0B),
+                secondaryColor = Color(0xFFE11D48),
+                sampleHook = "एक गरीब लड़के की वो सीख जिसने करोड़पति का दिल जीत लिया... ❤️",
+                defaultPrompt = "Emotional Hindi moral story short reel with twist ending and life lesson",
+                beatTrackName = "Emotional Piano Strings • 96 BPM"
+            ),
+            ViralVideoCategoryOption(
+                id = "Shayari & Status",
+                titleHindi = "हिंदी शायरी & स्टेटस",
+                titleEnglish = "Shayari & Sad Status",
+                emoji = "🥀",
+                accentColor = Color(0xFFFB7185),
+                secondaryColor = Color(0xFF6D28D9),
+                sampleHook = "चुप रहना हमारी आदत बन गई — वरना शिकायतें तो आज भी हज़ार हैं... 🌙",
+                defaultPrompt = "Deep soulful Hindi shayari WhatsApp status reel with aesthetic rain mood",
+                beatTrackName = "Midnight Acoustic Lo-Fi • 92 BPM"
+            ),
+            ViralVideoCategoryOption(
+                id = "Viral Facts & Secrets",
+                titleHindi = "चौकाने वाले फैक्ट्स",
+                titleEnglish = "Mind-Blowing Facts",
+                emoji = "🤯",
+                accentColor = Color(0xFF38BDF8),
+                secondaryColor = Color(0xFF1D4ED8),
+                sampleHook = "99% लोग अपने फोन का ये छुपा हुआ फीचर आज तक नहीं जानते! 🔍",
+                defaultPrompt = "Mind blowing psychology & technology secret facts in fast Hindi storytelling",
+                beatTrackName = "Mystery Documentary Pulse • 118 BPM"
+            ),
+            ViralVideoCategoryOption(
                 id = "Action & Gaming",
                 titleHindi = "एक्शन & गेमिंग क्लिप्स",
                 titleEnglish = "Action & Gaming",
@@ -227,9 +276,12 @@ fun OneClickAiVideoHashtagFullScreen(
         )
     }
 
+    var studioMode by remember { mutableStateOf("prompt") } // "prompt" | "photo" | "script"
     var selectedCategory by remember { mutableStateOf(categories.first()) }
     var customTopicInput by remember { mutableStateOf("") }
+    var customScriptInput by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var uploadedPhotoBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     var isGenerating by remember { mutableStateOf(false) }
     var generationProgress by remember { mutableFloatStateOf(0f) }
@@ -237,8 +289,64 @@ fun OneClickAiVideoHashtagFullScreen(
 
     val geminiService = remember { GeminiSocialContentService() }
     var isVideoPlaying by remember { mutableStateOf(true) }
+    var previewElapsedSec by remember { mutableFloatStateOf(0f) }
     var generatedResult by remember { mutableStateOf<SocialContentResult?>(null) }
+    var studioPackage by remember { mutableStateOf<StudioVideoPackage?>(null) }
+    var sceneBitmaps by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
+    var renderedVideoOutput by remember { mutableStateOf<RenderedReelOutput?>(null) }
+    var isRenderingMp4 by remember { mutableStateOf(false) }
+    var mp4RenderProgress by remember { mutableFloatStateOf(0f) }
+    var voiceEnabled by remember { mutableStateOf(true) }
+    var isVoiceSpeaking by remember { mutableStateOf(false) }
     var statusBannerMessage by remember { mutableStateOf<String?>(null) }
+
+    var ttsInstance by remember { mutableStateOf<TextToSpeech?>(null) }
+    DisposableEffect(context) {
+        var engine: TextToSpeech? = null
+        engine = TextToSpeech(context.applicationContext) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                engine?.language = Locale("hi", "IN")
+                engine?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) {
+                        isVoiceSpeaking = true
+                    }
+                    override fun onDone(utteranceId: String?) {
+                        isVoiceSpeaking = false
+                    }
+                    @Deprecated("Deprecated in Java")
+                    override fun onError(utteranceId: String?) {
+                        isVoiceSpeaking = false
+                    }
+                })
+            }
+        }
+        ttsInstance = engine
+        onDispose {
+            try {
+                engine.stop()
+                engine.shutdown()
+            } catch (_: Throwable) {}
+        }
+    }
+
+    val speakHindiVoiceover: (String) -> Unit = { rawText ->
+        val clean = rawText.replace(Regex("\\[[^\\]]+\\]"), " ").replace(Regex("\\s+"), " ").trim()
+        if (clean.isNotBlank()) {
+            try {
+                ttsInstance?.language = Locale("hi", "IN")
+                ttsInstance?.setSpeechRate(1.02f)
+                ttsInstance?.speak(clean.take(500), TextToSpeech.QUEUE_FLUSH, null, "viralboost_vo")
+                isVoiceSpeaking = true
+            } catch (_: Throwable) {
+                isVoiceSpeaking = false
+            }
+        }
+    }
+
+    val stopVoiceover: () -> Unit = {
+        try { ttsInstance?.stop() } catch (_: Throwable) {}
+        isVoiceSpeaking = false
+    }
 
     // =========================================================================
     // 📺 INTERSTITIAL AD & REWARDED AD STATE FOR EVERY OPTION CLICK
@@ -289,22 +397,59 @@ fun OneClickAiVideoHashtagFullScreen(
     }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
             selectedImageUri = uri
-            statusBannerMessage = "📸 फोटो लोड हो गई! अब 1-Click में AI वीडियो और वायरल हैशटैग बनाएं।"
+            studioMode = "photo"
+            coroutineScope.launch(Dispatchers.IO) {
+                val bmp = try {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        BitmapFactory.decodeStream(stream)
+                    }
+                } catch (_: Throwable) {
+                    null
+                }
+                withContext(Dispatchers.Main) {
+                    uploadedPhotoBitmap = bmp
+                    if (bmp != null) {
+                        sceneBitmaps = listOf(bmp, bmp, bmp, bmp)
+                    }
+                    renderedVideoOutput = null
+                    statusBannerMessage = "📸 फोटो लोड हो गई! अब '1-Click Generate' दबाकर Photo-to-AI Video बनाएं।"
+                }
+            }
         }
     }
 
-    // Load initial viral blueprint for the first category so the page immediately looks rich & alive
+    // Animate 12-second 4-scene playback clock smoothly while preview is playing
+    LaunchedEffect(isVideoPlaying) {
+        while (isVideoPlaying) {
+            delay(50L)
+            previewElapsedSec = (previewElapsedSec + 0.05f) % 12f
+        }
+    }
+
+    // Load initial 4-scene storyboard for the default category
     LaunchedEffect(Unit) {
-        val initialPrompt = categories.first().defaultPrompt
-        generatedResult = geminiService.generateSocialContent(
-            prompt = initialPrompt,
-            platform = "Instagram Reels & YouTube Shorts",
-            tone = "High-Energy Viral",
-            contentType = "Reel Script + Viral Hashtags"
+        val cat = categories.first()
+        val pkg = geminiService.generateStudioVideoPackage(
+            mode = "prompt",
+            topic = cat.defaultPrompt,
+            customScript = "",
+            categoryTitle = "${cat.titleHindi} (${cat.titleEnglish})",
+            beatName = cat.beatTrackName
+        )
+        studioPackage = pkg
+        generatedResult = SocialContentResult(
+            fullResponse = "${pkg.hook}\n\n${pkg.script}",
+            hook = pkg.hook,
+            bodyCaption = pkg.script,
+            callToAction = pkg.callToAction,
+            hashtags = pkg.hashtags,
+            platformTips = "4-Scene 9:16 Cinema Ready (${pkg.modelUsed})",
+            isRealApiCall = pkg.isRealApiCall,
+            errorMessage = pkg.errorMessage
         )
     }
 
@@ -330,30 +475,128 @@ fun OneClickAiVideoHashtagFullScreen(
 
     val executeOneClickGenerate: () -> Unit = {
         if (!isGenerating) {
-            isGenerating = true
-            generationProgress = 0.20f
-            generationStageText = "✨ Google Gemini AI (3.8 Flash) से वायरल स्क्रिप्ट, वीडियो सीन और हैशटैग जनरेट हो रहे हैं..."
-            statusBannerMessage = null
-
-            coroutineScope.launch {
-                val effectivePrompt = customTopicInput.trim().ifEmpty {
-                    "${selectedCategory.defaultPrompt} (${selectedCategory.titleHindi})"
+            if (studioMode == "photo" && uploadedPhotoBitmap == null) {
+                statusBannerMessage = "📸 पहले गैलरी से अपनी फोटो चुनें!"
+                Toast.makeText(context, "Please select a photo first!", Toast.LENGTH_SHORT).show()
+            } else if (studioMode == "script" && customScriptInput.isBlank()) {
+                statusBannerMessage = "📝 पहले अपनी स्क्रिप्ट या शायरी लिखें!"
+                Toast.makeText(context, "Please paste your script first!", Toast.LENGTH_SHORT).show()
+            } else {
+                isGenerating = true
+                renderedVideoOutput = null
+                stopVoiceover()
+                generationProgress = 0.25f
+                generationStageText = when (studioMode) {
+                    "photo" -> "📸 Gemini Vision आपकी फोटो समझकर 4-Scene वीडियो लिख रहा है..."
+                    "script" -> "📝 Gemini आपकी स्क्रिप्ट को 4 सिनेमैटिक सीन में बदल रहा है..."
+                    else -> "✨ Gemini 3.8 / 3.5 Flash 4-Scene AI वीडियो और वायरल हैशटैग बना रहा है..."
                 }
-                generationProgress = 0.55f
-                val result = geminiService.generateSocialContent(
-                    prompt = effectivePrompt,
-                    platform = "Instagram Reels & YouTube Shorts",
-                    tone = "High-Energy Viral (${selectedCategory.titleEnglish})",
-                    contentType = "Reel Script + Viral Hashtags"
+                statusBannerMessage = null
+
+                coroutineScope.launch {
+                    val effectiveTopic = customTopicInput.trim().ifEmpty {
+                        if (studioMode == "script") {
+                            customScriptInput.trim().lineSequence().firstOrNull().orEmpty().take(70)
+                        } else {
+                            "${selectedCategory.defaultPrompt} (${selectedCategory.titleHindi})"
+                        }
+                    }
+
+                    val pkg = geminiService.generateStudioVideoPackage(
+                        mode = studioMode,
+                        topic = effectiveTopic,
+                        customScript = customScriptInput,
+                        categoryTitle = "${selectedCategory.titleHindi} (${selectedCategory.titleEnglish})",
+                        beatName = selectedCategory.beatTrackName,
+                        photoBitmap = if (studioMode == "photo") uploadedPhotoBitmap else null
+                    )
+
+                    generationProgress = 0.68f
+                    generationStageText = "🎞️ 4-Scene 9:16 Cinema स्टिल्स और हैशटैग्स तैयार हो रहे हैं..."
+
+                    var imageNote: String? = null
+                    val nextBitmaps = if (studioMode == "photo" && uploadedPhotoBitmap != null) {
+                        val photo = uploadedPhotoBitmap!!
+                        listOf(photo, photo, photo, photo)
+                    } else if (pkg.isRealApiCall) {
+                        val (genBmps, err) = geminiService.tryGenerateSceneImages(
+                            scenes = pkg.scenes,
+                            categoryTitle = selectedCategory.titleEnglish
+                        )
+                        imageNote = err
+                        genBmps
+                    } else {
+                        emptyList()
+                    }
+
+                    sceneBitmaps = nextBitmaps
+                    studioPackage = pkg
+                    generatedResult = SocialContentResult(
+                        fullResponse = "${pkg.hook}\n\n${pkg.script}\n\n${pkg.hashtags.joinToString(" ")}",
+                        hook = pkg.hook,
+                        bodyCaption = pkg.script,
+                        callToAction = pkg.callToAction,
+                        hashtags = pkg.hashtags,
+                        platformTips = imageNote ?: "4-Scene 9:16 Cinema Engine (${pkg.modelUsed})",
+                        isRealApiCall = pkg.isRealApiCall,
+                        errorMessage = pkg.errorMessage
+                    )
+                    generationProgress = 1.0f
+                    isGenerating = false
+                    isVideoPlaying = true
+                    previewElapsedSec = 0f
+
+                    statusBannerMessage = if (pkg.isRealApiCall) {
+                        "🎬 ${pkg.modelUsed} ने 4-Scene AI वीडियो & वायरल हैशटैग्स तैयार कर दिए! नीचे 'गैलरी में सेव करें' पर .MP4 डाउनलोड करें।"
+                    } else {
+                        "🎞️ Smart Studio 4-Scene AI वीडियो तैयार! (Live AI busy — फिर भी पूरा वीडियो और हैशटैग्स रेडी हैं)"
+                    }
+                    if (voiceEnabled) {
+                        speakHindiVoiceover(pkg.voiceoverText)
+                    }
+                }
+            }
+        }
+    }
+
+    val renderAndSaveOrShareMp4: (shareAfterRender: Boolean) -> Unit = { shareAfterRender ->
+        if (!isRenderingMp4) {
+            isRenderingMp4 = true
+            mp4RenderProgress = 0.05f
+            statusBannerMessage = "🎬 720×1280 @ 30FPS HD .MP4 वीडियो रेंडर हो रहा है..."
+            coroutineScope.launch {
+                val scenes = studioPackage?.scenes ?: emptyList()
+                val res = AndroidReelVideoRenderer.renderAndSaveMp4(
+                    context = context,
+                    scenes = scenes,
+                    sceneBitmaps = sceneBitmaps,
+                    categoryLabel = selectedCategory.titleEnglish,
+                    accentColorInt = selectedCategory.accentColor.toArgb(),
+                    secondaryColorInt = selectedCategory.secondaryColor.toArgb(),
+                    onProgress = { pct -> mp4RenderProgress = pct }
                 )
-                generationProgress = 1.0f
-                generatedResult = result
-                isGenerating = false
-                isVideoPlaying = true
-                statusBannerMessage = if (result.isRealApiCall) {
-                    "⚡ Live Gemini 3.8 Flash ने 1-Click AI वीडियो और वायरल हैशटैग्स तैयार कर दिए हैं!"
-                } else {
-                    "⚠️ Offline Fallback सक्रिय (${result.errorMessage ?: "Network issue"}) — नीचे कॉपी या ऑटो-शेयर करें।"
+                isRenderingMp4 = false
+                res.onSuccess { output ->
+                    renderedVideoOutput = output
+                    statusBannerMessage = "✅ .MP4 वीडियो गैलरी (${output.displayPath}) में सेव हो गया!"
+                    Toast.makeText(
+                        context,
+                        "✅ HD .MP4 Video saved to Gallery!",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    if (shareAfterRender) {
+                        val pkgText = buildString {
+                            appendLine("🔥 ${generatedResult?.hook ?: selectedCategory.sampleHook}")
+                            appendLine()
+                            appendLine(generatedResult?.bodyCaption ?: "")
+                            appendLine()
+                            append(generatedResult?.hashtags?.joinToString(" ") ?: "")
+                        }
+                        shareVideoFileToSocials(context, output.shareUri, pkgText)
+                    }
+                }.onFailure { err ->
+                    statusBannerMessage = "⚠️ .MP4 Export Error: ${err.localizedMessage ?: "Unsupported codec"}"
+                    Toast.makeText(context, "MP4 export failed: ${err.localizedMessage}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -1120,18 +1363,35 @@ fun OneClickAiVideoHashtagFullScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // 9:16 Vertical Studio Preview Monitor (Clicking triggers Interstitial Ad)
+                            // 9:16 Vertical 4-Scene Studio Preview Monitor
+                            val previewScenes = studioPackage?.scenes ?: emptyList()
+                            val sceneCount = previewScenes.size.coerceAtLeast(1)
+                            val activeSceneIdx = ((previewElapsedSec / 3.0f).toInt()).coerceIn(0, sceneCount - 1)
+                            val sceneProgress = ((previewElapsedSec - activeSceneIdx * 3.0f) / 3.0f).coerceIn(0f, 1f)
+                            val activeScene = previewScenes.getOrNull(activeSceneIdx)
+                            val activeBitmap = sceneBitmaps.getOrNull(activeSceneIdx) ?: sceneBitmaps.firstOrNull() ?: uploadedPhotoBitmap
+                            val motionScale = when (activeScene?.cameraMotion) {
+                                "zoom-out" -> 1.18f - 0.12f * sceneProgress
+                                "zoom-in" -> 1.04f + 0.14f * sceneProgress
+                                else -> 1.10f + 0.04f * sceneProgress
+                            }
+                            val motionTx = when (activeScene?.cameraMotion) {
+                                "pan-right" -> (sceneProgress - 0.5f) * -28f
+                                "pan-left" -> (sceneProgress - 0.5f) * 28f
+                                else -> 0f
+                            }
+
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(290.dp)
+                                    .height(330.dp)
                                     .clip(RoundedCornerShape(18.dp))
                                     .background(
                                         Brush.linearGradient(
                                             colors = listOf(
-                                                Color(0xFF1B0E36),
+                                                Color(0xFF140D2E),
                                                 selectedCategory.secondaryColor.copy(alpha = 0.45f),
-                                                Color(0xFF090D24)
+                                                Color(0xFF070918)
                                             )
                                         )
                                     )
@@ -1152,43 +1412,107 @@ fun OneClickAiVideoHashtagFullScreen(
                                     }
                                     .testTag("ai_video_preview_canvas")
                             ) {
-                                if (selectedImageUri != null) {
-                                    AsyncImage(
-                                        model = selectedImageUri,
-                                        contentDescription = "Uploaded Photo Preview",
+                                if (activeBitmap != null) {
+                                    Image(
+                                        bitmap = activeBitmap.asImageBitmap(),
+                                        contentDescription = "AI Scene Visual",
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .graphicsLayer(
+                                                scaleX = motionScale,
+                                                scaleY = motionScale,
+                                                translationX = motionTx
+                                            )
                                     )
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .background(Color.Black.copy(alpha = 0.45f))
+                                            .background(Color.Black.copy(alpha = 0.28f))
+                                    )
+                                } else if (selectedImageUri != null) {
+                                    AsyncImage(
+                                        model = selectedImageUri,
+                                        contentDescription = "Uploaded Photo Preview",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .graphicsLayer(
+                                                scaleX = motionScale,
+                                                scaleY = motionScale,
+                                                translationX = motionTx
+                                            )
                                     )
                                 } else {
                                     Canvas(modifier = Modifier.fillMaxSize()) {
                                         val centerX = size.width / 2f
                                         val centerY = size.height / 2f
+                                        val driftX = kotlin.math.cos(Math.toRadians(wavePhase.toDouble())).toFloat() * 48f
+                                        val driftY = kotlin.math.sin(Math.toRadians(wavePhase.toDouble())).toFloat() * 28f
                                         drawCircle(
-                                            color = selectedCategory.accentColor.copy(alpha = 0.18f * pulseGlow),
-                                            radius = size.minDimension * 0.48f,
-                                            center = Offset(centerX, centerY)
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    Color.White.copy(alpha = 0.25f),
+                                                    selectedCategory.accentColor.copy(alpha = 0.35f * pulseGlow),
+                                                    Color.Transparent
+                                                ),
+                                                center = Offset(centerX + driftX, size.height * 0.28f),
+                                                radius = size.minDimension * 0.65f
+                                            ),
+                                            radius = size.minDimension * 0.65f,
+                                            center = Offset(centerX + driftX, size.height * 0.28f)
                                         )
                                         drawCircle(
-                                            color = selectedCategory.secondaryColor.copy(alpha = 0.15f),
-                                            radius = size.minDimension * 0.32f,
-                                            center = Offset(
-                                                centerX + kotlin.math.cos(Math.toRadians(wavePhase.toDouble())).toFloat() * 35f,
-                                                centerY + kotlin.math.sin(Math.toRadians(wavePhase.toDouble())).toFloat() * 25f
-                                            )
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    selectedCategory.secondaryColor.copy(alpha = 0.40f),
+                                                    Color.Transparent
+                                                ),
+                                                center = Offset(centerX - driftX, size.height * 0.65f + driftY),
+                                                radius = size.minDimension * 0.55f
+                                            ),
+                                            radius = size.minDimension * 0.55f,
+                                            center = Offset(centerX - driftX, size.height * 0.65f + driftY)
                                         )
                                     }
                                 }
 
-                                // Top Overlay inside Video Player: Audio Track & Category Badge
+                                // 4-Segment Top Story / Reels Progress Indicator
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp)
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                        .align(Alignment.TopCenter),
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
+                                    for (sIdx in 0 until 4) {
+                                        val segFill = when {
+                                            sIdx < activeSceneIdx -> 1f
+                                            sIdx == activeSceneIdx -> sceneProgress
+                                            else -> 0f
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(3.dp)
+                                                .clip(RoundedCornerShape(50))
+                                                .background(Color.White.copy(alpha = 0.28f))
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth(segFill)
+                                                    .height(3.dp)
+                                                    .background(selectedCategory.accentColor)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Top Overlay inside Video Player: Audio Track & Play/Voice Buttons
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 12.dp, end = 12.dp, top = 20.dp)
                                         .align(Alignment.TopCenter),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
@@ -1209,96 +1533,100 @@ fun OneClickAiVideoHashtagFullScreen(
                                         Spacer(modifier = Modifier.width(5.dp))
                                         Text(
                                             text = selectedCategory.beatTrackName,
-                                            fontSize = 10.5.sp,
+                                            fontSize = 10.sp,
                                             color = Color.White,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
-
-                                    IconButton(
-                                        onClick = {
-                                            triggerOptionWithInterstitialAd("Play/Pause AI Video Preview") {
-                                                isVideoPlaying = !isVideoPlaying
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .size(34.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Black.copy(alpha = 0.65f))
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                            contentDescription = "Play/Pause Preview",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-
-                                // Center Animated Emoji + Hook Overlay
-                                Column(
-                                    modifier = Modifier
-                                        .align(Alignment.Center)
-                                        .padding(horizontal = 20.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(64.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                Brush.linearGradient(
-                                                    listOf(
-                                                        selectedCategory.accentColor.copy(alpha = 0.85f),
-                                                        selectedCategory.secondaryColor.copy(alpha = 0.85f)
-                                                    )
-                                                )
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = selectedCategory.emoji,
-                                            fontSize = 30.sp
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(Color.Black.copy(alpha = 0.78f))
-                                            .border(
-                                                1.dp,
-                                                selectedCategory.accentColor.copy(alpha = 0.8f),
-                                                RoundedCornerShape(12.dp)
-                                            )
-                                            .padding(horizontal = 14.dp, vertical = 10.dp)
-                                    ) {
-                                        Text(
-                                            text = generatedResult?.hook ?: selectedCategory.sampleHook,
-                                            fontSize = 13.5.sp,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = Color(0xFFFFD700),
-                                            textAlign = TextAlign.Center,
-                                            maxLines = 3,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
                                     }
+
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        IconButton(
+                                            onClick = {
+                                                if (isVoiceSpeaking) {
+                                                    stopVoiceover()
+                                                } else {
+                                                    val vo = studioPackage?.voiceoverText ?: generatedResult?.hook ?: selectedCategory.sampleHook
+                                                    speakHindiVoiceover(vo)
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .clip(CircleShape)
+                                                .background(if (isVoiceSpeaking) Color(0xFF00E5FF) else Color.Black.copy(alpha = 0.65f))
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.RecordVoiceOver,
+                                                contentDescription = "Hindi Voiceover",
+                                                tint = if (isVoiceSpeaking) Color.Black else Color.White,
+                                                modifier = Modifier.size(17.dp)
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = {
+                                                triggerOptionWithInterstitialAd("Play/Pause AI Video Preview") {
+                                                    isVideoPlaying = !isVideoPlaying
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.Black.copy(alpha = 0.65f))
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                                contentDescription = "Play/Pause Preview",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
                                 }
 
-                                // Bottom Overlay inside Video Player: Hashtag Ticker & Waveform
+                                // Lower-Third Dynamic Reel Scene Caption & Bottom Controls
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .align(Alignment.BottomCenter)
                                         .background(
                                             Brush.verticalGradient(
-                                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
+                                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.90f))
                                             )
                                         )
                                         .padding(12.dp)
                                 ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(Color(0xB8070914))
+                                            .border(1.dp, selectedCategory.accentColor.copy(alpha = 0.75f), RoundedCornerShape(14.dp))
+                                            .padding(horizontal = 12.dp, vertical = 9.dp)
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                            Text(
+                                                text = "SCENE ${activeSceneIdx + 1}/$sceneCount • ${selectedCategory.titleEnglish.uppercase()}",
+                                                fontSize = 9.5.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = selectedCategory.accentColor
+                                            )
+                                            Spacer(modifier = Modifier.height(3.dp))
+                                            Text(
+                                                text = activeScene?.caption ?: generatedResult?.hook ?: selectedCategory.sampleHook,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = Color.White,
+                                                textAlign = TextAlign.Center,
+                                                maxLines = 3,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1313,23 +1641,23 @@ fun OneClickAiVideoHashtagFullScreen(
                                             )
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
-                                                text = if (isVideoPlaying) "AI Voiceover & Auto-Captions Active" else "Preview Paused",
-                                                fontSize = 11.sp,
+                                                text = if (isVoiceSpeaking) "🎙️ Hindi AI Voiceover Speaking..." else if (isVideoPlaying) "9:16 30FPS Motion Active" else "Preview Paused",
+                                                fontSize = 10.5.sp,
                                                 color = Color(0xFF00E5FF),
                                                 fontWeight = FontWeight.Bold
                                             )
                                         }
                                         Text(
-                                            text = "00:15 / 00:60",
+                                            text = "00:${String.format(Locale.US, "%02d", previewElapsedSec.toInt())} / 00:12",
                                             fontSize = 10.5.sp,
                                             color = Color.LightGray
                                         )
                                     }
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(3.dp))
                                     Text(
                                         text = generatedResult?.hashtags?.take(5)?.joinToString(" ")
                                             ?: "#ViralReels #TrendingShorts #AIStudio #ExplorePage",
-                                        fontSize = 11.sp,
+                                        fontSize = 10.5.sp,
                                         color = Color.White,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
@@ -1340,7 +1668,7 @@ fun OneClickAiVideoHashtagFullScreen(
                     }
                 }
 
-                // 4. OPTIONAL PHOTO UPLOAD & TOPIC INPUT + 1-CLICK GENERATE BUTTON (All trigger Interstitial Ad)
+                // 4. 3-MODE FLOW / VEO CREATION CONTROLS (PROMPT / PHOTO / SCRIPT) & 1-CLICK GENERATE
                 item {
                     Card(
                         shape = RoundedCornerShape(20.dp),
@@ -1350,47 +1678,113 @@ fun OneClickAiVideoHashtagFullScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "2️⃣ अपना टॉपिक लिखें या फोटो जोड़ें (Optional)",
+                                text = "2️⃣ वीडियो बनाने का तरीका चुनें (Flow AI Studio)",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
                             )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "बिना कुछ लिखे भी सीधे नीचे '1-Click Generate' दबा सकते हैं, या अपना टॉपिक लिखें:",
-                                fontSize = 11.5.sp,
-                                color = Color(0xFF9CA3AF)
-                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // 3-Mode Selector Row (Prompt | Photo | Script)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(
+                                    Triple("prompt", "✨ Prompt", "Topic to AI"),
+                                    Triple("photo", "📸 Photo", "Photo + Vision"),
+                                    Triple("script", "📝 Script", "Custom Text")
+                                ).forEach { (id, title, sub) ->
+                                    val active = studioMode == id
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (active) Color(0xFF312E81) else Color(0xFF0B0A1A))
+                                            .border(
+                                                width = if (active) 1.5.dp else 1.dp,
+                                                color = if (active) Color(0xFF00E5FF) else Color(0xFF2D2B52),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                            .clickable { studioMode = id }
+                                            .padding(vertical = 8.dp, horizontal = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = title,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = if (active) Color.White else Color(0xFFD1D5DB)
+                                        )
+                                        Text(
+                                            text = sub,
+                                            fontSize = 9.5.sp,
+                                            color = if (active) Color(0xFF00E5FF) else Color.Gray
+                                        )
+                                    }
+                                }
+                            }
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            OutlinedTextField(
-                                value = customTopicInput,
-                                onValueChange = { customTopicInput = it },
-                                placeholder = {
-                                    Text(
-                                        text = "उदा: देसी जिम मोटिवेशन, हरियाणवी स्वैग, या कोई भी टॉपिक...",
-                                        fontSize = 12.5.sp,
-                                        color = Color.Gray
-                                    )
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    focusedBorderColor = selectedCategory.accentColor,
-                                    unfocusedBorderColor = Color(0xFF3B3866),
-                                    focusedContainerColor = Color(0xFF0B0A1A),
-                                    unfocusedContainerColor = Color(0xFF0B0A1A)
-                                ),
-                                shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .testTag("one_click_topic_input")
-                            )
+                            if (studioMode == "script") {
+                                OutlinedTextField(
+                                    value = customScriptInput,
+                                    onValueChange = { customScriptInput = it },
+                                    minLines = 3,
+                                    placeholder = {
+                                        Text(
+                                            text = "अपनी शायरी, कहानी या स्क्रिप्ट यहाँ पेस्ट करें — AI इसे 4 सीन में बदल देगा...",
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                    },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedTextColor = Color.White,
+                                        unfocusedTextColor = Color.White,
+                                        focusedBorderColor = selectedCategory.accentColor,
+                                        unfocusedBorderColor = Color(0xFF3B3866),
+                                        focusedContainerColor = Color(0xFF0B0A1A),
+                                        unfocusedContainerColor = Color(0xFF0B0A1A)
+                                    ),
+                                    shape = RoundedCornerShape(14.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("one_click_topic_input")
+                                )
+                            } else {
+                                OutlinedTextField(
+                                    value = customTopicInput,
+                                    onValueChange = { customTopicInput = it },
+                                    placeholder = {
+                                        Text(
+                                            text = if (studioMode == "photo") {
+                                                "Optional: फोटो के लिए मूड या स्टोरी लिखें..."
+                                            } else {
+                                                "उदा: देसी जिम मोटिवेशन, हरियाणवी स्वैग, या कोई भी टॉपिक..."
+                                            },
+                                            fontSize = 12.5.sp,
+                                            color = Color.Gray
+                                        )
+                                    },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedTextColor = Color.White,
+                                        unfocusedTextColor = Color.White,
+                                        focusedBorderColor = selectedCategory.accentColor,
+                                        unfocusedBorderColor = Color(0xFF3B3866),
+                                        focusedContainerColor = Color(0xFF0B0A1A),
+                                        unfocusedContainerColor = Color(0xFF0B0A1A)
+                                    ),
+                                    shape = RoundedCornerShape(14.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("one_click_topic_input")
+                                )
+                            }
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // Quick Trending Topic Pills + Photo Upload Button (Each triggers Interstitial Ad)
+                            // Photo Picker & Sample/Idea Buttons
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1399,7 +1793,9 @@ fun OneClickAiVideoHashtagFullScreen(
                                 OutlinedButton(
                                     onClick = {
                                         triggerOptionWithInterstitialAd("Photo-to-Video Gallery Picker") {
-                                            photoPickerLauncher.launch("image/*")
+                                            photoPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
                                         }
                                     },
                                     shape = RoundedCornerShape(12.dp),
@@ -1427,7 +1823,11 @@ fun OneClickAiVideoHashtagFullScreen(
                                 OutlinedButton(
                                     onClick = {
                                         triggerOptionWithInterstitialAd("Trending AI Idea Generator") {
-                                            customTopicInput = selectedCategory.defaultPrompt
+                                            if (studioMode == "script") {
+                                                customScriptInput = selectedCategory.sampleHook + "\nहर सपना सच होता है अगर हिम्मत न टूटे।\nआज से अपनी नई शुरुआत करो!\nवीडियो पसंद आए तो अभी शेयर करें ❤️"
+                                            } else {
+                                                customTopicInput = selectedCategory.defaultPrompt
+                                            }
                                             executeOneClickGenerate()
                                         }
                                     },
@@ -1446,7 +1846,7 @@ fun OneClickAiVideoHashtagFullScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "ट्रेंडिंग आइडिया",
+                                        text = if (studioMode == "script") "सैंपल स्क्रिप्ट" else "ट्रेंडिंग आइडिया",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFFFFD700)
@@ -1541,6 +1941,111 @@ fun OneClickAiVideoHashtagFullScreen(
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF6EE7B7)
                                     )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4B. 4-SCENE AI STORYBOARD STRIP
+                studioPackage?.scenes?.takeIf { it.isNotEmpty() }?.let { scenes ->
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF101329)),
+                            border = BorderStroke(1.dp, Color(0xFF28305A)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "🎞️ 4-Scene AI Storyboard (12s Reel)",
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFF00E5FF)
+                                    )
+                                    Text(
+                                        text = studioPackage?.modelUsed ?: "Gemini AI",
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF86EFAC)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    items(scenes.indices.toList()) { idx ->
+                                        val sc = scenes[idx]
+                                        val thumb = sceneBitmaps.getOrNull(idx) ?: uploadedPhotoBitmap
+                                        Card(
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFF080A18)),
+                                            border = BorderStroke(1.dp, selectedCategory.accentColor.copy(alpha = 0.45f)),
+                                            modifier = Modifier.width(136.dp)
+                                        ) {
+                                            Column {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(82.dp)
+                                                        .background(
+                                                            Brush.linearGradient(
+                                                                listOf(
+                                                                    selectedCategory.accentColor.copy(alpha = 0.25f),
+                                                                    selectedCategory.secondaryColor.copy(alpha = 0.4f)
+                                                                )
+                                                            )
+                                                        ),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    if (thumb != null) {
+                                                        Image(
+                                                            bitmap = thumb.asImageBitmap(),
+                                                            contentDescription = "Scene ${idx + 1}",
+                                                            contentScale = ContentScale.Crop,
+                                                            modifier = Modifier.fillMaxSize()
+                                                        )
+                                                    } else {
+                                                        Text(text = selectedCategory.emoji, fontSize = 24.sp)
+                                                    }
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .align(Alignment.TopStart)
+                                                            .padding(5.dp)
+                                                            .clip(RoundedCornerShape(6.dp))
+                                                            .background(Color.Black.copy(alpha = 0.72f))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "S${idx + 1} • ${sc.timeRange}",
+                                                            fontSize = 9.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Color(0xFF00E5FF)
+                                                        )
+                                                    }
+                                                }
+                                                Column(modifier = Modifier.padding(8.dp)) {
+                                                    Text(
+                                                        text = sc.caption,
+                                                        fontSize = 10.5.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color.White,
+                                                        maxLines = 2,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Spacer(modifier = Modifier.height(2.dp))
+                                                    Text(
+                                                        text = sc.cameraMotion,
+                                                        fontSize = 9.sp,
+                                                        color = Color(0xFF9CA3AF)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1752,10 +2257,11 @@ fun OneClickAiVideoHashtagFullScreen(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                // 1-Click Auto-Post & Download Action Buttons (All trigger Interstitial Ad)
+                                // 1-Click Auto-Post & Real MP4 Gallery Export Buttons
                                 Button(
                                     onClick = {
                                         triggerOptionWithInterstitialAd("1-Click Auto-Post to Socials") {
+                                            val existingUri = renderedVideoOutput?.shareUri
                                             val fullSharePayload = buildString {
                                                 appendLine("🔥 ${result.hook}")
                                                 appendLine()
@@ -1763,10 +2269,15 @@ fun OneClickAiVideoHashtagFullScreen(
                                                 appendLine()
                                                 append(result.hashtags.joinToString(" "))
                                             }
-                                            shareContentToSocials(context, fullSharePayload)
-                                            statusBannerMessage = "🚀 वीडियो और वायरल हैशटैग्स सभी सोशल अकाउंट्स (IG, YT, FB, GoLiveGram) पर शेयर के लिए तैयार!"
+                                            if (existingUri != null) {
+                                                shareVideoFileToSocials(context, existingUri, fullSharePayload)
+                                                statusBannerMessage = "🚀 .MP4 वीडियो और वायरल हैशटैग्स शेयर के लिए तैयार!"
+                                            } else {
+                                                renderAndSaveOrShareMp4(true)
+                                            }
                                         }
                                     },
+                                    enabled = !isRenderingMp4,
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFF00C853)
                                     ),
@@ -1784,9 +2295,9 @@ fun OneClickAiVideoHashtagFullScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "🌐 1-Click Auto-Post to IG, YT, FB & GoLiveGram",
+                                        text = if (isRenderingMp4) "⏳ .MP4 रेंडर हो रहा है (${(mp4RenderProgress * 100).toInt()}%)..." else "🌐 1-Click Share .MP4 to IG, YT & WhatsApp",
                                         fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 13.sp,
+                                        fontSize = 12.5.sp,
                                         color = Color.White
                                     )
                                 }
@@ -1800,14 +2311,10 @@ fun OneClickAiVideoHashtagFullScreen(
                                     Button(
                                         onClick = {
                                             triggerOptionWithInterstitialAd("Download HD Video to Gallery") {
-                                                statusBannerMessage = "📥 HD AI वीडियो और ऑटो-हैशटैग्स फोन गैलरी में सेव हो गए!"
-                                                Toast.makeText(
-                                                    context,
-                                                    "📥 Video saved to phone gallery with viral tags!",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
+                                                renderAndSaveOrShareMp4(false)
                                             }
                                         },
+                                        enabled = !isRenderingMp4,
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = Color(0xFF1E293B)
                                         ),
@@ -1817,17 +2324,25 @@ fun OneClickAiVideoHashtagFullScreen(
                                             .height(46.dp)
                                             .testTag("download_phone_gallery_button")
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Download,
-                                            contentDescription = null,
-                                            tint = Color(0xFF00E5FF),
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                        if (isRenderingMp4) {
+                                            CircularProgressIndicator(
+                                                color = Color(0xFF00E5FF),
+                                                strokeWidth = 2.dp,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Default.Download,
+                                                contentDescription = null,
+                                                tint = Color(0xFF00E5FF),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = "गैलरी में सेव करें",
+                                            text = if (isRenderingMp4) "${(mp4RenderProgress * 100).toInt()}% .MP4" else "गैलरी में .MP4 सेव करें",
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
+                                            fontSize = 11.5.sp,
                                             color = Color.White
                                         )
                                     }
@@ -2338,5 +2853,20 @@ private fun shareContentToSocials(context: Context, content: String) {
         }
         context.startActivity(Intent.createChooser(intent, "Share AI Viral Video & Hashtags"))
     } catch (_: Throwable) {
+    }
+}
+
+private fun shareVideoFileToSocials(context: Context, videoUri: Uri, captionText: String) {
+    try {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "video/mp4"
+            putExtra(Intent.EXTRA_STREAM, videoUri)
+            putExtra(Intent.EXTRA_TEXT, captionText)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share HD AI Reel (.MP4)"))
+    } catch (_: Throwable) {
+        shareContentToSocials(context, captionText)
     }
 }

@@ -33,8 +33,11 @@ module.exports = async function handler(req, res) {
     const expectJson = body.expectJson !== false;
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
 
-    if (!prompt) {
-      return res.status(400).json({ ok: false, error: 'Prompt is required.' });
+    const imageBase64 = String(body.imageBase64 || '').trim();
+    const imageMimeType = String(body.imageMimeType || 'image/jpeg').trim();
+
+    if (!prompt && !imageBase64) {
+      return res.status(400).json({ ok: false, error: 'Prompt or image is required.' });
     }
 
     const systemInstruction = String(
@@ -42,12 +45,13 @@ module.exports = async function handler(req, res) {
       'You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators on Instagram Reels, YouTube Shorts, Facebook Reels, and Telegram.'
     );
 
+    const isSceneMode = contentType === 'FLOW_4_SCENE_REEL';
     const structuredPrompt = expectJson
       ? [
           `Content Mode: ${contentType}`,
           `Target Platform: ${platform}`,
           `Tone / Style: ${tone}`,
-          `User Request / Topic: ${prompt}`,
+          `User Request / Topic: ${prompt || 'Analyze photo for a viral Hindi/Hinglish Reel'}`,
           '',
           'Respond strictly as valid JSON with keys:',
           '{',
@@ -56,7 +60,13 @@ module.exports = async function handler(req, res) {
           '  "script": "complete timestamped script [0-3s HOOK], [3-20s BODY], [20-30s CTA] with visual cues",',
           '  "cta": "engagement-driving comment/share call to action",',
           '  "hashtags": "space-separated string of 8-12 trending Hindi + English hashtags",',
-          '  "tips": ["tip 1", "tip 2"]',
+          '  "tips": ["tip 1", "tip 2"]' + (isSceneMode ? ',' : ''),
+          ...(isSceneMode
+            ? [
+                '  "voiceoverText": "smooth Hindi/Hinglish narration without bracket tags",',
+                '  "scenes": [{"timeRange":"0-3s","caption":"short Hindi/Hinglish caption","visualPrompt":"photorealistic 9:16 visual prompt","cameraMotion":"zoom-in"}]'
+              ]
+            : []),
           '}'
         ].join('\n')
       : prompt;
@@ -70,33 +80,56 @@ module.exports = async function handler(req, res) {
         });
       }
     }
-    contents.push({ role: 'user', parts: [{ text: structuredPrompt }] });
+    const userParts = [];
+    if (imageBase64) {
+      userParts.push({ inlineData: { mimeType: imageMimeType, data: imageBase64 } });
+    }
+    userParts.push({ text: structuredPrompt });
+    contents.push({ role: 'user', parts: userParts });
 
     const generationConfig = {
       temperature: 0.85,
       topP: 0.95,
-      maxOutputTokens: 1200
+      maxOutputTokens: 1400
     };
     if (expectJson) {
       generationConfig.responseMimeType = 'application/json';
     }
 
-    const geminiResp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemInstruction }] },
-          contents,
-          generationConfig
-        })
-      }
-    );
+    const models = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
+    let geminiResp = null;
+    let rawData = null;
+    let modelUsed = models[0];
 
-    const rawData = await geminiResp.json();
-    if (!geminiResp.ok) {
-      return res.status(geminiResp.status).json({
+    for (const modelName of models) {
+      try {
+        modelUsed = modelName;
+        geminiResp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: systemInstruction }] },
+              contents,
+              generationConfig
+            })
+          }
+        );
+        rawData = await geminiResp.json();
+        if (geminiResp.ok && rawData?.candidates?.[0]?.content?.parts?.[0]?.text) {
+          break;
+        }
+        if (![404, 429, 500, 503].includes(geminiResp.status)) {
+          break;
+        }
+      } catch (fetchErr) {
+        rawData = { error: { message: fetchErr?.message || 'Fetch error' } };
+      }
+    }
+
+    if (!geminiResp || !geminiResp.ok) {
+      return res.status(geminiResp?.status || 502).json({
         ok: false,
         error: rawData?.error?.message || 'Gemini API upstream error'
       });
@@ -111,7 +144,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         mode: 'LIVE_GEMINI_API',
-        model: 'gemini-2.5-flash',
+        model: modelUsed,
         data: { rawText: text }
       });
     }
@@ -134,14 +167,16 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       mode: 'LIVE_GEMINI_API',
-      model: 'gemini-2.5-flash',
+      model: modelUsed,
       data: {
         title: String(parsed.title || `🔥 ${prompt}`),
         hook: String(parsed.hook || ''),
         script: String(parsed.script || text),
+        voiceoverText: String(parsed.voiceoverText || parsed.script || text),
         cta: String(parsed.cta || ''),
-        hashtags: String(parsed.hashtags || '#ViralReels #ViralBoostAI #TrendingShorts'),
+        hashtags: Array.isArray(parsed.hashtags) ? parsed.hashtags.join(' ') : String(parsed.hashtags || '#ViralReels #ViralBoostAI #TrendingShorts'),
         tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+        scenes: Array.isArray(parsed.scenes) ? parsed.scenes : undefined,
         rawText: text
       }
     });

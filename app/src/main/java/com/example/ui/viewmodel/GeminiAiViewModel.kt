@@ -32,8 +32,11 @@ sealed interface GeminiAiUiState {
  */
 class GeminiAiViewModel : ViewModel() {
 
-    private val model by lazy {
-        Firebase.ai.generativeModel("gemini-3.8-flash")
+    private val models by lazy {
+        listOf(
+            Firebase.ai.generativeModel("gemini-3.8-flash"),
+            Firebase.ai.generativeModel("gemini-3.5-flash-lite")
+        )
     }
 
     private val socialService by lazy {
@@ -46,60 +49,70 @@ class GeminiAiViewModel : ViewModel() {
     fun generateContent(prompt: String) {
         viewModelScope.launch {
             _uiState.value = GeminiAiUiState.Loading
-            try {
-                val response = withTimeout(60_000L) {
-                    model.generateContent(prompt)
+            var lastError: Exception? = null
+            for (m in models) {
+                try {
+                    val response = withTimeout(60_000L) {
+                        m.generateContent(prompt)
+                    }
+                    val text = response.text
+                    if (!text.isNullOrBlank()) {
+                        _uiState.value = GeminiAiUiState.Success(text = text)
+                        return@launch
+                    } else {
+                        lastError = IllegalStateException("Model returned an empty response.")
+                    }
+                } catch (e: CancellationException) {
+                    if (e is TimeoutCancellationException) {
+                        lastError = e
+                    } else {
+                        throw e
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Firebase AI generation failed, trying fallback model...", e)
+                    lastError = e
                 }
-                val text = response.text
-                if (!text.isNullOrBlank()) {
-                    _uiState.value = GeminiAiUiState.Success(text = text)
-                } else {
-                    _uiState.value = GeminiAiUiState.Error("Model returned an empty response.")
-                }
-            } catch (e: TimeoutCancellationException) {
-                Log.e(TAG, "Generation timed out", e)
-                _uiState.value = GeminiAiUiState.Error(
-                    "Generation timed out after 60 seconds. Please try again."
-                )
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e(TAG, "Firebase AI generation failed", e)
-                _uiState.value = GeminiAiUiState.Error(
-                    e.localizedMessage ?: "Generation failed."
-                )
             }
+            _uiState.value = GeminiAiUiState.Error(
+                lastError?.localizedMessage ?: "Generation failed."
+            )
         }
     }
 
     fun generateStream(prompt: String) {
         viewModelScope.launch {
             _uiState.value = GeminiAiUiState.Loading
-            val accumulatedText = StringBuilder()
-            try {
-                withTimeout(60_000L) {
-                    model.generateContentStream(prompt).collect { chunk ->
-                        val chunkText = chunk.text.orEmpty()
-                        accumulatedText.append(chunkText)
-                        _uiState.value = GeminiAiUiState.Streaming(accumulatedText.toString())
+            var lastError: Exception? = null
+            for (m in models) {
+                val accumulatedText = StringBuilder()
+                try {
+                    withTimeout(60_000L) {
+                        m.generateContentStream(prompt).collect { chunk ->
+                            val chunkText = chunk.text.orEmpty()
+                            accumulatedText.append(chunkText)
+                            _uiState.value = GeminiAiUiState.Streaming(accumulatedText.toString())
+                        }
                     }
+                    if (accumulatedText.isNotBlank()) {
+                        _uiState.value = GeminiAiUiState.Success(text = accumulatedText.toString())
+                        return@launch
+                    } else {
+                        lastError = IllegalStateException("Model returned an empty response.")
+                    }
+                } catch (e: CancellationException) {
+                    if (e is TimeoutCancellationException) {
+                        lastError = e
+                    } else {
+                        throw e
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Streaming failed on primary model, trying fallback...", e)
+                    lastError = e
                 }
-                if (accumulatedText.isNotBlank()) {
-                    _uiState.value = GeminiAiUiState.Success(text = accumulatedText.toString())
-                } else {
-                    _uiState.value = GeminiAiUiState.Error("Model returned an empty response.")
-                }
-            } catch (e: TimeoutCancellationException) {
-                Log.e(TAG, "Streaming timed out", e)
-                _uiState.value = GeminiAiUiState.Error("Streaming timed out after 60 seconds.")
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e(TAG, "Streaming generation failed", e)
-                _uiState.value = GeminiAiUiState.Error(
-                    e.localizedMessage ?: "Streaming failed."
-                )
             }
+            _uiState.value = GeminiAiUiState.Error(
+                lastError?.localizedMessage ?: "Streaming failed."
+            )
         }
     }
 

@@ -623,12 +623,14 @@
         reelsPlatform: 'All',
         reelsSort: 'date',
         aiStudioState: {
+          studioVersion: 2,
           studioMode: 'prompt', // 'prompt' | 'photo' | 'script'
           catIdx: 0,
           selectedBeatIdx: 0,
           customTopic: '',
           customScriptInput: '',
           coverDataUrl: '',
+          hasUserPhoto: false,
           isPlaying: true,
           aiSource: 'IDLE',
           engineUsed: 'IDLE',
@@ -695,12 +697,28 @@
           cleanAiStudio.studioMode = 'prompt';
         }
         if (!Array.isArray(cleanAiStudio.scenes)) cleanAiStudio.scenes = [];
+        // Migrate legacy cached lightning coverDataUrl (studioVersion < 2) so old placeholder PNG never reappears
+        if (Number(parsed.aiStudioState?.studioVersion || 0) < 2) {
+          cleanAiStudio.studioVersion = 2;
+          cleanAiStudio.coverDataUrl = '';
+          cleanAiStudio.hasUserPhoto = false;
+          cleanAiStudio.scenes = [];
+          cleanAiStudio.title = '';
+          cleanAiStudio.script = '';
+          cleanAiStudio.hashtags = '';
+          cleanAiStudio.voiceoverText = '';
+          cleanAiStudio.aiSource = 'IDLE';
+          cleanAiStudio.engineUsed = 'IDLE';
+        } else if (cleanAiStudio.studioMode !== 'photo' && !cleanAiStudio.hasUserPhoto && cleanAiStudio.scenes.length === 0) {
+          cleanAiStudio.coverDataUrl = '';
+        }
         if (cleanAiStudio.aiSource === 'READY' || cleanAiStudio.aiSource === 'OFFLINE_BLUEPRINT') {
           cleanAiStudio.aiSource = 'IDLE';
           cleanAiStudio.title = '';
           cleanAiStudio.script = '';
           cleanAiStudio.hashtags = '';
           cleanAiStudio.scenes = [];
+          cleanAiStudio.coverDataUrl = cleanAiStudio.hasUserPhoto ? cleanAiStudio.coverDataUrl : '';
         }
         cleanAiStudio.errorMsg = '';
         cleanAiStudio.progressStage = '';
@@ -2714,10 +2732,10 @@
       const engineBadge = s.engineUsed === 'VEO_VIDEO'
         ? '🎬 Google Veo AI Video'
         : s.engineUsed === 'IMAGEN_MULTI_SCENE'
-          ? '🎞️ Imagen 3 • 4-Scene Cinema'
+          ? '🎞️ 4-Scene Cinema Engine'
           : s.engineUsed === 'PHOTO_3D_MOTION'
             ? '📸 3D Photo Motion Engine'
-            : '🟢 Veo + Gemini 3.8 + Imagen 3';
+            : '🟢 Gemini 3.8 + 3.5 Lite + Veo';
 
       return `
         ${overlayHeader('1-Click AI Video & Viral Hashtags', 'Flow / Veo AI Studio • Prompt, Photo & Script • 1080×1920 @ 30FPS', `<span class="px-2 py-1 rounded-lg bg-gradient-to-r from-amber-400/20 to-cyan-400/20 border border-amber-400/60 text-amber-300 text-[9.5px] font-extrabold whitespace-nowrap">${state.profile.isVip ? '👑 VIP HD' : '⚡ VEO PRO'}</span>`)}
@@ -3925,10 +3943,24 @@
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       let coverImg = null;
-      const fallbackSrc = studioMediaCache.uploadedPhotoDataUrl || state.aiStudioState.coverDataUrl;
+      const canUseStoredCover = Boolean(
+        state.aiStudioState.hasUserPhoto ||
+        (Number(state.aiStudioState.studioVersion || 0) >= 2 && Array.isArray(state.aiStudioState.scenes) && state.aiStudioState.scenes.length > 0)
+      );
+      const fallbackSrc = studioMediaCache.uploadedPhotoDataUrl || (canUseStoredCover ? state.aiStudioState.coverDataUrl : '');
       if (fallbackSrc) {
         coverImg = new Image();
         coverImg.src = fallbackSrc;
+      }
+      if (Array.isArray(state.aiStudioState.scenes) && state.aiStudioState.scenes.length > 0 && studioMediaCache.sceneDataUrls.length === 0) {
+        const activeCat = getActiveStudioCategory();
+        if (state.aiStudioState.hasUserPhoto && fallbackSrc) {
+          studioMediaCache.sceneDataUrls = [0, 1, 2, 3].map(() => fallbackSrc);
+        } else {
+          studioMediaCache.sceneDataUrls = state.aiStudioState.scenes.slice(0, 4).map((sc, idx) =>
+            generatePhotorealisticSceneBackdropDataUrl(sc, idx, activeCat)
+          );
+        }
       }
       refreshStudioSceneImagesCache();
       let lastPerf = performance.now();
@@ -4309,17 +4341,25 @@
         const cfg = { temperature: 0.85, topP: 0.95, maxOutputTokens: 1200 };
         if (expectJson) cfg.responseMimeType = 'application/json';
 
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(userKey)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: sysText }] },
-            contents,
-            generationConfig: cfg
-          })
-        });
-        const raw = await r.json();
-        if (!r.ok) {
+        let r = null;
+        let raw = null;
+        const keyModels = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
+        for (const mName of keyModels) {
+          try {
+            r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(userKey)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: sysText }] },
+                contents,
+                generationConfig: cfg
+              })
+            });
+            raw = await r.json();
+            if (r.ok && raw?.candidates?.[0]?.content?.parts?.[0]?.text) break;
+          } catch (_) {}
+        }
+        if (!r || !r.ok) {
           throw new Error(raw?.error?.message || 'Gemini API Key Error');
         }
         const txt = raw?.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -4349,7 +4389,7 @@
         }
       }
 
-      // Strictly NO offline/demo fallback — surface actual live AI error
+      // Strictly NO offline/demo fallback for general text routes — surface actual live AI error
       throw new Error(lastErrorMsg || 'Live Gemini AI service unavailable. Check internet connection & App Check.');
     }
 
@@ -4363,41 +4403,140 @@
       return await window.ViralBoostFirebase.generateImage({ prompt, aspectRatio });
     }
 
+    function buildResilientStudioScenesFallback({ mode = 'prompt', topic = '', scriptText = '', category = {}, beatName = '' }) {
+      const cat = category || {};
+      const catEn = cat.titleEnglish || 'Viral Reel';
+      const catHi = cat.titleHindi || 'वायरल रील';
+      const cleanTopic = String(topic || catHi || 'Trending Story').trim();
+      const shortTopic = cleanTopic.slice(0, 68);
+      const motions = ['zoom-in', 'pan-right', 'zoom-out', 'pan-left'];
+
+      let captions = [];
+      if (mode === 'script' && String(scriptText || '').trim()) {
+        const rawLines = String(scriptText)
+          .split(/\n+|(?<=[।.!?])\s+/)
+          .map(l => l.replace(/^\[[^\]]+\]\s*/, '').trim())
+          .filter(Boolean);
+        captions = [0, 1, 2, 3].map(i => (rawLines[i] || rawLines[i % Math.max(1, rawLines.length)] || shortTopic).slice(0, 105));
+      } else if (mode === 'photo') {
+        captions = [
+          `इस तस्वीर के पीछे छुपी एक अनकही कहानी... 👀`,
+          `${shortTopic} — हर पल में एक नया एहसास ✨`,
+          `ज़िंदगी की असली खूबसूरती यहीं नज़र आती है ❤️`,
+          `अच्छा लगा तो अभी Save & Share ज़रूर करें! 🔥`
+        ];
+      } else {
+        const lower = String(cat.id || catEn).toLowerCase();
+        if (lower.includes('shayari')) {
+          captions = [
+            `वक़्त ने सिखा दिया चुप रहना... 🌙`,
+            `${shortTopic} — दिल की गहराई से निकली बात ✍️`,
+            `जो समझे वो अपना, बाकी सब कहानी थी ❤️‍🩹`,
+            `ये शायरी किसे भेजनी है? Tag करो कमेंट में! 💬`
+          ];
+        } else if (lower.includes('story')) {
+          captions = [
+            `एक ऐसा मोड़ जिसने सब कुछ बदल दिया... 🎬`,
+            `${shortTopic} — किसी ने सोचा न था ऐसा होगा!`,
+            `जब हिम्मत न टूटी, तो किस्मत भी झुक गई ✨`,
+            `इस कहानी से क्या सीख मिली? कमेंट में लिखो! 💬`
+          ];
+        } else if (lower.includes('comedy')) {
+          captions = [
+            `रुको! ये सीन देखकर हंसी नहीं रुकेगी 😂`,
+            `${shortTopic} — देसी दोस्तों का असली ड्रामा 🎭`,
+            `अंत वाला ट्विस्ट तो बिल्कुल अनएक्सपेक्टेड था 🤣`,
+            `अपने उस एक दोस्त को अभी Tag करो! 👇😂`
+          ];
+        } else if (lower.includes('tech') || lower.includes('fact')) {
+          captions = [
+            `99% लोगों को ये सीक्रेट आज भी नहीं पता! 🤯`,
+            `${shortTopic} — 3 सेकंड में दिमाग हिल जाएगा 🚀`,
+            `यही वो स्मार्ट ट्रिक है जो क्रिएटर्स इस्तेमाल करते हैं 💡`,
+            `अभी Bookmark कर लो वरना रील खो जाएगी! 📌`
+          ];
+        } else {
+          captions = [
+            `रुक जाओ! आज ${shortTopic} आपकी सोच बदल देगा 🔥`,
+            `हर बड़ी कामयाबी की शुरुआत छोटे कदम से होती है ⚡`,
+            `भीड़ से अलग चलना सीखो — रिज़ल्ट खुद बोलेगा 🚀`,
+            `अगर बात दिल को लगी हो तो Share & Follow करें! ❤️`
+          ];
+        }
+      }
+
+      const scenes = [0, 1, 2, 3].map(i => ({
+        timeRange: `${i * 3}-${(i + 1) * 3}s`,
+        caption: captions[i],
+        visualPrompt: `Photorealistic 9:16 vertical film still scene ${i + 1}, ${catEn}, ${cleanTopic}, dramatic golden/cyan lighting, 35mm depth of field`,
+        cameraMotion: motions[i]
+      }));
+
+      const catTag = `#${String(cat.shortLabel || 'Viral').replace(/[^A-Za-z0-9]/g, '')}Reels`;
+      const hashtags = `${catTag} #HindiReels #TrendingShorts #ViralBoostAI #FYP #ReelsIndia #ExplorePage #2026Viral`;
+      const script = scenes.map(sc => `[${sc.timeRange}] ${sc.caption}`).join('\n');
+      const voiceoverText = scenes.map(sc => sc.caption).join('. ');
+      const title = `🔥 ${shortTopic}`;
+
+      return {
+        ok: true,
+        source: 'SMART_STUDIO',
+        data: {
+          title,
+          hook: captions[0],
+          script,
+          voiceoverText,
+          cta: 'वीडियो पसंद आए तो अभी सेव और शेयर करें! 🔥',
+          hashtags,
+          scenes
+        }
+      };
+    }
+
     async function callStudioScenesBackend(payload) {
       if (window.ViralBoostFirebaseReady) {
         try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3500))]); } catch (_) {}
       }
       if (window.ViralBoostFirebase && typeof window.ViralBoostFirebase.generateStudioScenes === 'function') {
-        const res = await window.ViralBoostFirebase.generateStudioScenes(payload);
-        if (res && res.ok && res.data) return res;
-      }
-      // Graceful fallback through callGeminiBackend when direct studio scene bridge isn't active
-      const fallbackPrompt = payload.mode === 'script'
-        ? `Split this user script into a 4-scene Hindi/Hinglish Reel for category "${payload.category.titleEnglish}":\n${payload.scriptText}`
-        : `Create a 4-scene viral Hindi/Hinglish Reel for category "${payload.category.titleEnglish}" on "${payload.topic}" synced to ${payload.beatName}.`;
-      const res = await callGeminiBackend({
-        prompt: fallbackPrompt,
-        platform: 'Instagram Reels & YouTube Shorts',
-        tone: payload.category.titleEnglish,
-        contentType: 'FLOW_4_SCENE_REEL'
-      });
-      const lines = String(res.data.script || res.data.title || '').split('\n').map(l => l.trim()).filter(Boolean);
-      const motions = ['zoom-in', 'pan-right', 'zoom-out', 'pan-left'];
-      const scenes = [0, 1, 2, 3].map(i => ({
-        timeRange: `${i * 3}-${(i + 1) * 3}s`,
-        caption: (lines[i] || res.data.hook || res.data.title || payload.topic).slice(0, 95),
-        visualPrompt: `Photorealistic 9:16 vertical cinematic scene ${i + 1} for ${payload.category.titleEnglish}: ${payload.topic}, natural dramatic lighting, shallow depth of field`,
-        cameraMotion: motions[i]
-      }));
-      return {
-        ok: true,
-        source: res.source || 'LIVE_GEMINI',
-        data: {
-          ...res.data,
-          voiceoverText: res.data.script,
-          scenes
+        try {
+          const res = await window.ViralBoostFirebase.generateStudioScenes(payload);
+          if (res && res.ok && res.data) return res;
+        } catch (fbErr) {
+          console.warn('Primary Firebase studio scenes cascade failed, trying HTTP proxy / Smart Studio:', fbErr?.message || fbErr);
         }
-      };
+      }
+      // Secondary: try HTTP /api/gemini or optional local key via callGeminiBackend
+      try {
+        const fallbackPrompt = payload.mode === 'script'
+          ? `Split this user script into a 4-scene Hindi/Hinglish Reel for category "${payload.category.titleEnglish}":\n${payload.scriptText}`
+          : `Create a 4-scene viral Hindi/Hinglish Reel for category "${payload.category.titleEnglish}" on "${payload.topic}" synced to ${payload.beatName}.`;
+        const res = await callGeminiBackend({
+          prompt: fallbackPrompt,
+          platform: 'Instagram Reels & YouTube Shorts',
+          tone: payload.category.titleEnglish,
+          contentType: 'FLOW_4_SCENE_REEL'
+        });
+        const lines = String(res.data.script || res.data.title || '').split('\n').map(l => l.trim()).filter(Boolean);
+        const motions = ['zoom-in', 'pan-right', 'zoom-out', 'pan-left'];
+        const scenes = [0, 1, 2, 3].map(i => ({
+          timeRange: `${i * 3}-${(i + 1) * 3}s`,
+          caption: (lines[i] || res.data.hook || res.data.title || payload.topic).slice(0, 95),
+          visualPrompt: `Photorealistic 9:16 vertical cinematic scene ${i + 1} for ${payload.category.titleEnglish}: ${payload.topic}, natural dramatic lighting, shallow depth of field`,
+          cameraMotion: motions[i]
+        }));
+        return {
+          ok: true,
+          source: res.source || 'LIVE_GEMINI',
+          data: {
+            ...res.data,
+            voiceoverText: res.data.script,
+            scenes
+          }
+        };
+      } catch (proxyOrNetErr) {
+        // Non-blocking Smart Studio rescue: never abort video generation on transient 500/network spikes
+        return buildResilientStudioScenesFallback(payload);
+      }
     }
 
     async function callVeoBackend({ prompt, imageBase64 = '', imageMimeType = 'image/jpeg', aspectRatio = '9:16' }) {
@@ -4851,6 +4990,7 @@
       studioMediaCache.sceneDataUrls = [];
       studioMediaCache.loadedSceneImgs = [];
       state.aiStudioState.coverDataUrl = '';
+      state.aiStudioState.hasUserPhoto = false;
       saveState();
       renderOverlay();
       showToast('Photo cleared.', 'info');
@@ -4883,6 +5023,8 @@
           studioMediaCache.sceneDataUrls = [compressed, compressed, compressed, compressed];
           studioMediaCache.veoVideoUrl = '';
           state.aiStudioState.coverDataUrl = compressed;
+          state.aiStudioState.hasUserPhoto = true;
+          state.aiStudioState.studioVersion = 2;
           saveState();
           renderOverlay();
           showToast('📸 Photo uploaded & synced to Gemini Vision + 3D Animator!', 'success');
@@ -5131,6 +5273,7 @@
               cameraMotion: ['zoom-in', 'pan-right', 'zoom-out', 'pan-left'][i]
             }));
 
+        s.studioVersion = 2;
         s.aiSource = res.source || 'LIVE_GEMINI';
         s.title = res.data.title || topic;
         s.voiceoverText = res.data.voiceoverText || res.data.script || scenes.map(sc => sc.caption).join(' ');
@@ -5142,7 +5285,7 @@
         s.progressStep = 2;
         s.progressStage = mode === 'photo'
           ? '2. Animating Photo via Veo / 3D Motion Engine...'
-          : '2. Calling Google Veo + Imagen 3 (4 Scenes)...';
+          : '2. Rendering 4-Scene Cinema Visuals...';
         s.progressPct = 58;
         renderOverlay();
 
@@ -5172,15 +5315,17 @@
           s.coverDataUrl = photoScenes[0] || studioMediaCache.uploadedPhotoDataUrl || s.coverDataUrl;
           s.engineUsed = 'PHOTO_3D_MOTION';
         } else {
-          // Prompt / Script mode: call Imagen 3 (`imagen-3.0-generate-002`) in parallel for all 4 scenes + photorealistic fallback
-          const imgResults = await Promise.allSettled(
-            scenes.map((sc, idx) =>
-              callImagenBackend({
-                prompt: `Photorealistic 9:16 vertical film still, 35mm cinema lens, ${sc.visualPrompt || sc.caption || topic}, category ${cat.titleEnglish}, dramatic realistic lighting, no text overlay`,
-                aspectRatio: '9:16'
-              }).catch(() => null)
-            )
-          );
+          // Prompt / Script mode: try Gemini/Imagen for all 4 scenes when live, with photorealistic 4-scene fallback
+          const imgResults = s.aiSource === 'SMART_STUDIO'
+            ? []
+            : await Promise.allSettled(
+                scenes.map((sc) =>
+                  callImagenBackend({
+                    prompt: `Photorealistic 9:16 vertical film still, 35mm cinema lens, ${sc.visualPrompt || sc.caption || topic}, category ${cat.titleEnglish}, dramatic realistic lighting, no text overlay`,
+                    aspectRatio: '9:16'
+                  }).catch(() => null)
+                )
+              );
           const finalSceneUrls = scenes.map((sc, idx) => {
             const r = imgResults[idx];
             if (r && r.status === 'fulfilled' && r.value && r.value.ok && r.value.dataUrl) {
@@ -5202,7 +5347,9 @@
         s.progressStep = 3;
         s.progressStage = s.engineUsed === 'VEO_VIDEO'
           ? '3. Google Veo 9:16 MP4 Stream Ready!'
-          : '3. 4-Scene 1080×1920 @ 30FPS Motion Ready!';
+          : s.aiSource === 'SMART_STUDIO'
+            ? '3. Smart 4-Scene 1080×1920 @ 30FPS Ready! (Live Gemini busy)'
+            : '3. 4-Scene 1080×1920 @ 30FPS Motion Ready!';
         s.progressPct = 100;
         state.aiHistory.unshift({
           id: 'ai_' + Date.now(),
@@ -6590,11 +6737,15 @@
 
       const SYSTEM_PROMPT = "You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators on Instagram Reels, YouTube Shorts, Facebook Reels, and Telegram.";
 
-      function buildAiModels(aiInstance) {
+      const AI_MODEL_CASCADE = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"];
+      const IMAGE_MODEL_CASCADE = ["gemini-nano-banana-2.1", "gemini-3.1-flash-lite-image", "gemini-3.8-flash"];
+
+      function buildAiModels(aiInstance, modelName = "gemini-3.8-flash") {
         return {
           aiInstance,
+          modelName,
           structuredModel: getGenerativeModel(aiInstance, {
-            model: "gemini-3.8-flash",
+            model: modelName,
             systemInstruction: SYSTEM_PROMPT,
             generationConfig: {
               responseMimeType: "application/json",
@@ -6603,7 +6754,7 @@
             }
           }),
           studioScenesModel: getGenerativeModel(aiInstance, {
-            model: "gemini-3.8-flash",
+            model: modelName,
             systemInstruction: SYSTEM_PROMPT,
             generationConfig: {
               responseMimeType: "application/json",
@@ -6612,7 +6763,7 @@
             }
           }),
           chatModel: getGenerativeModel(aiInstance, {
-            model: "gemini-3.8-flash",
+            model: modelName,
             systemInstruction: SYSTEM_PROMPT
           }),
           getImagen: typeof FirebaseAI.getImagenModel === "function"
@@ -6624,8 +6775,8 @@
                 }
               })
             : null,
-          getGeminiImage: () => getGenerativeModel(aiInstance, {
-            model: "gemini-3.8-flash",
+          getGeminiImage: (imgModel = "gemini-nano-banana-2.1") => getGenerativeModel(aiInstance, {
+            model: imgModel,
             generationConfig: {
               responseModalities: ["IMAGE", "TEXT"]
             }
@@ -6638,19 +6789,54 @@
         return s.includes("401") || s.includes("403") || s.includes("appcheck") || s.includes("app check") || s.includes("token is invalid") || s.includes("unauthenticated");
       }
 
-      async function runWithAiFallback(task) {
-        if (appCheckTokenOk) {
+      function isRetryableAiError(err) {
+        const s = String(err?.message || err || "").toLowerCase();
+        return (
+          s.includes("500") ||
+          s.includes("503") ||
+          s.includes("429") ||
+          s.includes("404") ||
+          s.includes("high demand") ||
+          s.includes("overload") ||
+          s.includes("temporarily") ||
+          s.includes("failed to fetch") ||
+          s.includes("network") ||
+          s.includes("timeout") ||
+          s.includes("unavailable") ||
+          s.includes("fetch-error") ||
+          s.includes("not found")
+        );
+      }
+
+      async function runWithAiFallback(task, models = AI_MODEL_CASCADE) {
+        let lastErr = null;
+        for (let i = 0; i < models.length; i++) {
+          const modelName = models[i];
           try {
-            return await task(buildAiModels(primaryAi));
+            if (appCheckTokenOk) {
+              try {
+                return await task(buildAiModels(primaryAi, modelName));
+              } catch (err) {
+                if (isAppCheckFailure(err)) {
+                  console.warn(`Primary App Check AI request rejected on ${modelName}; retrying direct Firebase AI Logic instance:`, err?.message || err);
+                  appCheckTokenOk = false;
+                  bridge.appCheckReady = false;
+                  return await task(buildAiModels(directAi, modelName));
+                }
+                throw err;
+              }
+            }
+            return await task(buildAiModels(directAi, modelName));
           } catch (err) {
-            if (!isAppCheckFailure(err)) throw err;
-            console.warn("Primary App Check AI request rejected; retrying seamlessly via direct Firebase AI Logic instance:", err?.message || err);
-            appCheckTokenOk = false;
-            bridge.appCheckReady = false;
-            return await task(buildAiModels(directAi));
+            lastErr = err;
+            if (i < models.length - 1 && isRetryableAiError(err)) {
+              console.warn(`Model ${modelName} failed transiently (${err?.message || err}); falling back to ${models[i + 1]}...`);
+              continue;
+            }
+            throw err;
           }
         }
-        return await task(buildAiModels(directAi));
+        throw lastErr || new Error("All Gemini cascade models failed.");
       }
 
       bridge.generateContent = async ({ prompt, platform, tone, contentType, expectJson = true, history = [] }) => {
@@ -6782,19 +6968,25 @@
                 if (isAppCheckFailure(imErr)) throw imErr;
               }
             }
-            const gRes = await getGeminiImage().generateContent(imgPrompt);
-            const parts = gRes?.response?.candidates?.[0]?.content?.parts || [];
-            const inline = parts.find(p => p?.inlineData?.data);
-            if (inline?.inlineData?.data) {
-              const mime = inline.inlineData.mimeType || "image/png";
-              return {
-                ok: true,
-                mimeType: mime,
-                dataUrl: `data:${mime};base64,${inline.inlineData.data}`
-              };
+            for (const imgModel of IMAGE_MODEL_CASCADE) {
+              try {
+                const gRes = await getGeminiImage(imgModel).generateContent(imgPrompt);
+                const parts = gRes?.response?.candidates?.[0]?.content?.parts || [];
+                const inline = parts.find(p => p?.inlineData?.data);
+                if (inline?.inlineData?.data) {
+                  const mime = inline.inlineData.mimeType || "image/png";
+                  return {
+                    ok: true,
+                    mimeType: mime,
+                    dataUrl: `data:${mime};base64,${inline.inlineData.data}`
+                  };
+                }
+              } catch (mErr) {
+                if (isAppCheckFailure(mErr)) throw mErr;
+              }
             }
             throw new Error("Live AI returned no image output.");
-          });
+          }, ["gemini-3.8-flash"]);
         } catch (imgErr) {
           bridge.lastAiError = String(imgErr?.message || imgErr || "AI Image generation error");
           throw imgErr;
@@ -6882,7 +7074,7 @@
               const parsed = JSON.parse(jsonText);
               return normalizeParsed(parsed, jsonText);
             } catch (structErr) {
-              if (isAppCheckFailure(structErr)) throw structErr;
+              if (isAppCheckFailure(structErr) || isRetryableAiError(structErr)) throw structErr;
               const jsonHint = 'Respond ONLY with valid JSON: {"title":"...","hook":"...","script":"...","voiceoverText":"...","cta":"...","hashtags":["#..."],"scenes":[{"timeRange":"0-3s","caption":"...","visualPrompt":"...","cameraMotion":"zoom-in"}]}';
               const fbRes = await chatModel.generateContent({ contents: buildParts(jsonHint) });
               const rawText = fbRes.response.text();
