@@ -91,6 +91,14 @@
       touch-action: pan-y;
       overscroll-behavior-y: contain;
     }
+    #overlay-host {
+      height: 100vh;
+      height: 100dvh;
+      max-height: 100vh;
+      max-height: 100dvh;
+      scroll-behavior: smooth;
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    }
     img, video, canvas, svg { max-width: 100%; }
     .app-card {
       background-color: var(--bg-card);
@@ -202,8 +210,8 @@
   </div>
 
   <!-- Full-Screen Overlay Host (1-Click AI Video Studio, Diamond Dashboard, Reels Hub, Shopsy Mall, Affiliate Hub, Creator Pool, Gemini Studio, Cross-Poster, Admin Panel) -->
-  <div id="overlay-host" class="hidden fixed inset-0 z-50 w-full h-[100dvh] max-h-[100dvh] max-w-[100vw] bg-[#070712] overflow-y-auto overflow-x-clip">
-    <div id="overlay-body" class="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col pb-24 overflow-x-clip"></div>
+  <div id="overlay-host" class="hidden fixed inset-0 z-50 w-full h-[100dvh] max-h-[100dvh] max-w-[100vw] bg-[#070712] overflow-y-auto overflow-x-clip scroll-smooth">
+    <div id="overlay-body" class="w-full max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto flex flex-col pb-28 overflow-x-clip"></div>
   </div>
 
   <!-- Reusable Action Modal (UPI Payment, Channel Config, 1-Day VIP Trial, Web Ad Slot, Order Form, Admin Login, Boost Modal) -->
