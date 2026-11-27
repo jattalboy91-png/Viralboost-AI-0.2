@@ -407,6 +407,19 @@
         bpm: 140
       },
       {
+        id: 'Story & Moral',
+        shortLabel: 'Story',
+        titleHindi: 'कहानी & स्टोरी',
+        titleEnglish: 'Story',
+        emoji: '📖',
+        accent: '#A855F7',
+        secondary: '#06B6D4',
+        sampleHook: 'एक छोटे से बदलाव ने उसकी पूरी जिंदगी बदल दी — 30 सेकंड की सच्ची कहानी! ✨',
+        defaultPrompt: 'Emotional inspiring Hindi short story with dramatic turning point and life lesson',
+        beatTrackName: 'Cinematic Story Piano • 102 BPM',
+        bpm: 102
+      },
+      {
         id: 'Action & Gaming',
         shortLabel: 'Gaming',
         titleHindi: 'गेमिंग क्लिप्स',
@@ -422,9 +435,10 @@
     ];
 
     const STUDIO_BEATS = [
-      { id: 'auto', name: 'Auto Category Beat', bpm: null },
+      { id: 'auto', name: 'Auto Category Score', bpm: null },
       { id: 'comedy_pluck', name: 'Quirky Comedy Pluck • 118 BPM', bpm: 118 },
       { id: 'epic_rise', name: 'Epic Motivation Rise • 128 BPM', bpm: 128 },
+      { id: 'story_piano', name: 'Cinematic Story Piano • 102 BPM', bpm: 102 },
       { id: 'cyber_synth', name: 'Cyberpunk Tech Synth • 132 BPM', bpm: 132 },
       { id: 'mystery_pulse', name: 'Mystery Facts Pulse • 124 BPM', bpm: 124 },
       { id: 'lofi_shayari', name: 'Lo-Fi Shayari Chill • 96 BPM', bpm: 96 },
@@ -462,6 +476,11 @@
         'गांव का छोरा अब शहर के ट्रेंड चलावे सै — Desi Swag Hook 🎤💥',
         'सिस्टम के नीचे नी, खुद सिस्टम के ऊपर चाला करा — Haryanvi Attitude 🔥',
         'Thar + 808 Bass Beat — Desi Entry Reel Slow-Mo Hook 🚜⚡'
+      ],
+      'Story & Moral': [
+        'एक गरीब चाय वाले के बेटे ने कैसे खड़ा किया करोड़ों का स्टार्टअप — 30s Story 📖✨',
+        'आखिर क्यों बुजुर्ग ने कहा "हर दरवाजा वक्त पर खुलता है" — दिल छू लेने वाली कहानी 💫',
+        'अजनबी की एक छोटी मदद जो लौटकर जिंदगी बचा गई — True Emotion Reel ❤️'
       ],
       'Action & Gaming': [
         '1 HP पर 1v4 Clutch — Enemy Squad की धज्जियां उड़ा दीं 🎮🔥',
@@ -604,12 +623,19 @@
         reelsPlatform: 'All',
         reelsSort: 'date',
         aiStudioState: {
+          studioMode: 'prompt', // 'prompt' | 'photo' | 'script'
           catIdx: 0,
           selectedBeatIdx: 0,
           customTopic: '',
+          customScriptInput: '',
           coverDataUrl: '',
           isPlaying: true,
           aiSource: 'IDLE',
+          engineUsed: 'IDLE',
+          voiceEnabled: true,
+          voiceGender: 'female',
+          voiceoverText: '',
+          scenes: [],
           title: '',
           script: '',
           hashtags: '',
@@ -665,11 +691,16 @@
           : [];
 
         const cleanAiStudio = { ...def.aiStudioState, ...(parsed.aiStudioState || {}) };
+        if (!['prompt', 'photo', 'script'].includes(cleanAiStudio.studioMode)) {
+          cleanAiStudio.studioMode = 'prompt';
+        }
+        if (!Array.isArray(cleanAiStudio.scenes)) cleanAiStudio.scenes = [];
         if (cleanAiStudio.aiSource === 'READY' || cleanAiStudio.aiSource === 'OFFLINE_BLUEPRINT') {
           cleanAiStudio.aiSource = 'IDLE';
           cleanAiStudio.title = '';
           cleanAiStudio.script = '';
           cleanAiStudio.hashtags = '';
+          cleanAiStudio.scenes = [];
         }
         cleanAiStudio.errorMsg = '';
         cleanAiStudio.progressStage = '';
@@ -722,6 +753,17 @@
     let exportedReelExt = 'webm';
     let exportedReelStats = null;
     let isStudioGenerating = false;
+    let isVoiceSpeaking = false;
+    const studioMediaCache = {
+      uploadedPhotoDataUrl: '',
+      uploadedPhotoMime: 'image/jpeg',
+      uploadedPhotoBase64: '',
+      uploadedPhotoName: '',
+      sceneDataUrls: [],
+      loadedSceneImgs: [],
+      veoVideoUrl: '',
+      veoMimeType: ''
+    };
 
     function updateTrialAndVipLifecycle() {
       const p = state.profile;
@@ -1035,7 +1077,15 @@
     function saveState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch (e) {}
+      } catch (e) {
+        try {
+          const lightState = {
+            ...state,
+            aiStudioState: { ...state.aiStudioState, coverDataUrl: '' }
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(lightState));
+        } catch (_) {}
+      }
       syncHeader();
     }
 
@@ -1267,6 +1317,7 @@
     function closeOverlay() {
       activeOverlay = null;
       stopBeatSynth();
+      if (typeof stopStudioVoiceover === 'function') stopStudioVoiceover();
       if (canvasRaf) { cancelAnimationFrame(canvasRaf); canvasRaf = null; }
       const host = document.getElementById('overlay-host');
       if (host) host.classList.add('hidden');
@@ -1708,6 +1759,19 @@
     }
 
     function logoutViralBoostAccount() {
+      stopBeatSynth();
+      if (typeof stopStudioVoiceover === 'function') stopStudioVoiceover();
+      if (studioMediaCache.veoVideoUrl) {
+        try { URL.revokeObjectURL(studioMediaCache.veoVideoUrl); } catch (_) {}
+      }
+      studioMediaCache.uploadedPhotoDataUrl = '';
+      studioMediaCache.uploadedPhotoBase64 = '';
+      studioMediaCache.uploadedPhotoName = '';
+      studioMediaCache.sceneDataUrls = [];
+      studioMediaCache.loadedSceneImgs = [];
+      studioMediaCache.veoVideoUrl = '';
+      studioMediaCache.veoMimeType = '';
+
       const fresh = defaultState();
       state.profile = fresh.profile;
       state.channels = emptyChannelsState();
@@ -2616,10 +2680,14 @@
     // -------------------------------------------------------------------------
     function renderOneClickAiStudioOverlay() {
       const s = state.aiStudioState;
+      const mode = ['prompt', 'photo', 'script'].includes(s.studioMode) ? s.studioMode : 'prompt';
       const cat = getActiveStudioCategory();
       const activeBeat = getActiveStudioBeat();
-      const hasResult = Boolean((s.title || '').trim() || (s.script || '').trim() || (s.hashtags || '').trim());
+      const scenes = Array.isArray(s.scenes) ? s.scenes : [];
+      const hasResult = Boolean((s.title || '').trim() || (s.script || '').trim() || scenes.length > 0);
       const step = isStudioGenerating ? (Number(s.progressStep) || 1) : (s.progressStep === 3 || hasResult ? 3 : 0);
+      const hasPhoto = Boolean(studioMediaCache.uploadedPhotoDataUrl || s.coverDataUrl);
+      const photoPreviewSrc = studioMediaCache.uploadedPhotoDataUrl || s.coverDataUrl || '';
 
       const stepBadge = (num, label) => {
         const done = step > num || (!isStudioGenerating && step === 3 && num === 3);
@@ -2630,24 +2698,49 @@
             ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200 animate-pulse'
             : 'bg-slate-900/70 border-slate-800 text-slate-400';
         const prefix = done ? '✓' : active ? '⏳' : '';
-        return `<div class="flex-1 min-w-[104px] sm:min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl border text-[10px] sm:text-[10.5px] font-bold transition overflow-hidden ${cls}">${prefix ? `<span class="shrink-0">${prefix}</span>` : ''}<span class="truncate">${num}. ${label}</span></div>`;
+        return `<div class="flex-1 min-w-[100px] sm:min-w-0 flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl border text-[10px] sm:text-[10.5px] font-bold transition overflow-hidden ${cls}">${prefix ? `<span class="shrink-0">${prefix}</span>` : ''}<span class="truncate">${num}. ${label}</span></div>`;
       };
 
+      const modeTab = (id, emoji, label, sub) => {
+        const active = mode === id;
+        return `
+          <button type="button" onclick="selectAiStudioMode('${id}')" class="p-2 sm:p-2.5 rounded-xl border text-center transition min-w-0 ${active ? 'bg-gradient-to-br from-violet-600/90 to-cyan-500/80 border-cyan-300 text-white shadow-lg shadow-cyan-500/20' : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:border-slate-600'}">
+            <div class="text-sm sm:text-base leading-none">${emoji}</div>
+            <div class="text-[10.5px] sm:text-xs font-extrabold mt-1 truncate">${label}</div>
+            <div class="text-[9px] ${active ? 'text-cyan-100' : 'text-slate-400'} truncate">${sub}</div>
+          </button>`;
+      };
+
+      const engineBadge = s.engineUsed === 'VEO_VIDEO'
+        ? '🎬 Google Veo AI Video'
+        : s.engineUsed === 'IMAGEN_MULTI_SCENE'
+          ? '🎞️ Imagen 3 • 4-Scene Cinema'
+          : s.engineUsed === 'PHOTO_3D_MOTION'
+            ? '📸 3D Photo Motion Engine'
+            : '🟢 Veo + Gemini 3.8 + Imagen 3';
+
       return `
-        ${overlayHeader('1-Click AI Video & Viral Hashtags', 'Pro Creator Studio • Gemini 3.8 Flash + Imagen 3 • 1080×1920 @ 30FPS', `<span class="px-2 py-1 rounded-lg bg-gradient-to-r from-amber-400/20 to-cyan-400/20 border border-amber-400/60 text-amber-300 text-[9.5px] font-extrabold whitespace-nowrap">${state.profile.isVip ? '👑 VIP HD' : '⚡ PRO'}</span>`)}
+        ${overlayHeader('1-Click AI Video & Viral Hashtags', 'Flow / Veo AI Studio • Prompt, Photo & Script • 1080×1920 @ 30FPS', `<span class="px-2 py-1 rounded-lg bg-gradient-to-r from-amber-400/20 to-cyan-400/20 border border-amber-400/60 text-amber-300 text-[9.5px] font-extrabold whitespace-nowrap">${state.profile.isVip ? '👑 VIP HD' : '⚡ VEO PRO'}</span>`)}
         <div class="w-full max-w-5xl mx-auto px-3 py-3.5 sm:p-5 space-y-3.5 sm:space-y-4 min-w-0 overflow-x-clip">
 
-          <!-- 1. TOP CONTROL CARD -->
+          <!-- 1. TOP FLOW/VEO CONTROL CARD -->
           <div class="w-full max-w-full min-w-0 rounded-3xl bg-[#110F26]/95 border border-white/10 p-3.5 sm:p-4 shadow-2xl space-y-3 overflow-hidden">
             <div class="flex items-center justify-between gap-2 flex-wrap w-full min-w-0">
               <div class="min-w-0">
-                <div class="text-xs font-display font-extrabold text-white tracking-wide">🎬 Creator Studio Controls</div>
-                <div class="text-[10.5px] text-slate-400">Pick category, craft prompt, choose beat &amp; visual cover</div>
+                <div class="text-xs font-display font-extrabold text-white tracking-wide">🎬 Flow / Veo AI Video Generator</div>
+                <div class="text-[10.5px] text-slate-400">Choose creation mode, category, voiceover &amp; cinematic score</div>
               </div>
-              <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold shrink-0">🟢 Live Gemini 3.8 Flash</span>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold shrink-0">${engineBadge}</span>
             </div>
 
-            <!-- Sleek Category Pills (100% Mobile Wrap Fit — Zero Horizontal Overflow) -->
+            <!-- 3-Tab Real Creation Mode Switcher -->
+            <div class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-950/90 p-1.5 rounded-2xl border border-slate-800 w-full min-w-0">
+              ${modeTab('prompt', '✨', 'Prompt to Video', '4-Scene AI')}
+              ${modeTab('photo', '📸', 'Photo to Video', '3D + Vision')}
+              ${modeTab('script', '📝', 'Script to Video', 'Custom Lines')}
+            </div>
+
+            <!-- Category Pills (Comedy, Motivation, Story, Shayari, Tech, Facts, Rap, Gaming) -->
             <div class="flex flex-wrap gap-1.5 sm:gap-2 w-full min-w-0">
               ${AI_VIDEO_CATEGORIES.map((c, idx) => `
                 <button onclick="selectAiStudioCategory(${idx})" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full border shrink-0 flex items-center gap-1.5 transition text-[11px] sm:text-xs font-extrabold ${s.catIdx===idx ? 'bg-gradient-to-r from-violet-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-cyan-500/20' : 'bg-slate-900/90 border-slate-700/80 text-slate-300 hover:border-slate-500'}">
@@ -2657,38 +2750,72 @@
               `).join('')}
             </div>
 
-            <!-- Clean Prompt Input Box + Random Viral Idea Button -->
-            <div class="space-y-2 w-full min-w-0">
-              <div class="flex items-center justify-between gap-2 flex-wrap w-full min-w-0">
-                <label for="studio-topic-input" class="text-[11px] font-bold text-slate-300 truncate">Reel Topic / Prompt (${cat.titleHindi})</label>
-                <button type="button" onclick="generateRandomViralIdea()" class="px-3 py-1 rounded-full bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/50 text-amber-300 text-[10.5px] font-extrabold transition shrink-0">
-                  🎲 Random Viral Idea
-                </button>
+            <!-- Mode-Specific Input Workspace -->
+            ${mode === 'photo' ? `
+              <div class="space-y-2.5 w-full min-w-0 rounded-2xl bg-slate-950/80 border border-cyan-400/40 p-3">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <div class="text-[11px] font-extrabold text-cyan-300">📸 Upload Your Photo for Gemini Vision + 3D AI Animation</div>
+                  ${hasPhoto ? `<button type="button" onclick="clearStudioUploadedPhoto()" class="px-2.5 py-1 rounded-lg bg-red-950/70 border border-red-500/40 text-red-300 text-[10px] font-bold">✕ Clear Photo</button>` : ''}
+                </div>
+                <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                  <label class="flex-1 min-w-[180px] cursor-pointer flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed ${hasPhoto ? 'border-emerald-400/60 bg-emerald-950/20' : 'border-cyan-400/60 bg-slate-900/90'} px-3 py-3 text-xs font-extrabold text-cyan-200 hover:border-cyan-300 transition">
+                    <span>${hasPhoto ? '🔄 Change Gallery Photo' : '📁 Upload Photo from Gallery'}</span>
+                    <input type="file" accept="image/*" class="hidden" onchange="handleStudioPhotoUpload(event)" />
+                  </label>
+                  ${photoPreviewSrc ? `
+                    <div class="w-16 h-24 rounded-xl overflow-hidden border-2 border-cyan-400/70 shrink-0 bg-black">
+                      <img src="${photoPreviewSrc}" alt="Uploaded Photo" class="w-full h-full object-cover" />
+                    </div>` : ''}
+                </div>
+                <textarea id="studio-topic-input" rows="2" oninput="state.aiStudioState.customTopic=this.value;saveState()" placeholder="Optional mood/story direction for your photo (e.g. Emotional Hindi Shayari with sunset lighting)..." class="w-full max-w-full min-w-0 rounded-xl bg-slate-900/90 border border-slate-700/90 px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 resize-none">${escapeHtml(s.customTopic)}</textarea>
               </div>
-              <textarea id="studio-topic-input" rows="2" oninput="state.aiStudioState.customTopic=this.value;saveState()" placeholder="e.g. ${escapeHtml(cat.sampleHook)}" class="w-full max-w-full min-w-0 rounded-2xl bg-slate-950/90 border border-slate-700/90 px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 resize-none">${escapeHtml(s.customTopic)}</textarea>
-            </div>
+            ` : mode === 'script' ? `
+              <div class="space-y-2 w-full min-w-0">
+                <div class="flex items-center justify-between gap-2 flex-wrap w-full min-w-0">
+                  <label for="studio-script-mode-input" class="text-[11px] font-bold text-amber-300 truncate">📝 Paste Your Custom Hindi / Hinglish Script, Shayari, or Story (${cat.titleHindi})</label>
+                  <button type="button" onclick="loadSampleCustomScript()" class="px-3 py-1 rounded-full bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/50 text-violet-200 text-[10.5px] font-extrabold transition shrink-0">
+                    ✨ Sample ${cat.shortLabel}
+                  </button>
+                </div>
+                <textarea id="studio-script-mode-input" rows="4" oninput="state.aiStudioState.customScriptInput=this.value;saveState()" placeholder="यहाँ अपनी शायरी, कहानी, कॉमेडी डायलॉग या स्क्रिप्ट पेस्ट करें — Gemini 3.8 Flash इसे 4 सिनेमैटिक सीन, विजुअल प्रॉम्प्ट्स और हैशटैग्स में बदल देगा..." class="w-full max-w-full min-w-0 rounded-2xl bg-slate-950/90 border border-slate-700/90 px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 resize-y">${escapeHtml(s.customScriptInput || '')}</textarea>
+              </div>
+            ` : `
+              <div class="space-y-2 w-full min-w-0">
+                <div class="flex items-center justify-between gap-2 flex-wrap w-full min-w-0">
+                  <label for="studio-topic-input" class="text-[11px] font-bold text-slate-300 truncate">Reel Topic / Prompt (${cat.titleHindi})</label>
+                  <button type="button" onclick="generateRandomViralIdea()" class="px-3 py-1 rounded-full bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/50 text-amber-300 text-[10.5px] font-extrabold transition shrink-0">
+                    🎲 Random Viral Idea
+                  </button>
+                </div>
+                <textarea id="studio-topic-input" rows="2" oninput="state.aiStudioState.customTopic=this.value;saveState()" placeholder="e.g. ${escapeHtml(cat.sampleHook)}" class="w-full max-w-full min-w-0 rounded-2xl bg-slate-950/90 border border-slate-700/90 px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 resize-none">${escapeHtml(s.customTopic)}</textarea>
+              </div>
+            `}
 
-            <!-- Music/Beat Selector Pill + Compact Custom Cover Upload Chip -->
-            <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full min-w-0">
-              <div class="w-full sm:flex-1 min-w-0 max-w-full flex items-center gap-2 rounded-full bg-slate-950 border border-violet-500/40 px-3 py-1.5 overflow-hidden">
+            <!-- Background Score + Hindi AI Voiceover Controls -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full min-w-0">
+              <div class="w-full min-w-0 flex items-center gap-2 rounded-2xl bg-slate-950 border border-violet-500/40 px-3 py-1.5 overflow-hidden">
                 <span class="text-xs shrink-0">🎵</span>
-                <select aria-label="Select background beat" onchange="selectStudioBeat(this.value)" class="flex-1 min-w-0 w-full bg-transparent text-[11px] font-bold text-amber-300 outline-none cursor-pointer truncate">
+                <select aria-label="Select background score" onchange="selectStudioBeat(this.value)" class="flex-1 min-w-0 w-full bg-transparent text-[11px] font-bold text-amber-300 outline-none cursor-pointer truncate">
                   ${STUDIO_BEATS.map((b, bIdx) => `
                     <option value="${bIdx}" class="bg-slate-950 text-white" ${activeBeat.idx === bIdx ? 'selected' : ''}>${bIdx === 0 ? `Auto: ${cat.beatTrackName}` : b.name}</option>
                   `).join('')}
                 </select>
                 <button type="button" onclick="toggleBeatSynth(${activeBeat.bpm})" class="px-2.5 py-1 rounded-full text-[10.5px] font-extrabold shrink-0 ${isAudioPlaying ? 'bg-emerald-400 text-slate-950' : 'bg-violet-600 text-white'}">
-                  ${isAudioPlaying ? '🔊 ON' : '▶ Test'}
+                  ${isAudioPlaying ? '🔊 Score' : '▶ Score'}
                 </button>
               </div>
 
-              <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 border border-cyan-400/50 text-[11px] font-extrabold text-cyan-300 transition">
-                  <span>📸</span>
-                  <span>${s.coverDataUrl ? 'Change Cover' : 'Custom Cover'}</span>
-                  <input type="file" accept="image/*" class="hidden" onchange="handleStudioCoverUpload(event)" />
-                </label>
-                ${s.coverDataUrl ? `<button type="button" onclick="state.aiStudioState.coverDataUrl='';saveState();renderOverlay()" title="Remove Cover" class="px-2.5 py-2 rounded-full bg-red-950/70 border border-red-500/40 text-red-300 text-[11px] font-extrabold">✕</button>` : ''}
+              <div class="w-full min-w-0 flex items-center gap-1.5 rounded-2xl bg-slate-950 border border-cyan-500/40 px-3 py-1.5 overflow-hidden">
+                <button type="button" onclick="toggleStudioVoiceEnabled()" class="px-2 py-1 rounded-lg text-[10px] font-extrabold shrink-0 ${s.voiceEnabled !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/50' : 'bg-slate-800 text-slate-400'}">
+                  ${s.voiceEnabled !== false ? '🎙️ Voice ON' : '🔇 Muted'}
+                </button>
+                <select aria-label="Hindi AI Voice" onchange="selectStudioVoiceGender(this.value)" class="flex-1 min-w-0 bg-transparent text-[11px] font-bold text-cyan-300 outline-none cursor-pointer truncate">
+                  <option value="female" class="bg-slate-950 text-white" ${s.voiceGender !== 'male' ? 'selected' : ''}>hi-IN Female Voice</option>
+                  <option value="male" class="bg-slate-950 text-white" ${s.voiceGender === 'male' ? 'selected' : ''}>hi-IN Male Voice</option>
+                </select>
+                <button type="button" onclick="toggleStudioVoicePlayback()" class="px-2.5 py-1 rounded-full text-[10.5px] font-extrabold shrink-0 ${isVoiceSpeaking ? 'bg-amber-400 text-slate-950' : 'bg-cyan-500 text-slate-950'}">
+                  ${isVoiceSpeaking ? '⏹ Stop' : '🗣 Speak'}
+                </button>
               </div>
             </div>
           </div>
@@ -2696,14 +2823,20 @@
           <!-- 2. PRIMARY ACTION BAR -->
           <div class="w-full max-w-full min-w-0 rounded-3xl bg-gradient-to-br from-[#191338] to-[#0D132B] border border-violet-500/30 p-3.5 shadow-xl space-y-2.5 overflow-hidden">
             <button onclick="executeOneClickAiGenerate()" ${isStudioGenerating ? 'disabled' : ''} class="w-full max-w-full py-3.5 px-3 sm:px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-pink-500 to-violet-600 hover:brightness-110 text-white font-display font-extrabold text-xs sm:text-base shadow-lg shadow-pink-500/25 transition disabled:opacity-60 break-words">
-              ${isStudioGenerating ? '⏳ Generating Live AI Video & Script...' : '✨ Generate Live AI Video & Script'}
+              ${isStudioGenerating
+                ? '⏳ Generating Veo / Photorealistic AI Video...'
+                : mode === 'photo'
+                  ? '📸 Animate Photo & Generate AI Reel'
+                  : mode === 'script'
+                    ? '📝 Turn Script into 4-Scene AI Video'
+                    : '✨ Generate Live AI Video & Script'}
             </button>
 
             <!-- Live Step-by-Step Progress Badges -->
             <div class="flex flex-wrap sm:grid sm:grid-cols-3 gap-1.5 sm:gap-2 w-full min-w-0">
-              ${stepBadge(1, 'Writing Script...')}
-              ${stepBadge(2, 'Creating HD Visual...')}
-              ${stepBadge(3, 'Ready to Render')}
+              ${stepBadge(1, mode === 'photo' ? 'Analyzing Photo...' : mode === 'script' ? 'Splitting 4 Scenes...' : 'Writing 4 Scenes...')}
+              ${stepBadge(2, 'Veo / Imagen Visuals...')}
+              ${stepBadge(3, '30FPS Motion Ready')}
             </div>
 
             ${(isStudioGenerating || s.progressStage) ? `
@@ -2723,38 +2856,67 @@
               </div>` : ''}
           </div>
 
+          ${scenes.length > 0 ? `
+            <!-- 4-SCENE PHOTOREALISTIC STORYBOARD STRIP -->
+            <div class="w-full max-w-full min-w-0 rounded-3xl bg-[#110F26]/95 border border-cyan-500/30 p-3.5 space-y-2.5 overflow-hidden">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-xs font-display font-extrabold text-cyan-300">🎞️ 4-Scene AI Storyboard (${scenes.length} Scenes • 12s Reel)</div>
+                <span class="text-[10px] font-bold text-emerald-300">${s.engineUsed === 'VEO_VIDEO' ? 'Veo Native MP4' : 'Ken Burns + Crossfade'}</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full min-w-0">
+                ${scenes.map((sc, i) => {
+                  const thumb = studioMediaCache.sceneDataUrls[i] || s.coverDataUrl || '';
+                  return `
+                    <div class="rounded-2xl bg-slate-950/90 border border-slate-800 overflow-hidden flex flex-col">
+                      <div class="relative aspect-[9/16] max-h-28 w-full bg-slate-900 overflow-hidden">
+                        ${thumb ? `<img src="${thumb}" alt="Scene ${i + 1}" class="w-full h-full object-cover" />` : `<div class="w-full h-full flex items-center justify-center text-lg">${cat.emoji}</div>`}
+                        <span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/75 text-[9px] font-extrabold text-cyan-300">S${i + 1} • ${escapeHtml(sc.timeRange || `${i*3}-${(i+1)*3}s`)}</span>
+                      </div>
+                      <div class="p-2 space-y-0.5">
+                        <div class="text-[10px] font-bold text-white line-clamp-2">${escapeHtml(sc.caption || '')}</div>
+                        <div class="text-[9px] text-slate-400 truncate">${escapeHtml(sc.cameraMotion || 'cinematic')}</div>
+                      </div>
+                    </div>`;
+                }).join('')}
+              </div>
+            </div>` : ''}
+
           <!-- 3. 9:16 LIVE PREVIEW & EXPORT STAGE -->
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start w-full min-w-0">
             <!-- Centered Rounded 9:16 Vertical Preview Card -->
             <div class="lg:col-span-5 flex flex-col items-center space-y-3 w-full min-w-0">
               <div class="rounded-[28px] overflow-hidden border-2 border-cyan-400/60 bg-black relative w-full max-w-[270px] sm:max-w-[290px] aspect-[9/16] shadow-[0_0_40px_rgba(0,229,255,0.18)]">
-                <canvas id="reel-studio-canvas" width="360" height="640" class="w-full h-full block"></canvas>
+                ${studioMediaCache.veoVideoUrl ? `
+                  <video id="veo-native-player" src="${studioMediaCache.veoVideoUrl}" autoplay loop playsinline controls class="w-full h-full object-cover"></video>
+                ` : `
+                  <canvas id="reel-studio-canvas" width="360" height="640" class="w-full h-full block"></canvas>
+                `}
 
                 <!-- Top Floating Live Stage Pill -->
                 <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-1 pointer-events-none">
-                  <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[9.5px] font-extrabold text-cyan-300">● 9:16 HD • 30FPS</span>
+                  <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[9.5px] font-extrabold text-cyan-300">${studioMediaCache.veoVideoUrl ? '● VEO 9:16 MP4' : '● 9:16 HD • 30FPS'}</span>
                   <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[9.5px] font-bold text-amber-300">${activeBeat.bpm} BPM</span>
                 </div>
 
-                <!-- Bottom Frosted Visualizer & Playback Controls -->
-                <div class="absolute bottom-3 left-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-2 rounded-2xl border border-white/15">
-                  <div class="flex items-center justify-between gap-1.5">
-                    <button onclick="toggleReelPlay()" class="px-2.5 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-[11px] shrink-0">${s.isPlaying ? '⏸ Pause' : '▶ Play'}</button>
-                    <div class="flex items-end gap-0.5 h-4 px-1" aria-hidden="true">
-                      <span class="w-1 rounded-full bg-cyan-400 ${s.isPlaying ? 'animate-pulse h-3' : 'h-1.5'}"></span>
-                      <span class="w-1 rounded-full bg-pink-400 ${s.isPlaying ? 'animate-pulse h-4' : 'h-2'}"></span>
-                      <span class="w-1 rounded-full bg-amber-300 ${s.isPlaying ? 'animate-pulse h-2.5' : 'h-1'}"></span>
-                      <span class="w-1 rounded-full bg-emerald-400 ${s.isPlaying ? 'animate-pulse h-4' : 'h-2'}"></span>
-                      <span class="w-1 rounded-full bg-violet-400 ${s.isPlaying ? 'animate-pulse h-3' : 'h-1.5'}"></span>
+                ${!studioMediaCache.veoVideoUrl ? `
+                  <!-- Bottom Frosted Visualizer & Playback Controls -->
+                  <div class="absolute bottom-3 left-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-2 rounded-2xl border border-white/15">
+                    <div class="flex items-center justify-between gap-1.5">
+                      <button onclick="toggleReelPlay()" class="px-2.5 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-[11px] shrink-0">${s.isPlaying ? '⏸ Pause' : '▶ Play'}</button>
+                      <button onclick="toggleStudioVoicePlayback()" class="px-2 py-1.5 rounded-xl bg-slate-800 text-cyan-300 font-bold text-[10.5px] shrink-0">${isVoiceSpeaking ? '⏹ Voice' : '🎙️ Voice'}</button>
+                      <button onclick="toggleBeatSynth(${activeBeat.bpm})" class="px-2.5 py-1.5 rounded-xl bg-violet-600 text-white font-bold text-[11px] shrink-0">${isAudioPlaying ? '🔊 Score' : '🎵 Score'}</button>
                     </div>
-                    <button onclick="toggleBeatSynth(${activeBeat.bpm})" class="px-2.5 py-1.5 rounded-xl bg-violet-600 text-white font-bold text-[11px] shrink-0">${isAudioPlaying ? '🔊 Beat' : '🎵 Beat'}</button>
-                  </div>
-                </div>
+                  </div>` : ''}
               </div>
+
+              ${studioMediaCache.veoVideoUrl ? `
+                <a href="${studioMediaCache.veoVideoUrl}" download="viralboost-veo-reel-${Date.now()}.mp4" class="w-full max-w-[270px] sm:max-w-[290px] py-2.5 px-3 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs text-center shadow-lg">
+                  ⬇ Download Native Veo .MP4
+                </a>` : ''}
 
               ${s.coverDataUrl ? `
                 <div class="w-full max-w-[270px] sm:max-w-[290px] rounded-2xl bg-slate-950/90 border border-cyan-500/40 p-2.5 flex items-center justify-between gap-2 min-w-0">
-                  <span class="text-[11px] font-bold text-cyan-300 truncate min-w-0">🖼️ HD Cover Ready</span>
+                  <span class="text-[11px] font-bold text-cyan-300 truncate min-w-0">🖼️ HD Keyframe Ready</span>
                   <a href="${s.coverDataUrl}" download="viralboost-ai-cover-${Date.now()}.png" class="px-3 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-[11px] shrink-0">⬇ Save PNG</a>
                 </div>` : ''}
 
@@ -3509,96 +3671,253 @@
     }
 
     // =========================================================================
-    // 7. INTERACTIVE ACTIONS, CANVAS RENDERER & SYNTH AUDIO BEAT PLAYER
+    // 7. INTERACTIVE ACTIONS, FLOW/VEO MOTION COMPOSITOR & HINDI VOICE + SCORE
     // =========================================================================
-    // Pure deterministic 9:16 frame renderer shared between live preview (360x640) and HD export (720x1280)
+    function easeInOutQuad(x) {
+      return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+    }
+
+    function drawCoverKenBurns(ctx, img, w, h, progress, motionType, alpha = 1) {
+      if (!img || !(img.naturalWidth > 0 || img.width > 0) || alpha <= 0.01) return;
+      const iw = img.naturalWidth || img.width || w;
+      const ih = img.naturalHeight || img.height || h;
+      const baseScale = Math.max(w / iw, h / ih);
+      const p = easeInOutQuad(Math.min(1, Math.max(0, progress)));
+
+      let zoom = 1.08;
+      let shiftX = 0;
+      let shiftY = 0;
+      const motion = String(motionType || '').toLowerCase();
+      if (motion.includes('out')) {
+        zoom = 1.16 - 0.11 * p;
+        shiftY = (0.5 - p) * 14;
+      } else if (motion.includes('right')) {
+        zoom = 1.13;
+        shiftX = (p - 0.5) * 28;
+      } else if (motion.includes('left')) {
+        zoom = 1.13;
+        shiftX = (0.5 - p) * 28;
+      } else {
+        zoom = 1.03 + 0.12 * p;
+        shiftY = (p - 0.5) * -10;
+      }
+
+      const dw = iw * baseScale * zoom;
+      const dh = ih * baseScale * zoom;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(img, (w - dw) / 2 + shiftX, (h - dh) / 2 + shiftY, dw, dh);
+      ctx.restore();
+    }
+
+    function drawProceduralCinemaScene(ctx, w, h, elapsedSec, cat, sceneIdx, alpha = 1) {
+      if (alpha <= 0.01) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      const palettes = [
+        ['#0B1026', '#1E293B', '#F59E0B'],
+        ['#091428', '#172554', '#06B6D4'],
+        ['#180C24', '#3B0764', '#EC4899'],
+        ['#071A1E', '#0F172A', '#10B981']
+      ];
+      const pal = palettes[sceneIdx % palettes.length];
+      const bg = ctx.createLinearGradient(0, 0, w, h);
+      bg.addColorStop(0, pal[0]);
+      bg.addColorStop(0.52, pal[1]);
+      bg.addColorStop(1, '#04050C');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      // Volumetric cinematic rim lights & shallow depth-of-field bokeh
+      const drift = Math.sin(elapsedSec * 0.8 + sceneIdx) * 18;
+      const orb1 = ctx.createRadialGradient(w * 0.28 + drift, h * 0.28, 12, w * 0.28 + drift, h * 0.28, w * 0.65);
+      orb1.addColorStop(0, (cat.accent || pal[2]) + '66');
+      orb1.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = orb1;
+      ctx.fillRect(0, 0, w, h);
+
+      const orb2 = ctx.createRadialGradient(w * 0.78 - drift, h * 0.62, 10, w * 0.78 - drift, h * 0.62, w * 0.6);
+      orb2.addColorStop(0, (cat.secondary || '#7C3AED') + '55');
+      orb2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = orb2;
+      ctx.fillRect(0, 0, w, h);
+
+      // Soft cinema bokeh discs
+      for (let i = 0; i < 10; i++) {
+        const bx = ((i * 83 + sceneIdx * 47) % (w - 40)) + 20 + Math.sin(elapsedSec * 0.6 + i) * 8;
+        const by = ((i * 119 + sceneIdx * 61) % (h * 0.78)) + 30 + Math.cos(elapsedSec * 0.5 + i) * 6;
+        const br = 8 + (i % 4) * 9;
+        ctx.beginPath();
+        ctx.fillStyle = i % 2 === 0 ? (cat.accent || '#00E5FF') : '#FFFFFF';
+        ctx.globalAlpha = alpha * (0.04 + (i % 3) * 0.025);
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Pure deterministic 9:16 4-Scene Flow/Veo Motion Compositor (360x640 preview & 1080x1920 HD export)
     function drawReelFrame(ctx, canvasWidth, canvasHeight, elapsedSec, opts = {}) {
       const cat = opts.cat || AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx] || AI_VIDEO_CATEGORIES[0];
-      const title = opts.title != null ? opts.title : (state.aiStudioState.title || `${cat.titleHindi} • Tap Live AI Generate`);
+      const title = opts.title != null ? opts.title : (state.aiStudioState.title || `${cat.titleHindi} • Flow / Veo Studio`);
+      const scenes = Array.isArray(opts.scenes) && opts.scenes.length ? opts.scenes : (Array.isArray(state.aiStudioState.scenes) ? state.aiStudioState.scenes : []);
+      const sceneImgs = Array.isArray(opts.sceneImgs) ? opts.sceneImgs : [];
       const coverImg = opts.coverImg || null;
       const isVip = opts.isVip != null ? opts.isVip : Boolean(state.profile.isVip);
+
       const w = 360;
       const h = 640;
-      const t = Math.max(0, Number(elapsedSec) || 0) * 2.7;
+      const sceneDuration = 3.0;
+      const totalScenes = Math.max(1, scenes.length || 4);
+      const totalLoop = sceneDuration * totalScenes;
+      const safeTime = Math.max(0, Number(elapsedSec) || 0) % totalLoop;
+      const sceneIdx = Math.floor(safeTime / sceneDuration) % totalScenes;
+      const prevIdx = (sceneIdx - 1 + totalScenes) % totalScenes;
+      const localSec = safeTime - sceneIdx * sceneDuration;
+      const progress = Math.min(1, Math.max(0, localSec / sceneDuration));
+      const fadeDur = 0.45;
+      const fadeAlpha = localSec < fadeDur ? (localSec / fadeDur) : 1;
+
+      const pickImg = (idx) => {
+        const sImg = sceneImgs[idx];
+        if (sImg && (sImg.naturalWidth > 0 || sImg.width > 0)) return sImg;
+        const firstLoaded = sceneImgs.find(im => im && (im.naturalWidth > 0 || im.width > 0));
+        if (firstLoaded) return firstLoaded;
+        return (coverImg && (coverImg.naturalWidth > 0 || coverImg.width > 0)) ? coverImg : null;
+      };
+
+      const curScene = scenes[sceneIdx] || {};
+      const prevScene = scenes[prevIdx] || {};
+      const curImg = pickImg(sceneIdx);
+      const prevImg = pickImg(prevIdx);
 
       ctx.save();
       ctx.setTransform(canvasWidth / w, 0, 0, canvasHeight / h, 0, 0);
 
-      const grad = ctx.createLinearGradient(0, 0, w, h);
-      grad.addColorStop(0, '#09071A');
-      grad.addColorStop(0.5, cat.secondary + '44');
-      grad.addColorStop(1, cat.accent + '55');
-      ctx.fillStyle = grad;
+      // Base background
+      ctx.fillStyle = '#05060D';
       ctx.fillRect(0, 0, w, h);
 
-      // Aspect-preserving ("cover") Ken Burns motion zoom so 1:1 / 16:9 / 9:16 images never stretch
-      const hasCover = Boolean(coverImg && (coverImg.naturalWidth > 0 || coverImg.width > 0));
-      if (hasCover) {
-        const iw = coverImg.naturalWidth || coverImg.width || w;
-        const ih = coverImg.naturalHeight || coverImg.height || h;
-        const baseScale = Math.max(w / iw, h / ih);
-        const zoom = 1.02 + Math.sin(t * 0.7) * 0.04;
-        const dw = iw * baseScale * zoom;
-        const dh = ih * baseScale * zoom;
-        ctx.save();
-        ctx.globalAlpha = 0.84;
-        ctx.drawImage(coverImg, (w - dw) / 2, (h - dh) / 2, dw, dh);
-        ctx.restore();
+      // Draw previous scene during crossfade, then active scene with Ken Burns 3D camera motion
+      if (fadeAlpha < 1 && totalScenes > 1) {
+        if (prevImg) {
+          drawCoverKenBurns(ctx, prevImg, w, h, 0.92 + localSec * 0.08, prevScene.cameraMotion || 'zoom-in', 1);
+        } else {
+          drawProceduralCinemaScene(ctx, w, h, elapsedSec, cat, prevIdx, 1);
+        }
       }
 
-      // Subtle bottom contrast gradient for high text legibility
-      const legibilityGrad = ctx.createLinearGradient(0, h * 0.45, 0, h);
-      legibilityGrad.addColorStop(0, 'rgba(7, 7, 18, 0)');
-      legibilityGrad.addColorStop(1, 'rgba(7, 7, 18, 0.86)');
-      ctx.fillStyle = legibilityGrad;
-      ctx.fillRect(0, h * 0.45, w, h * 0.55);
+      if (curImg) {
+        drawCoverKenBurns(ctx, curImg, w, h, progress, curScene.cameraMotion || (sceneIdx % 2 === 0 ? 'zoom-in' : 'pan-right'), fadeAlpha);
+      } else {
+        drawProceduralCinemaScene(ctx, w, h, elapsedSec, cat, sceneIdx, fadeAlpha);
+      }
 
-      // Animated neon rings
-      for (let i = 0; i < 4; i++) {
+      // Floating warm/cool ambient dust particles for cinema depth
+      for (let p = 0; p < 14; p++) {
+        const px = ((p * 57 + elapsedSec * (10 + (p % 4) * 4)) % (w + 20)) - 10;
+        const py = ((p * 91 - elapsedSec * (8 + (p % 3) * 3)) % h + h) % h;
+        const pr = 1.1 + (p % 3) * 0.7;
         ctx.beginPath();
-        ctx.strokeStyle = i % 2 === 0 ? cat.accent : '#00E5FF';
-        ctx.globalAlpha = 0.25 + 0.15 * Math.sin(t + i);
-        ctx.lineWidth = 2;
-        ctx.arc(w / 2, h * 0.42, 48 + i * 28 + Math.sin(t * 1.5 + i) * 8, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.fillStyle = p % 2 === 0 ? 'rgba(255,255,255,0.22)' : (cat.accent || '#00E5FF');
+        ctx.globalAlpha = 0.25;
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      if (!hasCover) {
-        ctx.font = '56px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillText(cat.emoji, w / 2, h * 0.36 + Math.sin(t * 2) * 6);
+      // Top & bottom cinema vignette for crisp Reel caption legibility
+      const topVig = ctx.createLinearGradient(0, 0, 0, h * 0.24);
+      topVig.addColorStop(0, 'rgba(4, 6, 14, 0.72)');
+      topVig.addColorStop(1, 'rgba(4, 6, 14, 0)');
+      ctx.fillStyle = topVig;
+      ctx.fillRect(0, 0, w, h * 0.24);
+
+      const botVig = ctx.createLinearGradient(0, h * 0.56, 0, h);
+      botVig.addColorStop(0, 'rgba(4, 6, 14, 0)');
+      botVig.addColorStop(0.55, 'rgba(4, 6, 14, 0.74)');
+      botVig.addColorStop(1, 'rgba(4, 6, 14, 0.94)');
+      ctx.fillStyle = botVig;
+      ctx.fillRect(0, h * 0.56, w, h * 0.44);
+
+      // 4-Segment Reels Story/Scene Progress Bar along very top
+      const segGap = 5;
+      const segW = (w - 28 - segGap * (totalScenes - 1)) / totalScenes;
+      for (let sIdx = 0; sIdx < totalScenes; sIdx++) {
+        const sx = 14 + sIdx * (segW + segGap);
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.fillRect(sx, 10, segW, 3);
+        const fillRatio = sIdx < sceneIdx ? 1 : sIdx === sceneIdx ? progress : 0;
+        if (fillRatio > 0) {
+          ctx.fillStyle = cat.accent || '#00E5FF';
+          ctx.fillRect(sx, 10, segW * fillRatio, 3);
+        }
       }
 
-      // Equalizer bars synced to deterministic elapsed time
-      const bars = 18;
-      const bw = (w - 60) / bars;
-      for (let b = 0; b < bars; b++) {
-        const bh = 16 + Math.abs(Math.sin(t * 3 + b * 0.6)) * 46;
-        ctx.fillStyle = b % 2 === 0 ? '#00E5FF' : cat.accent;
-        ctx.fillRect(30 + b * bw + 2, h * 0.56 - bh / 2, bw - 5, bh);
-      }
+      // Dynamic Reel Caption synced to active scene (or hook title)
+      const activeCaption = String(curScene.caption || title || `${cat.titleHindi} • Flow / Veo Studio`).trim();
+      const capY = h * 0.74;
+      const popScale = localSec < 0.22 ? (0.94 + (localSec / 0.22) * 0.06) : 1;
 
-      // Hook Caption Card Overlay
-      ctx.fillStyle = 'rgba(7, 7, 18, 0.86)';
-      ctx.fillRect(18, h * 0.65, w - 36, 98);
-      ctx.strokeStyle = cat.accent;
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(18, h * 0.65, w - 36, 98);
+      ctx.save();
+      ctx.translate(w / 2, capY);
+      ctx.scale(popScale, popScale);
+      ctx.fillStyle = 'rgba(7, 9, 20, 0.72)';
+      ctx.strokeStyle = (cat.accent || '#00E5FF') + '99';
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(-(w - 36) / 2, -32, w - 36, 78, 16);
+      } else {
+        ctx.rect(-(w - 36) / 2, -32, w - 36, 78);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      // Subtle scene tag pill above caption text
+      ctx.fillStyle = cat.accent || '#00E5FF';
+      ctx.font = 'bold 9.5px "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`SCENE ${sceneIdx + 1}/${totalScenes} • ${(cat.shortLabel || 'AI REEL').toUpperCase()}`, 0, -14);
 
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 14px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'center';
-      wrapCanvasText(ctx, title, w / 2, h * 0.65 + 28, w - 58, 20);
+      ctx.font = 'bold 13.5px "Plus Jakarta Sans", sans-serif';
+      wrapCanvasText(ctx, activeCaption, 0, 7, w - 58, 18);
+      ctx.restore();
+
+      // Minimal subtle bottom waveform accent
+      const bars = 20;
+      const bw = (w - 90) / bars;
+      for (let b = 0; b < bars; b++) {
+        const bh = 4 + Math.abs(Math.sin(elapsedSec * 7 + b * 0.7)) * 14;
+        ctx.fillStyle = b % 2 === 0 ? 'rgba(0, 229, 255, 0.55)' : (cat.accent || '#A855F7');
+        ctx.fillRect(45 + b * bw + 1.5, h - 78 - bh / 2, bw - 3, bh);
+      }
 
       if (!isVip) {
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.88)';
-        ctx.font = 'bold 11px monospace';
-        ctx.fillText('⚡ Created with ViralBoost AI', w / 2, 28);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('ViralBoost AI Studio', w / 2, 30);
       }
 
       ctx.restore();
+    }
+
+    function refreshStudioSceneImagesCache() {
+      const urls = Array.isArray(studioMediaCache.sceneDataUrls) ? studioMediaCache.sceneDataUrls : [];
+      if (urls.length > 0) {
+        studioMediaCache.loadedSceneImgs = urls.map((u) => {
+          if (!u) return null;
+          const im = new Image();
+          if (/^https?:\/\//i.test(u)) im.crossOrigin = 'anonymous';
+          im.src = u;
+          return im;
+        });
+      } else {
+        studioMediaCache.loadedSceneImgs = [];
+      }
     }
 
     function startReelCanvasLoop() {
@@ -3606,10 +3925,12 @@
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       let coverImg = null;
-      if (state.aiStudioState.coverDataUrl) {
+      const fallbackSrc = studioMediaCache.uploadedPhotoDataUrl || state.aiStudioState.coverDataUrl;
+      if (fallbackSrc) {
         coverImg = new Image();
-        coverImg.src = state.aiStudioState.coverDataUrl;
+        coverImg.src = fallbackSrc;
       }
+      refreshStudioSceneImagesCache();
       let lastPerf = performance.now();
 
       function draw(nowPerf) {
@@ -3621,8 +3942,10 @@
           reelPreviewElapsedSec += deltaSec;
         }
         drawReelFrame(ctx, c.width, c.height, reelPreviewElapsedSec, {
-          cat: AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx],
-          title: state.aiStudioState.title || `${AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx].titleHindi} • Tap Live AI Generate`,
+          cat: AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx] || AI_VIDEO_CATEGORIES[0],
+          title: state.aiStudioState.title || `${(AI_VIDEO_CATEGORIES[state.aiStudioState.catIdx] || AI_VIDEO_CATEGORIES[0]).titleHindi} • Tap Live AI Generate`,
+          scenes: state.aiStudioState.scenes || [],
+          sceneImgs: studioMediaCache.loadedSceneImgs || [],
           coverImg,
           isVip: state.profile.isVip
         });
@@ -3633,7 +3956,7 @@
     }
 
     function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
-      const words = String(text).split(' ');
+      const words = String(text || '').split(' ');
       let line = '';
       let cy = y;
       for (let n = 0; n < words.length; n++) {
@@ -3642,12 +3965,59 @@
           ctx.fillText(line.trim(), x, cy);
           line = words[n] + ' ';
           cy += lineHeight;
-          if (cy > y + lineHeight * 2.5) break;
+          if (cy > y + lineHeight * 2.2) break;
         } else {
           line = testLine;
         }
       }
       ctx.fillText(line.trim(), x, cy);
+    }
+
+    function playCategoryScoreStep(ctx, destNode, catId, step) {
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const id = String(catId || '').toLowerCase();
+      const chords = {
+        story: [261.63, 329.63, 392.0, 493.88],
+        shayari: [220.0, 261.63, 329.63, 392.0],
+        comedy: [392.0, 440.0, 523.25, 659.25],
+        motivation: [196.0, 246.94, 293.66, 392.0],
+        tech: [146.83, 220.0, 293.66, 349.23],
+        facts: [246.94, 293.66, 369.99, 440.0],
+        rap: [110.0, 130.81, 164.81, 196.0],
+        gaming: [130.81, 196.0, 261.63, 311.13]
+      };
+      let scale = chords.motivation;
+      let wave = 'triangle';
+      let dur = 0.36;
+      if (id.includes('story')) { scale = chords.story; wave = 'sine'; dur = 0.55; }
+      else if (id.includes('shayari')) { scale = chords.shayari; wave = 'sine'; dur = 0.6; }
+      else if (id.includes('comedy')) { scale = chords.comedy; wave = 'triangle'; dur = 0.24; }
+      else if (id.includes('tech')) { scale = chords.tech; wave = 'sawtooth'; dur = 0.28; }
+      else if (id.includes('fact')) { scale = chords.facts; wave = 'sine'; dur = 0.38; }
+      else if (id.includes('rap')) { scale = chords.rap; wave = 'triangle'; dur = 0.26; }
+      else if (id.includes('gaming')) { scale = chords.gaming; wave = 'sawtooth'; dur = 0.24; }
+
+      const freq = scale[step % scale.length];
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = wave;
+      osc.frequency.setValueAtTime(freq, now);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(wave === 'sawtooth' ? 950 : 1400, now);
+
+      // Subtle cinematic background volume (0.18 max per user spec)
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.18, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      if (destNode) gain.connect(destNode);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + dur + 0.02);
     }
 
     function toggleBeatSynth(bpm = 128) {
@@ -3660,23 +4030,16 @@
         audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
         isAudioPlaying = true;
-        const interval = (60 / bpm) * 1000;
+        const cat = getActiveStudioCategory();
+        const interval = (60 / (bpm || 120)) * 1000;
         let step = 0;
-        const playKick = () => {
+        const playNote = () => {
           if (!isAudioPlaying) return;
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = step % 2 === 0 ? 'sine' : 'triangle';
-          osc.frequency.setValueAtTime(step % 4 === 0 ? 140 : 220, audioCtx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(42, audioCtx.currentTime + 0.14);
-          gain.gain.setValueAtTime(0.28, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
-          osc.connect(gain); gain.connect(audioCtx.destination);
-          osc.start(); osc.stop(audioCtx.currentTime + 0.16);
+          playCategoryScoreStep(audioCtx, null, cat.id, step);
           step++;
         };
-        playKick();
-        beatTimer = setInterval(playKick, interval);
+        playNote();
+        beatTimer = setInterval(playNote, interval);
         renderOverlay();
       } catch (e) {
         showToast('Audio preview requires browser interaction first', 'info');
@@ -3686,6 +4049,113 @@
     function stopBeatSynth() {
       isAudioPlaying = false;
       if (beatTimer) { clearInterval(beatTimer); beatTimer = null; }
+    }
+
+    function stopStudioVoiceover() {
+      isVoiceSpeaking = false;
+      try {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      } catch (_) {}
+    }
+
+    function selectBestHindiVoice(gender = 'female') {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (!voices.length) return null;
+      const g = gender === 'male' ? 'male' : 'female';
+      const femaleHints = /female|lekha|swara|neerja|heera|kalpana|priya|aditi|raveena|kanya|neural.*f|woman/i;
+      const maleHints = /male|hemant|madhur|prabhat|rishi|arjun|kabir|neural.*m|\bman\b/i;
+
+      const scored = voices.map((v) => {
+        let score = 0;
+        const lang = String(v.lang || '').toLowerCase();
+        const name = String(v.name || '').toLowerCase();
+        if (lang.startsWith('hi')) score += 60;
+        else if (lang.endsWith('-in')) score += 35;
+        if (name.includes('google') || name.includes('microsoft') || name.includes('natural')) score += 15;
+        if (g === 'female') {
+          if (femaleHints.test(name)) score += 25;
+          if (maleHints.test(name)) score -= 20;
+        } else {
+          if (maleHints.test(name)) score += 25;
+          if (femaleHints.test(name)) score -= 20;
+        }
+        return { v, score };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      return scored[0]?.v || null;
+    }
+
+    function speakStudioVoiceover(customText = '') {
+      if (!('speechSynthesis' in window)) {
+        showToast('Voiceover synthesis not supported on this browser.', 'info');
+        return;
+      }
+      const s = state.aiStudioState;
+      const rawText = String(customText || s.voiceoverText || s.script || s.title || '').trim();
+      const spoken = rawText
+        .replace(/\[[^\]]+\]/g, ' ')
+        .replace(/https?:\/\/\S+/g, ' ')
+        .replace(/🛍️.*$/gm, '')
+        .replace(/[#*_`]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 650);
+      if (!spoken) {
+        showToast('Generate a script first to preview Hindi AI Voiceover!', 'info');
+        return;
+      }
+      stopStudioVoiceover();
+      try {
+        const utt = new SpeechSynthesisUtterance(spoken);
+        utt.lang = 'hi-IN';
+        const gender = s.voiceGender === 'male' ? 'male' : 'female';
+        const chosenVoice = selectBestHindiVoice(gender);
+        if (chosenVoice) utt.voice = chosenVoice;
+        utt.rate = 1.02;
+        utt.pitch = gender === 'male' ? 0.92 : 1.08;
+        utt.volume = 1.0;
+        utt.onstart = () => {
+          isVoiceSpeaking = true;
+          if (activeOverlay === 'oneClickAiStudio') renderOverlay();
+        };
+        utt.onend = () => {
+          isVoiceSpeaking = false;
+          if (activeOverlay === 'oneClickAiStudio') renderOverlay();
+        };
+        utt.onerror = () => {
+          isVoiceSpeaking = false;
+          if (activeOverlay === 'oneClickAiStudio') renderOverlay();
+        };
+        isVoiceSpeaking = true;
+        window.speechSynthesis.speak(utt);
+        if (activeOverlay === 'oneClickAiStudio') renderOverlay();
+      } catch (e) {
+        isVoiceSpeaking = false;
+      }
+    }
+
+    function toggleStudioVoiceEnabled() {
+      state.aiStudioState.voiceEnabled = state.aiStudioState.voiceEnabled === false;
+      if (!state.aiStudioState.voiceEnabled) stopStudioVoiceover();
+      saveState();
+      renderOverlay();
+    }
+
+    function selectStudioVoiceGender(gender) {
+      state.aiStudioState.voiceGender = gender === 'male' ? 'male' : 'female';
+      saveState();
+      if (isVoiceSpeaking) speakStudioVoiceover();
+      else renderOverlay();
+    }
+
+    function toggleStudioVoicePlayback() {
+      if (isVoiceSpeaking) {
+        stopStudioVoiceover();
+        renderOverlay();
+        return;
+      }
+      speakStudioVoiceover();
     }
 
     function triggerGoogleCloudSignIn() {
@@ -3893,6 +4363,57 @@
       return await window.ViralBoostFirebase.generateImage({ prompt, aspectRatio });
     }
 
+    async function callStudioScenesBackend(payload) {
+      if (window.ViralBoostFirebaseReady) {
+        try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3500))]); } catch (_) {}
+      }
+      if (window.ViralBoostFirebase && typeof window.ViralBoostFirebase.generateStudioScenes === 'function') {
+        const res = await window.ViralBoostFirebase.generateStudioScenes(payload);
+        if (res && res.ok && res.data) return res;
+      }
+      // Graceful fallback through callGeminiBackend when direct studio scene bridge isn't active
+      const fallbackPrompt = payload.mode === 'script'
+        ? `Split this user script into a 4-scene Hindi/Hinglish Reel for category "${payload.category.titleEnglish}":\n${payload.scriptText}`
+        : `Create a 4-scene viral Hindi/Hinglish Reel for category "${payload.category.titleEnglish}" on "${payload.topic}" synced to ${payload.beatName}.`;
+      const res = await callGeminiBackend({
+        prompt: fallbackPrompt,
+        platform: 'Instagram Reels & YouTube Shorts',
+        tone: payload.category.titleEnglish,
+        contentType: 'FLOW_4_SCENE_REEL'
+      });
+      const lines = String(res.data.script || res.data.title || '').split('\n').map(l => l.trim()).filter(Boolean);
+      const motions = ['zoom-in', 'pan-right', 'zoom-out', 'pan-left'];
+      const scenes = [0, 1, 2, 3].map(i => ({
+        timeRange: `${i * 3}-${(i + 1) * 3}s`,
+        caption: (lines[i] || res.data.hook || res.data.title || payload.topic).slice(0, 95),
+        visualPrompt: `Photorealistic 9:16 vertical cinematic scene ${i + 1} for ${payload.category.titleEnglish}: ${payload.topic}, natural dramatic lighting, shallow depth of field`,
+        cameraMotion: motions[i]
+      }));
+      return {
+        ok: true,
+        source: res.source || 'LIVE_GEMINI',
+        data: {
+          ...res.data,
+          voiceoverText: res.data.script,
+          scenes
+        }
+      };
+    }
+
+    async function callVeoBackend({ prompt, imageBase64 = '', imageMimeType = 'image/jpeg', aspectRatio = '9:16' }) {
+      if (window.ViralBoostFirebaseReady) {
+        try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3500))]); } catch (_) {}
+      }
+      if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.generateVeoVideo !== 'function') {
+        return { ok: false };
+      }
+      try {
+        return await window.ViralBoostFirebase.generateVeoVideo({ prompt, imageBase64, imageMimeType, aspectRatio });
+      } catch (e) {
+        return { ok: false, reason: String(e?.message || e || '') };
+      }
+    }
+
     function preloadStudioCoverForExport(srcUrl) {
       return new Promise((resolve) => {
         if (!srcUrl) { resolve(null); return; }
@@ -3978,8 +4499,8 @@
       if (isExportingVideo) return;
 
       const TARGET_FPS = 30;
-      const DURATION_MS = 5000;
-      const TOTAL_FRAMES = 150;
+      const DURATION_MS = 12000;
+      const TOTAL_FRAMES = 360;
       const EXPORT_W = 1080;
       const EXPORT_H = 1920;
 
@@ -3987,7 +4508,7 @@
       exportProgressPct = 2;
       exportedReelStats = null;
       state.aiStudioState.isPlaying = true;
-      updateExportButtonDom(`🎬 Preparing 1080×1920 @ 30 FPS...`, true);
+      updateExportButtonDom(`🎬 Preparing 12s 1080×1920 @ 30 FPS...`, true);
 
       // Dedicated hidden 1080x1920 9:16 Full HD export canvas (isolated from DOM overlay re-renders)
       const exportCanvas = document.createElement('canvas');
@@ -4037,10 +4558,16 @@
       try {
         const cat = getActiveStudioCategory();
         const activeBeat = getActiveStudioBeat();
+        const sceneUrls = Array.isArray(studioMediaCache.sceneDataUrls) && studioMediaCache.sceneDataUrls.length
+          ? studioMediaCache.sceneDataUrls
+          : [studioMediaCache.uploadedPhotoDataUrl || state.aiStudioState.coverDataUrl].filter(Boolean);
+        const preloadedSceneImgs = await Promise.all(sceneUrls.map(u => preloadStudioCoverForExport(u)));
         const snapshot = {
           cat,
-          title: state.aiStudioState.title || `${cat.titleHindi} • Tap Live AI Generate`,
-          coverImg: await preloadStudioCoverForExport(state.aiStudioState.coverDataUrl),
+          title: state.aiStudioState.title || `${cat.titleHindi} • Flow / Veo AI Reel`,
+          scenes: Array.isArray(state.aiStudioState.scenes) ? state.aiStudioState.scenes : [],
+          sceneImgs: preloadedSceneImgs,
+          coverImg: preloadedSceneImgs[0] || await preloadStudioCoverForExport(studioMediaCache.uploadedPhotoDataUrl || state.aiStudioState.coverDataUrl),
           isVip: Boolean(state.profile.isVip)
         };
 
@@ -4052,7 +4579,7 @@
         const videoTrack = videoStream.getVideoTracks()[0] || null;
         const tracks = [...videoStream.getVideoTracks()];
 
-        // Route synthesized WebAudio beat + silent keep-alive carrier into MediaRecorder
+        // Route subtle 0.18-gain category background score + keep-alive carrier into MediaRecorder
         try {
           audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
           if (audioCtx.state === 'suspended') await audioCtx.resume();
@@ -4069,25 +4596,14 @@
           keepAliveOsc.start();
 
           let step = 0;
-          const pulseMs = (60 / (activeBeat.bpm || 128)) * 1000;
-          const triggerPulse = () => {
+          const pulseMs = (60 / (activeBeat.bpm || 120)) * 1000;
+          const triggerScore = () => {
             if (!isExportingVideo) return;
-            const osc = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            osc.type = step % 2 === 0 ? 'sine' : 'triangle';
-            osc.frequency.setValueAtTime(step % 4 === 0 ? 135 : 210, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(44, audioCtx.currentTime + 0.14);
-            g.gain.setValueAtTime(0.24, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
-            osc.connect(g);
-            g.connect(dest);
-            g.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.16);
+            playCategoryScoreStep(audioCtx, dest, cat.id, step);
             step++;
           };
-          triggerPulse();
-          beatInterval = setInterval(triggerPulse, pulseMs);
+          triggerScore();
+          beatInterval = setInterval(triggerScore, pulseMs);
           tracks.push(...dest.stream.getAudioTracks());
         } catch (_) {}
 
@@ -4297,88 +4813,246 @@
       renderOverlay();
     }
 
-    function handleStudioCoverUpload(e) {
+    function selectAiStudioMode(mode) {
+      if (!['prompt', 'photo', 'script'].includes(mode)) return;
+      state.aiStudioState.studioMode = mode;
+      state.aiStudioState.errorMsg = '';
+      state.aiStudioState.progressStage = '';
+      state.aiStudioState.progressStep = 0;
+      state.aiStudioState.progressPct = 0;
+      saveState();
+      renderOverlay();
+    }
+
+    function loadSampleCustomScript() {
+      const cat = getActiveStudioCategory();
+      const samples = {
+        'Desi Comedy & Fun': `जब मम्मी बोलें सिर्फ 2 मिनट रुक जा...\nऔर फिर पूरा घर साफ करवा लें 😂\nदोस्त पूछे भाई पार्टी कब है?\nजेब में सिर्फ 10 रुपये और बड़े सपने 💸`,
+        'Motivation & Success': `सुबह 5 बजे सब सोते हैं, तभी चैंपियन जागते हैं ⚡\nलोग आज हंसेंगे, कल वही तालियां बजाएंगे 🔥\nहर दिन सिर्फ 1% बेहतर बनो,\nसफलता शोर नहीं, इतिहास रचती है 💪`,
+        'Story & Moral': `एक छोटे शहर के लड़के के पास सिर्फ एक पुरानी साइकिल थी 📖\nलोगों ने कहा तुम कुछ बड़ा नहीं कर पाओगे,\nपर उसने हर ठोकर को अपनी सीढ़ी बना लिया ✨\nआज वही करोड़ों लोगों की प्रेरणा बन चुका है ❤️`,
+        'Shayari & Status': `वक्त ने सिखाया है खामोश रहना ✍️\nवरना जवाब हमारे पास भी लाजवाब थे 🖤\nभीड़ का हिस्सा नहीं, भीड़ की वजह बनो,\nकिस्मत से ज्यादा अपनी मेहनत पर भरोसा रखो 🔥`,
+        'AI & Tech Secrets': `ये 3 गुप्त AI टूल्स आपका काम 10x तेज कर देंगे 🤖\nपहला: ऑटो स्क्रिप्ट और वॉइसओवर जनरेटर ⚡\nदूसरा: 1-क्लिक 4-सीन HD वीडियो क्रिएटर,\nतीसरा: वायरल टैग्स से सीधा बूस्ट 🚀`,
+        'Viral Facts & Secrets': `99% लोग ये साइकोलॉजी सच नहीं जानते 🧠\nइंसान का दिमाग सुबह के पहले 20 मिनट में सबसे तेज होता है ⚡\nमुस्कुराने से स्ट्रेस हार्मोन तुरंत कम हो जाते हैं,\nयही छोटी आदतें जिंदगी बदल देती हैं 🤯`,
+        'Haryanvi Rap & Swag': `गांव का छोरा अब शहर के ट्रेंड चलावे सै 💥\nदेसी स्टाइल और पक्की यारी पहचान हमारी 🎤\nकिस्मत नी, बाजुओं के दम पै नाम कमाया सै,\nसिस्टम के ऊपर चाला करा — देसी स्वैग 🔥`,
+        'Action & Gaming': `1 HP बची थी और सामने पूरी 4 की स्क्वाड 🎮\nएक गलत मूव और मैच खत्म हो जाता ⚡\nपर आखिरी सेकंड का परफेक्ट हेडशॉट क्लच,\nपलट दिया पूरा गेम और बनी जीत की कहानी 🔥`
+      };
+      const text = samples[cat.id] || samples['Story & Moral'];
+      state.aiStudioState.customScriptInput = text;
+      const el = document.getElementById('studio-script-mode-input');
+      if (el) el.value = text;
+      saveState();
+      showToast(`📝 ${cat.shortLabel} sample script loaded!`, 'success');
+    }
+
+    function clearStudioUploadedPhoto() {
+      studioMediaCache.uploadedPhotoDataUrl = '';
+      studioMediaCache.uploadedPhotoBase64 = '';
+      studioMediaCache.uploadedPhotoName = '';
+      studioMediaCache.sceneDataUrls = [];
+      studioMediaCache.loadedSceneImgs = [];
+      state.aiStudioState.coverDataUrl = '';
+      saveState();
+      renderOverlay();
+      showToast('Photo cleared.', 'info');
+    }
+
+    function handleStudioPhotoUpload(e) {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        state.aiStudioState.coverDataUrl = reader.result;
-        saveState();
-        renderOverlay();
-        showToast('📸 Cover photo loaded into 9:16 Reel Canvas!', 'success');
+        const rawUrl = String(reader.result || '');
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1080;
+          const maxH = 1920;
+          const scale = Math.min(1, maxW / img.width, maxH / img.height);
+          const cw = Math.max(1, Math.round(img.width * scale));
+          const ch = Math.max(1, Math.round(img.height * scale));
+          const c = document.createElement('canvas');
+          c.width = cw;
+          c.height = ch;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0, cw, ch);
+          const compressed = c.toDataURL('image/jpeg', 0.88);
+          const commaIdx = compressed.indexOf(',');
+          studioMediaCache.uploadedPhotoDataUrl = compressed;
+          studioMediaCache.uploadedPhotoMime = 'image/jpeg';
+          studioMediaCache.uploadedPhotoBase64 = commaIdx >= 0 ? compressed.slice(commaIdx + 1) : '';
+          studioMediaCache.uploadedPhotoName = file.name;
+          studioMediaCache.sceneDataUrls = [compressed, compressed, compressed, compressed];
+          studioMediaCache.veoVideoUrl = '';
+          state.aiStudioState.coverDataUrl = compressed;
+          saveState();
+          renderOverlay();
+          showToast('📸 Photo uploaded & synced to Gemini Vision + 3D Animator!', 'success');
+        };
+        img.onerror = () => {
+          showToast('Could not decode selected photo.', 'error');
+        };
+        img.src = rawUrl;
       };
       reader.readAsDataURL(file);
     }
 
-    function generateDynamicHdCoverDataUrl({ topic = '', cat = null, title = '' } = {}) {
+    function handleStudioCoverUpload(e) {
+      handleStudioPhotoUpload(e);
+    }
+
+    function createCinematicPhotoSceneDataUrl(photoImg, sceneIdx, cat, scene = {}) {
       const c = document.createElement('canvas');
-      c.width = 1080;
-      c.height = 1920;
+      c.width = 720;
+      c.height = 1280;
+      const ctx = c.getContext('2d');
+      const accent = cat.accent || '#00E5FF';
+      const secondary = cat.secondary || '#7C3AED';
+
+      ctx.fillStyle = '#05060D';
+      ctx.fillRect(0, 0, 720, 1280);
+
+      if (photoImg && (photoImg.naturalWidth > 0 || photoImg.width > 0)) {
+        const iw = photoImg.naturalWidth || photoImg.width;
+        const ih = photoImg.naturalHeight || photoImg.height;
+        const baseScale = Math.max(720 / iw, 1280 / ih);
+        const crops = [
+          { zoom: 1.04, ox: 0, oy: 0 },
+          { zoom: 1.24, ox: -45, oy: -40 },
+          { zoom: 1.18, ox: 45, oy: -15 },
+          { zoom: 1.12, ox: 0, oy: 35 }
+        ];
+        const cr = crops[sceneIdx % crops.length];
+        const dw = iw * baseScale * cr.zoom;
+        const dh = ih * baseScale * cr.zoom;
+        ctx.drawImage(photoImg, (720 - dw) / 2 + cr.ox, (1280 - dh) / 2 + cr.oy, dw, dh);
+      }
+
+      // Cinematic color grading & atmospheric rim light per scene
+      const tints = [
+        [accent + '33', 'rgba(255, 165, 60, 0.22)'],
+        [secondary + '44', 'rgba(0, 229, 255, 0.24)'],
+        ['rgba(236, 72, 153, 0.28)', 'rgba(15, 23, 42, 0.35)'],
+        ['rgba(16, 185, 129, 0.26)', accent + '2E']
+      ];
+      const tint = tints[sceneIdx % tints.length];
+      const grad = ctx.createLinearGradient(0, 0, 720, 1280);
+      grad.addColorStop(0, tint[0]);
+      grad.addColorStop(1, tint[1]);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 720, 1280);
+
+      // Subtle golden/neon flare on corner
+      const flareX = sceneIdx % 2 === 0 ? 120 : 600;
+      const flareY = sceneIdx < 2 ? 220 : 420;
+      const flare = ctx.createRadialGradient(flareX, flareY, 10, flareX, flareY, 420);
+      flare.addColorStop(0, accent + '4D');
+      flare.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = flare;
+      ctx.fillRect(0, 0, 720, 1280);
+
+      return c.toDataURL('image/jpeg', 0.86);
+    }
+
+    function generatePhotorealisticSceneBackdropDataUrl(scene = {}, sceneIdx = 0, cat = null) {
+      const c = document.createElement('canvas');
+      c.width = 720;
+      c.height = 1280;
       const ctx = c.getContext('2d');
       const activeCat = cat || getActiveStudioCategory();
       const accent = activeCat.accent || '#00E5FF';
       const secondary = activeCat.secondary || '#7C3AED';
+      const id = String(activeCat.id || '').toLowerCase();
 
-      // Deep cinematic gradient backdrop
-      const bg = ctx.createLinearGradient(0, 0, 1080, 1920);
-      bg.addColorStop(0, '#050412');
-      bg.addColorStop(0.45, secondary + '55');
-      bg.addColorStop(1, '#09071D');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, 1080, 1920);
+      // Rich photorealistic sky & environment palette matched to category + scene arc
+      const moods = id.includes('shayari') || id.includes('story')
+        ? [
+            ['#1A0E2E', '#581C87', '#F97316'],
+            ['#091428', '#1E3A8A', '#38BDF8'],
+            ['#2A1120', '#831843', '#FB7185'],
+            ['#0B1E24', '#0F766E', '#FBBF24']
+          ]
+        : id.includes('comedy')
+          ? [
+              ['#062822', '#0D9488', '#FDE047'],
+              ['#1E1B4B', '#4F46E5', '#22D3EE'],
+              ['#2B102E', '#BE185D', '#F59E0B'],
+              ['#0C1E3A', '#0284C7', '#34D399']
+            ]
+          : [
+              ['#090D1F', '#1E1B4B', accent],
+              ['#0D1526', '#164E63', '#00E5FF'],
+              ['#1F0B29', '#5B21B6', secondary],
+              ['#0E1815', '#065F46', '#FBBF24']
+            ];
+      const pal = moods[sceneIdx % moods.length];
 
-      // Volumetric studio glow orbs
-      const g1 = ctx.createRadialGradient(260, 420, 40, 260, 420, 560);
-      g1.addColorStop(0, accent + '88');
-      g1.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g1;
-      ctx.fillRect(0, 0, 1080, 1920);
+      const sky = ctx.createLinearGradient(0, 0, 0, 1280);
+      sky.addColorStop(0, pal[0]);
+      sky.addColorStop(0.55, pal[1]);
+      sky.addColorStop(1, '#05060D');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, 720, 1280);
 
-      const g2 = ctx.createRadialGradient(840, 1280, 50, 840, 1280, 620);
-      g2.addColorStop(0, secondary + '99');
-      g2.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g2;
-      ctx.fillRect(0, 0, 1080, 1920);
+      // Cinematic horizon sun / volumetric studio key-light
+      const lightX = [520, 210, 480, 360][sceneIdx % 4];
+      const lightY = [340, 460, 300, 380][sceneIdx % 4];
+      const sun = ctx.createRadialGradient(lightX, lightY, 16, lightX, lightY, 520);
+      sun.addColorStop(0, '#FFFFFFCC');
+      sun.addColorStop(0.18, pal[2] + 'BB');
+      sun.addColorStop(0.55, pal[2] + '33');
+      sun.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sun;
+      ctx.fillRect(0, 0, 720, 1280);
 
-      // Subtle futuristic perspective grid
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      ctx.lineWidth = 2;
-      for (let x = 0; x <= 1080; x += 90) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1920); ctx.stroke();
-      }
-      for (let y = 0; y <= 1920; y += 90) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1080, y); ctx.stroke();
-      }
-
-      // Glowing concentric neon rings
-      for (let i = 0; i < 4; i++) {
+      // Soft angled volumetric light shafts
+      ctx.save();
+      ctx.globalAlpha = 0.14;
+      for (let r = 0; r < 3; r++) {
+        ctx.fillStyle = r % 2 === 0 ? '#FFFFFF' : pal[2];
         ctx.beginPath();
-        ctx.strokeStyle = i % 2 === 0 ? accent : '#00E5FF';
-        ctx.globalAlpha = 0.28 - i * 0.04;
-        ctx.lineWidth = 5;
-        ctx.arc(540, 720, 180 + i * 95, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.moveTo(lightX - 30 + r * 20, lightY);
+        ctx.lineTo(lightX - 320 + r * 140, 1280);
+        ctx.lineTo(lightX - 180 + r * 150, 1280);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Cinematic distant layered hills / skyline silhouettes
+      const horizonY = 780 + (sceneIdx % 2) * 35;
+      ctx.fillStyle = 'rgba(10, 12, 24, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(0, 1280);
+      ctx.lineTo(0, horizonY);
+      ctx.quadraticCurveTo(180, horizonY - 95, 360, horizonY - 25);
+      ctx.quadraticCurveTo(560, horizonY + 45, 720, horizonY - 55);
+      ctx.lineTo(720, 1280);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(5, 6, 14, 0.82)';
+      ctx.beginPath();
+      ctx.moveTo(0, 1280);
+      ctx.lineTo(0, horizonY + 90);
+      ctx.quadraticCurveTo(240, horizonY + 25, 450, horizonY + 85);
+      ctx.quadraticCurveTo(600, horizonY + 115, 720, horizonY + 60);
+      ctx.lineTo(720, 1280);
+      ctx.closePath();
+      ctx.fill();
+
+      // Out-of-focus cinematic foreground bokeh orbs
+      for (let i = 0; i < 16; i++) {
+        const bx = (i * 97 + sceneIdx * 71) % 720;
+        const by = 140 + ((i * 157 + sceneIdx * 53) % 860);
+        const br = 12 + (i % 5) * 14;
+        ctx.beginPath();
+        ctx.fillStyle = i % 3 === 0 ? '#FFFFFF' : pal[2];
+        ctx.globalAlpha = 0.06 + (i % 4) * 0.035;
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // Center vibrant creator emblem
-      ctx.font = '200px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(activeCat.emoji || '🎬', 540, 720);
-
-      // Category & Topic atmospheric pill
-      const badgeLabel = String(activeCat.shortLabel || 'CREATOR STUDIO').toUpperCase();
-      ctx.fillStyle = 'rgba(10, 12, 32, 0.72)';
-      ctx.fillRect(290, 290, 500, 68);
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 3;
-      ctx.strokeRect(290, 290, 500, 68);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 34px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText(`✦ ${badgeLabel} ✦`, 540, 325);
-
-      return c.toDataURL('image/png');
+      return c.toDataURL('image/jpeg', 0.86);
     }
 
     async function executeOneClickAiGenerate() {
@@ -4389,68 +5063,154 @@
         switchTab('vip');
         return;
       }
+
+      const s = state.aiStudioState;
+      const mode = ['prompt', 'photo', 'script'].includes(s.studioMode) ? s.studioMode : 'prompt';
       const cat = getActiveStudioCategory();
       const activeBeat = getActiveStudioBeat();
-      const topic = (state.aiStudioState.customTopic || '').trim() || `${cat.titleHindi} (${cat.titleEnglish})`;
+      const customTopic = (s.customTopic || '').trim();
+      const customScript = (s.customScriptInput || '').trim();
+
+      // Extract base64 if photo was loaded
+      let photoBase64 = studioMediaCache.uploadedPhotoBase64 || '';
+      let photoMime = studioMediaCache.uploadedPhotoMime || 'image/jpeg';
+      if (!photoBase64 && s.coverDataUrl && s.coverDataUrl.startsWith('data:image/')) {
+        const idx = s.coverDataUrl.indexOf(',');
+        if (idx > 0) {
+          photoBase64 = s.coverDataUrl.slice(idx + 1);
+          photoMime = s.coverDataUrl.slice(5, s.coverDataUrl.indexOf(';')) || 'image/jpeg';
+        }
+      }
+
+      if (mode === 'photo' && !photoBase64) {
+        showToast('📸 Please upload a photo from your gallery first!', 'error');
+        return;
+      }
+      if (mode === 'script' && !customScript) {
+        showToast('📝 Please paste your Hindi/Hinglish script or tap Sample!', 'error');
+        return;
+      }
+
+      const topic = customTopic || (mode === 'script' ? customScript.split('\n')[0].slice(0, 70) : `${cat.titleHindi} (${cat.titleEnglish})`);
+      stopStudioVoiceover();
+      if (studioMediaCache.veoVideoUrl) {
+        try { URL.revokeObjectURL(studioMediaCache.veoVideoUrl); } catch (_) {}
+        studioMediaCache.veoVideoUrl = '';
+        studioMediaCache.veoMimeType = '';
+      }
+
       isStudioGenerating = true;
-      state.aiStudioState.errorMsg = '';
-      state.aiStudioState.progressStep = 1;
-      state.aiStudioState.progressStage = '1. Writing Script... (Live Gemini 3.8 Flash)';
-      state.aiStudioState.progressPct = 28;
+      s.errorMsg = '';
+      s.progressStep = 1;
+      s.progressStage = mode === 'photo'
+        ? '1. Gemini Vision analyzing uploaded photo...'
+        : mode === 'script'
+          ? '1. Splitting your script into 4 timed scenes...'
+          : '1. Gemini 3.8 Flash directing 4-scene AI script...';
+      s.progressPct = 24;
       renderOverlay();
 
       try {
-        const res = await callGeminiBackend({
-          prompt: `Create a high-retention 30-second viral short video package in Hindi/Hinglish for category "${cat.id}" (${cat.titleHindi}) on topic "${topic}" synced to ${activeBeat.name}.`,
-          platform: 'Instagram Reels & YouTube Shorts',
-          tone: cat.titleEnglish,
-          contentType: '1_CLICK_AI_REEL'
+        // STEP 1: Generate 4-scene Hindi/Hinglish storyboard + visual prompts + voiceover script
+        const res = await callStudioScenesBackend({
+          mode,
+          topic,
+          scriptText: customScript,
+          category: cat,
+          beatName: activeBeat.name,
+          imageBase64: mode === 'photo' ? photoBase64 : '',
+          imageMimeType: photoMime
         });
 
-        state.aiStudioState.aiSource = res.source;
-        state.aiStudioState.title = res.data.title;
-        state.aiStudioState.script = `${res.data.script}\n\n🛍️ Shop Deals (ID ${CONSTANTS.AFFILIATE_TAG}): ${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}`;
-        state.aiStudioState.hashtags = res.data.hashtags;
-        state.aiStudioState.progressStep = 2;
-        state.aiStudioState.progressStage = '2. Creating HD Visual... (Imagen 3 + HD Studio Cover)';
-        state.aiStudioState.progressPct = 65;
+        const scenes = Array.isArray(res.data.scenes) && res.data.scenes.length
+          ? res.data.scenes.slice(0, 4)
+          : [0, 1, 2, 3].map(i => ({
+              timeRange: `${i * 3}-${(i + 1) * 3}s`,
+              caption: res.data.title || topic,
+              visualPrompt: `Cinematic 9:16 scene ${i + 1} for ${topic}`,
+              cameraMotion: ['zoom-in', 'pan-right', 'zoom-out', 'pan-left'][i]
+            }));
+
+        s.aiSource = res.source || 'LIVE_GEMINI';
+        s.title = res.data.title || topic;
+        s.voiceoverText = res.data.voiceoverText || res.data.script || scenes.map(sc => sc.caption).join(' ');
+        s.script = `${res.data.script || scenes.map((sc, i) => `[${sc.timeRange || `${i*3}-${(i+1)*3}s`}] ${sc.caption}`).join('\n')}\n\n🛍️ Shop Deals (ID ${CONSTANTS.AFFILIATE_TAG}): ${CONSTANTS.PERMANENT_OWNER_AFFILIATE_LINK}`;
+        s.hashtags = res.data.hashtags || '#ViralReels #TrendingShorts #ViralBoostAI';
+        s.scenes = scenes;
+
+        // STEP 2: Attempt Google Veo real AI video generation, else 4-Scene Imagen 3 / Photo 3D Motion
+        s.progressStep = 2;
+        s.progressStage = mode === 'photo'
+          ? '2. Animating Photo via Veo / 3D Motion Engine...'
+          : '2. Calling Google Veo + Imagen 3 (4 Scenes)...';
+        s.progressPct = 58;
         renderOverlay();
 
-        // Live Imagen 3 visual cover with graceful dynamic 1080x1920 HD canvas cover fallback
-        let usedDynamicFallback = false;
-        try {
-          const imgPrompt = `Vibrant cinematic 9:16 vertical social reel poster art for Indian creator video about "${topic}", category "${cat.titleEnglish}", neon studio lighting, ultra detailed, no text clutter`;
-          const imgRes = await callImagenBackend({ prompt: imgPrompt, aspectRatio: '9:16' });
-          if (imgRes && imgRes.ok && imgRes.dataUrl) {
-            state.aiStudioState.coverDataUrl = imgRes.dataUrl;
+        const veoPrompt = `${scenes.map((sc, i) => `Scene ${i + 1}: ${sc.visualPrompt || sc.caption}`).join('. ')}. Photorealistic 9:16 vertical short reel, cinematic lighting.`;
+        const veoRes = await callVeoBackend({
+          prompt: veoPrompt,
+          imageBase64: mode === 'photo' ? photoBase64 : '',
+          imageMimeType: photoMime,
+          aspectRatio: '9:16'
+        });
+
+        if (veoRes && veoRes.ok && veoRes.videoUrl) {
+          studioMediaCache.veoVideoUrl = veoRes.videoUrl;
+          studioMediaCache.veoMimeType = veoRes.mimeType || 'video/mp4';
+          s.engineUsed = 'VEO_VIDEO';
+          if (mode === 'photo' && studioMediaCache.uploadedPhotoDataUrl) {
+            studioMediaCache.sceneDataUrls = [0, 1, 2, 3].map(() => studioMediaCache.uploadedPhotoDataUrl);
           } else {
-            usedDynamicFallback = true;
+            studioMediaCache.sceneDataUrls = scenes.map((sc, idx) => generatePhotorealisticSceneBackdropDataUrl(sc, idx, cat));
           }
-        } catch (imgErr) {
-          console.warn('Imagen fallback to dynamic HD canvas cover:', imgErr);
-          usedDynamicFallback = true;
-        }
-        if (usedDynamicFallback) {
-          state.aiStudioState.coverDataUrl = generateDynamicHdCoverDataUrl({
-            topic,
-            cat,
-            title: state.aiStudioState.title
+          s.coverDataUrl = studioMediaCache.sceneDataUrls[0] || '';
+        } else if (mode === 'photo') {
+          // Photo-to-Video: build 4 color-graded 3D camera cuts from the user's uploaded photo
+          const photoImg = await preloadStudioCoverForExport(studioMediaCache.uploadedPhotoDataUrl || s.coverDataUrl);
+          const photoScenes = scenes.map((sc, idx) => createCinematicPhotoSceneDataUrl(photoImg, idx, cat, sc));
+          studioMediaCache.sceneDataUrls = photoScenes;
+          s.coverDataUrl = photoScenes[0] || studioMediaCache.uploadedPhotoDataUrl || s.coverDataUrl;
+          s.engineUsed = 'PHOTO_3D_MOTION';
+        } else {
+          // Prompt / Script mode: call Imagen 3 (`imagen-3.0-generate-002`) in parallel for all 4 scenes + photorealistic fallback
+          const imgResults = await Promise.allSettled(
+            scenes.map((sc, idx) =>
+              callImagenBackend({
+                prompt: `Photorealistic 9:16 vertical film still, 35mm cinema lens, ${sc.visualPrompt || sc.caption || topic}, category ${cat.titleEnglish}, dramatic realistic lighting, no text overlay`,
+                aspectRatio: '9:16'
+              }).catch(() => null)
+            )
+          );
+          const finalSceneUrls = scenes.map((sc, idx) => {
+            const r = imgResults[idx];
+            if (r && r.status === 'fulfilled' && r.value && r.value.ok && r.value.dataUrl) {
+              return r.value.dataUrl;
+            }
+            return generatePhotorealisticSceneBackdropDataUrl(sc, idx, cat);
           });
+          studioMediaCache.sceneDataUrls = finalSceneUrls;
+          s.coverDataUrl = finalSceneUrls[0] || '';
+          s.engineUsed = 'IMAGEN_MULTI_SCENE';
         }
+
+        refreshStudioSceneImagesCache();
+        reelPreviewElapsedSec = 0;
 
         state.profile.videosUsed += 1;
         state.profile.aiGenCount = (state.profile.aiGenCount || 0) + 1;
-        state.aiStudioState.isPlaying = true;
-        state.aiStudioState.progressStep = 3;
-        state.aiStudioState.progressStage = '3. Ready to Render (1080×1920 @ 30FPS)';
-        state.aiStudioState.progressPct = 100;
+        s.isPlaying = true;
+        s.progressStep = 3;
+        s.progressStage = s.engineUsed === 'VEO_VIDEO'
+          ? '3. Google Veo 9:16 MP4 Stream Ready!'
+          : '3. 4-Scene 1080×1920 @ 30FPS Motion Ready!';
+        s.progressPct = 100;
         state.aiHistory.unshift({
           id: 'ai_' + Date.now(),
-          type: 'TEXT_TO_VIDEO',
-          topic: state.aiStudioState.title,
+          type: mode === 'photo' ? 'PHOTO_TO_VIDEO' : mode === 'script' ? 'SCRIPT_TO_VIDEO' : 'TEXT_TO_VIDEO',
+          topic: s.title,
           platform: 'Instagram Reels & Shorts',
-          content: state.aiStudioState.script,
-          hashtags: state.aiStudioState.hashtags,
+          content: s.script,
+          hashtags: s.hashtags,
           bookmarked: false,
           time: Date.now()
         });
@@ -4458,29 +5218,42 @@
         saveState();
         syncProfileToCloud();
         renderOverlay();
-        showToast('🟢 Live Gemini 3.8 Flash + 9:16 HD Visual Ready!', 'success');
-        if (state.profile.aiGenCount % 3 === 0) {
-          UnityAdEngine.showInterstitial('ai_gen', () => {
-            if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
-              exportOneClickReelVideo();
-            }
-          });
-        } else {
-          setTimeout(() => {
-            if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
-              exportOneClickReelVideo();
-            }
-          }, 350);
+
+        if (s.voiceEnabled !== false) {
+          setTimeout(() => speakStudioVoiceover(s.voiceoverText), 250);
+        }
+
+        const readyLabel = s.engineUsed === 'VEO_VIDEO'
+          ? '🎬 Google Veo Native 9:16 Video Ready!'
+          : s.engineUsed === 'PHOTO_3D_MOTION'
+            ? '📸 3D Photo Motion Reel Ready!'
+            : '🎞️ 4-Scene Photorealistic AI Reel Ready!';
+        showToast(readyLabel, 'success');
+
+        if (s.engineUsed !== 'VEO_VIDEO') {
+          if (state.profile.aiGenCount % 3 === 0) {
+            UnityAdEngine.showInterstitial('ai_gen', () => {
+              if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
+                exportOneClickReelVideo();
+              }
+            });
+          } else {
+            setTimeout(() => {
+              if (activeOverlay === 'oneClickAiStudio' && !isExportingVideo) {
+                exportOneClickReelVideo();
+              }
+            }, 450);
+          }
         }
       } catch (err) {
         isStudioGenerating = false;
-        state.aiStudioState.progressStep = 0;
-        state.aiStudioState.progressStage = '';
-        state.aiStudioState.progressPct = 0;
-        state.aiStudioState.errorMsg = String(err?.message || err || 'Live AI failed');
+        s.progressStep = 0;
+        s.progressStage = '';
+        s.progressPct = 0;
+        s.errorMsg = String(err?.message || err || 'Live AI failed');
         saveState();
         renderOverlay();
-        showToast(`⚠️ Live AI Failed: ${state.aiStudioState.errorMsg}`, 'error');
+        showToast(`⚠️ Live AI Failed: ${s.errorMsg}`, 'error');
       }
     }
 
@@ -5720,6 +6493,8 @@
       recordAffiliateOrder: async () => {},
       generateContent: async () => null,
       generateImage: async () => null,
+      generateStudioScenes: async () => null,
+      generateVeoVideo: async () => ({ ok: false }),
       addCommunityCreator: async () => {},
       followCommunityCreator: async () => {},
       deleteCommunityCreator: async () => {},
@@ -5788,10 +6563,36 @@
         }
       });
 
+      const studioScenesSchema = Schema.object({
+        properties: {
+          title: Schema.string({ description: "Catchy clickable bilingual Hindi/Hinglish viral reel title" }),
+          hook: Schema.string({ description: "Opening 3-second scroll-stopping hook" }),
+          script: Schema.string({ description: "Full 4-part timestamped Hindi/Hinglish script" }),
+          voiceoverText: Schema.string({ description: "Natural clean Hindi/Hinglish voiceover narration ready for text-to-speech" }),
+          cta: Schema.string({ description: "Closing engagement CTA" }),
+          hashtags: Schema.array({
+            items: Schema.string(),
+            description: "8-12 trending Hindi and English hashtags starting with #"
+          }),
+          scenes: Schema.array({
+            items: Schema.object({
+              properties: {
+                timeRange: Schema.string({ description: "Time span like 0-3s, 3-6s, 6-9s, 9-12s" }),
+                caption: Schema.string({ description: "Short punchy Hindi/Hinglish on-screen caption for this 3-second scene" }),
+                visualPrompt: Schema.string({ description: "Detailed photorealistic 9:16 vertical visual prompt for Imagen 3 / Veo" }),
+                cameraMotion: Schema.string({ description: "One of: zoom-in, pan-right, zoom-out, pan-left" })
+              }
+            }),
+            description: "Exactly 4 timed scenes for a 12-second 9:16 Reel"
+          })
+        }
+      });
+
       const SYSTEM_PROMPT = "You are ViralBoost AI, an expert bilingual (Hindi + Hinglish + English) short-form video strategist and social growth engineer for Indian creators on Instagram Reels, YouTube Shorts, Facebook Reels, and Telegram.";
 
       function buildAiModels(aiInstance) {
         return {
+          aiInstance,
           structuredModel: getGenerativeModel(aiInstance, {
             model: "gemini-3.8-flash",
             systemInstruction: SYSTEM_PROMPT,
@@ -5799,6 +6600,15 @@
               responseMimeType: "application/json",
               responseSchema: socialContentSchema,
               temperature: 0.8
+            }
+          }),
+          studioScenesModel: getGenerativeModel(aiInstance, {
+            model: "gemini-3.8-flash",
+            systemInstruction: SYSTEM_PROMPT,
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: studioScenesSchema,
+              temperature: 0.85
             }
           }),
           chatModel: getGenerativeModel(aiInstance, {
@@ -5988,6 +6798,155 @@
         } catch (imgErr) {
           bridge.lastAiError = String(imgErr?.message || imgErr || "AI Image generation error");
           throw imgErr;
+        }
+      };
+
+      bridge.generateStudioScenes = async ({ mode = "prompt", topic = "", scriptText = "", category = {}, beatName = "", imageBase64 = "", imageMimeType = "image/jpeg" }) => {
+        bridge.lastAiError = "";
+        const catTitle = `${category.titleHindi || ""} (${category.titleEnglish || "Reel"})`.trim();
+        let instruction = "";
+        if (mode === "photo") {
+          instruction = [
+            `Analyze the attached user photo carefully and create a viral 4-scene Hindi/Hinglish Instagram Reel / YouTube Short in category "${catTitle}" synced to "${beatName}".`,
+            topic ? `Creator Mood / Direction: ${topic}` : "",
+            "Write a natural emotional/engaging voiceover matching the photo's real subjects, expression, setting, and colors. Split into exactly 4 3-second scenes (0-3s, 3-6s, 6-9s, 9-12s) with short on-screen captions, cameraMotion (zoom-in/pan-right/zoom-out/pan-left), and 10 trending #hashtags."
+          ].filter(Boolean).join("\n");
+        } else if (mode === "script") {
+          instruction = [
+            `Take this creator's custom Hindi/Hinglish script/shayari/story for category "${catTitle}" synced to "${beatName}" and split it cleanly into exactly 4 timed scenes (0-3s, 3-6s, 6-9s, 9-12s):`,
+            scriptText,
+            "Keep the user's wording/meaning intact across voiceoverText & 4 scene captions, generate detailed photorealistic 9:16 visualPrompt descriptions for each scene, cameraMotion, title, hook, CTA, and 10 trending #hashtags."
+          ].join("\n\n");
+        } else {
+          instruction = [
+            `Write a viral 4-scene Hindi/Hinglish short video package for category "${catTitle}" synced to "${beatName}" on topic: "${topic}".`,
+            "Return clickable title, opening hook, full script, smooth Hindi/Hinglish voiceoverText (no stage bracket tags), CTA, 10 trending #hashtags, and exactly 4 timed scenes (0-3s, 3-6s, 6-9s, 9-12s) with punchy short captions, cameraMotion (zoom-in, pan-right, zoom-out, pan-left), and photorealistic 9:16 visualPrompt descriptions."
+          ].join("\n");
+        }
+
+        const buildParts = (extraSuffix = "") => {
+          const parts = [];
+          if (mode === "photo" && imageBase64) {
+            parts.push({ inlineData: { mimeType: imageMimeType || "image/jpeg", data: imageBase64 } });
+          }
+          parts.push({ text: extraSuffix ? `${instruction}\n\n${extraSuffix}` : instruction });
+          return [{ role: "user", parts }];
+        };
+
+        const normalizeParsed = (parsed, rawFallback = "") => {
+          const motions = ["zoom-in", "pan-right", "zoom-out", "pan-left"];
+          const rawScenes = Array.isArray(parsed?.scenes) ? parsed.scenes.slice(0, 4) : [];
+          const defaultLines = String(parsed?.script || parsed?.voiceoverText || scriptText || topic)
+            .split("\n")
+            .map(l => l.trim())
+            .filter(Boolean);
+          const scenes = [0, 1, 2, 3].map((i) => {
+            const sc = rawScenes[i] || {};
+            return {
+              timeRange: String(sc.timeRange || `${i * 3}-${(i + 1) * 3}s`),
+              caption: String(sc.caption || defaultLines[i] || parsed?.hook || topic).slice(0, 110),
+              visualPrompt: String(sc.visualPrompt || `Photorealistic 9:16 cinematic scene ${i + 1} for ${category.titleEnglish || "Reel"}: ${topic}`),
+              cameraMotion: motions.includes(sc.cameraMotion) ? sc.cameraMotion : motions[i]
+            };
+          });
+          const tagsArr = Array.isArray(parsed?.hashtags)
+            ? parsed.hashtags
+            : String(parsed?.hashtags || "").split(/\s+/);
+          const hashtags = tagsArr
+            .map(t => String(t || "").trim())
+            .filter(Boolean)
+            .map(t => (t.startsWith("#") ? t : `#${t}`))
+            .join(" ") || "#ViralReels #TrendingShorts #ViralBoostAI #HindiReels";
+          const scriptOut = String(parsed?.script || scenes.map(sc => `[${sc.timeRange}] ${sc.caption}`).join("\n"));
+          return {
+            ok: true,
+            source: "LIVE_GEMINI",
+            data: {
+              title: String(parsed?.title || topic || `${category.titleHindi || "Viral"} Reel`),
+              hook: String(parsed?.hook || scenes[0]?.caption || ""),
+              script: scriptOut,
+              voiceoverText: String(parsed?.voiceoverText || scenes.map(sc => sc.caption).join(". ") || scriptOut),
+              cta: String(parsed?.cta || "Save & Share 🔥"),
+              hashtags,
+              scenes,
+              rawText: rawFallback
+            }
+          };
+        };
+
+        try {
+          return await runWithAiFallback(async ({ studioScenesModel, chatModel }) => {
+            try {
+              const res = await studioScenesModel.generateContent({ contents: buildParts() });
+              const jsonText = res.response.text();
+              const parsed = JSON.parse(jsonText);
+              return normalizeParsed(parsed, jsonText);
+            } catch (structErr) {
+              if (isAppCheckFailure(structErr)) throw structErr;
+              const jsonHint = 'Respond ONLY with valid JSON: {"title":"...","hook":"...","script":"...","voiceoverText":"...","cta":"...","hashtags":["#..."],"scenes":[{"timeRange":"0-3s","caption":"...","visualPrompt":"...","cameraMotion":"zoom-in"}]}';
+              const fbRes = await chatModel.generateContent({ contents: buildParts(jsonHint) });
+              const rawText = fbRes.response.text();
+              let parsed = null;
+              try {
+                const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+                parsed = JSON.parse(cleaned);
+              } catch (_) {}
+              return normalizeParsed(parsed || { script: rawText }, rawText);
+            }
+          });
+        } catch (err) {
+          bridge.lastAiError = String(err?.message || err || "Studio scene generation error");
+          throw err;
+        }
+      };
+
+      bridge.generateVeoVideo = async ({ prompt = "", imageBase64 = "", imageMimeType = "image/jpeg", aspectRatio = "9:16" }) => {
+        try {
+          return await runWithAiFallback(async ({ aiInstance }) => {
+            const veoModels = ["veo-3.0-generate-preview", "veo-2.0-generate-001"];
+            for (const modelName of veoModels) {
+              try {
+                // Attempt Veo if supported by loaded Firebase AI Web SDK build
+                const modelFactory = typeof FirebaseAI.getVeoModel === "function"
+                  ? FirebaseAI.getVeoModel
+                  : typeof FirebaseAI.getVideoGenerationModel === "function"
+                    ? FirebaseAI.getVideoGenerationModel
+                    : null;
+                if (!modelFactory) continue;
+
+                const veoModel = modelFactory(aiInstance, {
+                  model: modelName,
+                  generationConfig: { aspectRatio }
+                });
+                const req = imageBase64
+                  ? { prompt, image: { imageBytes: imageBase64, mimeType: imageMimeType } }
+                  : prompt;
+                const vRes = typeof veoModel.generateVideos === "function"
+                  ? await veoModel.generateVideos(req)
+                  : typeof veoModel.generateVideo === "function"
+                    ? await veoModel.generateVideo(req)
+                    : null;
+
+                const vid = vRes?.videos?.[0] || vRes?.generatedVideos?.[0]?.video || null;
+                if (vid?.bytesBase64Encoded) {
+                  const bin = atob(vid.bytesBase64Encoded);
+                  const bytes = new Uint8Array(bin.length);
+                  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                  const mime = vid.mimeType || "video/mp4";
+                  const blob = new Blob([bytes], { type: mime });
+                  return { ok: true, model: modelName, mimeType: mime, videoUrl: URL.createObjectURL(blob) };
+                }
+                if (vid?.uri) {
+                  return { ok: true, model: modelName, mimeType: vid.mimeType || "video/mp4", videoUrl: vid.uri };
+                }
+              } catch (innerErr) {
+                if (isAppCheckFailure(innerErr)) throw innerErr;
+              }
+            }
+            return { ok: false, reason: "Veo video tier unavailable; using 4-Scene Imagen 3 + Motion Compositor" };
+          });
+        } catch (err) {
+          return { ok: false, reason: String(err?.message || err || "") };
         }
       };
 
