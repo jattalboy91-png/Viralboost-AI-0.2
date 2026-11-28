@@ -511,20 +511,27 @@ fun OneClickAiVideoHashtagFullScreen(
                         photoBitmap = if (studioMode == "photo") uploadedPhotoBitmap else null
                     )
 
-                    generationProgress = 0.68f
-                    generationStageText = "🎞️ 4-Scene 9:16 Cinema स्टिल्स और हैशटैग्स तैयार हो रहे हैं..."
+                    generationProgress = 0.58f
+                    generationStageText = if (studioMode == "photo") {
+                        "🎨 Nano Banana AI आपकी फोटो को 4 नए सिनेमैटिक सीन में बदल रहा है..."
+                    } else {
+                        "🎞️ 4-Scene 9:16 Cinema स्टिल्स और हैशटैग्स तैयार हो रहे हैं..."
+                    }
 
-                    var imageNote: String? = null
-                    val nextBitmaps = if (studioMode == "photo" && uploadedPhotoBitmap != null) {
+                    val (genBmps, err) = geminiService.tryGenerateSceneImages(
+                        scenes = pkg.scenes,
+                        categoryTitle = selectedCategory.titleEnglish,
+                        photoBitmap = if (studioMode == "photo") uploadedPhotoBitmap else null,
+                        userCommand = customTopicInput.trim()
+                    )
+                    val imageNote: String? = err
+                    val nextBitmaps = if (genBmps.isNotEmpty()) {
+                        (0 until 4).map { idx ->
+                            genBmps.getOrNull(idx) ?: genBmps[idx % genBmps.size]
+                        }
+                    } else if (studioMode == "photo" && uploadedPhotoBitmap != null) {
                         val photo = uploadedPhotoBitmap!!
                         listOf(photo, photo, photo, photo)
-                    } else if (pkg.isRealApiCall) {
-                        val (genBmps, err) = geminiService.tryGenerateSceneImages(
-                            scenes = pkg.scenes,
-                            categoryTitle = selectedCategory.titleEnglish
-                        )
-                        imageNote = err
-                        genBmps
                     } else {
                         emptyList()
                     }
@@ -537,7 +544,7 @@ fun OneClickAiVideoHashtagFullScreen(
                         bodyCaption = pkg.script,
                         callToAction = pkg.callToAction,
                         hashtags = pkg.hashtags,
-                        platformTips = imageNote ?: "4-Scene 9:16 Cinema Engine (${pkg.modelUsed})",
+                        platformTips = imageNote ?: "4-Scene 9:16 AI Cinema Engine (${pkg.modelUsed})",
                         isRealApiCall = pkg.isRealApiCall,
                         errorMessage = pkg.errorMessage
                     )
@@ -546,10 +553,15 @@ fun OneClickAiVideoHashtagFullScreen(
                     isVideoPlaying = true
                     previewElapsedSec = 0f
 
-                    statusBannerMessage = if (pkg.isRealApiCall) {
-                        "🎬 ${pkg.modelUsed} ने 4-Scene AI वीडियो & वायरल हैशटैग्स तैयार कर दिए! नीचे 'गैलरी में सेव करें' पर .MP4 डाउनलोड करें।"
-                    } else {
-                        "🎞️ Smart Studio 4-Scene AI वीडियो तैयार! (Live AI busy — फिर भी पूरा वीडियो और हैशटैग्स रेडी हैं)"
+                    statusBannerMessage = when {
+                        genBmps.isNotEmpty() && studioMode == "photo" ->
+                            "✨ AI ने आपकी फोटो से 4 बिल्कुल नए सिनेमैटिक सीन बना दिए! नीचे .MP4 डाउनलोड करें।"
+                        genBmps.isNotEmpty() ->
+                            "🎬 ${pkg.modelUsed} + Nano Banana AI ने 4-Scene वीडियो तैयार कर दिया! नीचे .MP4 डाउनलोड करें।"
+                        imageNote != null ->
+                            "⚠️ AI Image note: $imageNote — 30FPS 3D Motion वीडियो तैयार है, नीचे से .MP4 सेव करें।"
+                        else ->
+                            "🎞️ 4-Scene 30FPS AI वीडियो तैयार! नीचे 'गैलरी में सेव करें' पर .MP4 डाउनलोड करें।"
                     }
                     if (voiceEnabled) {
                         speakHindiVoiceover(pkg.voiceoverText)
@@ -1371,14 +1383,19 @@ fun OneClickAiVideoHashtagFullScreen(
                             val activeScene = previewScenes.getOrNull(activeSceneIdx)
                             val activeBitmap = sceneBitmaps.getOrNull(activeSceneIdx) ?: sceneBitmaps.firstOrNull() ?: uploadedPhotoBitmap
                             val motionScale = when (activeScene?.cameraMotion) {
-                                "zoom-out" -> 1.18f - 0.12f * sceneProgress
-                                "zoom-in" -> 1.04f + 0.14f * sceneProgress
-                                else -> 1.10f + 0.04f * sceneProgress
+                                "zoom-out" -> 1.34f - 0.28f * sceneProgress
+                                "zoom-in" -> 1.04f + 0.30f * sceneProgress
+                                else -> 1.16f + 0.12f * sceneProgress
                             }
                             val motionTx = when (activeScene?.cameraMotion) {
-                                "pan-right" -> (sceneProgress - 0.5f) * -28f
-                                "pan-left" -> (sceneProgress - 0.5f) * 28f
+                                "pan-right" -> (sceneProgress - 0.5f) * -58f
+                                "pan-left" -> (sceneProgress - 0.5f) * 58f
                                 else -> 0f
+                            }
+                            val motionRot = when (activeScene?.cameraMotion) {
+                                "pan-right" -> (sceneProgress - 0.5f) * 2.2f
+                                "pan-left" -> (0.5f - sceneProgress) * 2.2f
+                                else -> kotlin.math.sin(sceneProgress * Math.PI).toFloat() * 1.1f
                             }
 
                             Box(
@@ -1422,13 +1439,14 @@ fun OneClickAiVideoHashtagFullScreen(
                                             .graphicsLayer(
                                                 scaleX = motionScale,
                                                 scaleY = motionScale,
-                                                translationX = motionTx
+                                                translationX = motionTx,
+                                                rotationZ = motionRot
                                             )
                                     )
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .background(Color.Black.copy(alpha = 0.28f))
+                                            .background(Color.Black.copy(alpha = 0.22f))
                                     )
                                 } else if (selectedImageUri != null) {
                                     AsyncImage(

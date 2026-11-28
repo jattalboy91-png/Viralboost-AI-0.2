@@ -383,20 +383,27 @@ object AndroidReelVideoRenderer {
         val bw = bmp.width.toFloat().coerceAtLeast(1f)
         val bh = bmp.height.toFloat().coerceAtLeast(1f)
         val baseScale = maxOf(w / bw, h / bh)
+        val p = progress.coerceIn(0f, 1f)
+        val eased = if (p < 0.5f) 2f * p * p else 1f - (-2f * p + 2f) * (-2f * p + 2f) / 2f
         val zoom = when (motion) {
-            "zoom-out" -> 1.18f - 0.12f * progress
-            "zoom-in" -> 1.04f + 0.14f * progress
-            else -> 1.12f + 0.04f * progress
+            "zoom-out" -> 1.36f - 0.28f * eased
+            "zoom-in" -> 1.04f + 0.32f * eased
+            else -> 1.22f + 0.10f * eased
         }
         val shiftX = when (motion) {
-            "pan-right" -> (progress - 0.5f) * -52f
-            "pan-left" -> (progress - 0.5f) * 52f
+            "pan-right" -> (eased - 0.5f) * -96f
+            "pan-left" -> (eased - 0.5f) * 96f
             else -> 0f
         }
         val shiftY = when (motion) {
-            "zoom-in" -> -progress * 16f
-            "zoom-out" -> progress * 16f
-            else -> 0f
+            "zoom-in" -> (0.5f - eased) * 44f
+            "zoom-out" -> (eased - 0.5f) * 44f
+            else -> sin(p * Math.PI).toFloat() * -18f
+        }
+        val angleDeg = when (motion) {
+            "pan-right" -> (eased - 0.5f) * 2.4f
+            "pan-left" -> (0.5f - eased) * 2.4f
+            else -> sin(p * Math.PI).toFloat() * 1.2f
         }
         val dw = bw * baseScale * zoom
         val dh = bh * baseScale * zoom
@@ -405,7 +412,10 @@ object AndroidReelVideoRenderer {
         val paint = Paint(Paint.FILTER_BITMAP_FLAG).apply {
             this.alpha = alpha
         }
+        canvas.save()
+        canvas.rotate(angleDeg, w / 2f, h / 2f)
         canvas.drawBitmap(bmp, null, RectF(left, top, left + dw, top + dh), paint)
+        canvas.restore()
     }
 
     private fun drawProceduralCinemaBackground(

@@ -780,7 +780,8 @@
       sceneDataUrls: [],
       loadedSceneImgs: [],
       veoVideoUrl: '',
-      veoMimeType: ''
+      veoMimeType: '',
+      showRenderedInTopPlayer: false
     };
 
     function updateTrialAndVipLifecycle() {
@@ -2731,11 +2732,13 @@
 
       const engineBadge = s.engineUsed === 'VEO_VIDEO'
         ? '🎬 Google Veo AI Video'
-        : s.engineUsed === 'IMAGEN_MULTI_SCENE'
-          ? '🎞️ 4-Scene Cinema Engine'
-          : s.engineUsed === 'PHOTO_3D_MOTION'
-            ? '📸 3D Photo Motion Engine'
-            : '🟢 Gemini 3.8 + 3.5 Lite + Veo';
+        : s.engineUsed === 'AI_PHOTO_TO_VIDEO'
+          ? '✨ Nano Banana AI Photo-to-Video'
+          : s.engineUsed === 'IMAGEN_MULTI_SCENE'
+            ? '🎞️ 4-Scene AI Cinema Engine'
+            : s.engineUsed === 'PHOTO_3D_MOTION'
+              ? '📸 3D Photo Motion Engine'
+              : '🟢 Gemini 3.8 + Nano Banana + Veo';
 
       return `
         ${overlayHeader('1-Click AI Video & Viral Hashtags', 'Flow / Veo AI Studio • Prompt, Photo & Script • 1080×1920 @ 30FPS', `<span class="px-2 py-1 rounded-lg bg-gradient-to-r from-amber-400/20 to-cyan-400/20 border border-amber-400/60 text-amber-300 text-[9.5px] font-extrabold whitespace-nowrap">${state.profile.isVip ? '👑 VIP HD' : '⚡ VEO PRO'}</span>`)}
@@ -2906,17 +2909,24 @@
               <div class="rounded-[28px] overflow-hidden border-2 border-cyan-400/60 bg-black relative w-full max-w-[270px] sm:max-w-[290px] aspect-[9/16] shadow-[0_0_40px_rgba(0,229,255,0.18)]">
                 ${studioMediaCache.veoVideoUrl ? `
                   <video id="veo-native-player" src="${studioMediaCache.veoVideoUrl}" autoplay loop playsinline controls class="w-full h-full object-cover"></video>
+                ` : (exportedReelUrl && studioMediaCache.showRenderedInTopPlayer) ? `
+                  <video id="rendered-top-player" src="${exportedReelUrl}" autoplay loop playsinline controls class="w-full h-full object-cover"></video>
                 ` : `
                   <canvas id="reel-studio-canvas" width="360" height="640" class="w-full h-full block"></canvas>
                 `}
 
                 <!-- Top Floating Live Stage Pill -->
                 <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-1 pointer-events-none">
-                  <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[9.5px] font-extrabold text-cyan-300">${studioMediaCache.veoVideoUrl ? '● VEO 9:16 MP4' : '● 9:16 HD • 30FPS'}</span>
+                  <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[9.5px] font-extrabold text-cyan-300">${studioMediaCache.veoVideoUrl ? '● VEO 9:16 MP4' : (exportedReelUrl && studioMediaCache.showRenderedInTopPlayer) ? `● AI VIDEO .${escapeHtml(exportedReelExt.toUpperCase())}` : '● 9:16 HD • 30FPS'}</span>
                   <span class="px-2 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 text-[9.5px] font-bold text-amber-300">${activeBeat.bpm} BPM</span>
                 </div>
 
-                ${!studioMediaCache.veoVideoUrl ? `
+                ${isExportingVideo ? `
+                  <div id="top-player-export-badge" class="absolute top-11 left-3 right-3 px-2.5 py-1 rounded-full bg-cyan-950/90 border border-cyan-400/60 text-[10px] font-extrabold text-cyan-200 text-center pointer-events-none">
+                    ${escapeHtml(exportStatusText || `🎬 Rendering AI Video (${exportProgressPct}%)...`)}
+                  </div>` : ''}
+
+                ${!studioMediaCache.veoVideoUrl && !(exportedReelUrl && studioMediaCache.showRenderedInTopPlayer) ? `
                   <!-- Bottom Frosted Visualizer & Playback Controls -->
                   <div class="absolute bottom-3 left-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-2 rounded-2xl border border-white/15">
                     <div class="flex items-center justify-between gap-1.5">
@@ -2926,6 +2936,11 @@
                     </div>
                   </div>` : ''}
               </div>
+
+              ${(exportedReelUrl && !studioMediaCache.veoVideoUrl) ? `
+                <button type="button" onclick="toggleTopRenderedVideoPlayer()" class="w-full max-w-[270px] sm:max-w-[290px] py-2 px-3 rounded-xl bg-slate-900 border border-cyan-400/50 text-cyan-300 font-extrabold text-[11px]">
+                  ${studioMediaCache.showRenderedInTopPlayer ? '✨ Switch to Live 30FPS Canvas' : `🎥 Play Rendered .${escapeHtml(exportedReelExt.toUpperCase())} Video Here`}
+                </button>` : ''}
 
               ${studioMediaCache.veoVideoUrl ? `
                 <a href="${studioMediaCache.veoVideoUrl}" download="viralboost-veo-reel-${Date.now()}.mp4" class="w-full max-w-[270px] sm:max-w-[290px] py-2.5 px-3 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-extrabold text-xs text-center shadow-lg">
@@ -3702,29 +3717,38 @@
       const baseScale = Math.max(w / iw, h / ih);
       const p = easeInOutQuad(Math.min(1, Math.max(0, progress)));
 
-      let zoom = 1.08;
+      let zoom = 1.24;
       let shiftX = 0;
       let shiftY = 0;
+      let rotRad = 0;
       const motion = String(motionType || '').toLowerCase();
       if (motion.includes('out')) {
-        zoom = 1.16 - 0.11 * p;
-        shiftY = (0.5 - p) * 14;
+        zoom = 1.38 - 0.30 * p;
+        shiftY = (0.5 - p) * 28;
+        rotRad = Math.sin(p * Math.PI) * 0.018;
       } else if (motion.includes('right')) {
-        zoom = 1.13;
-        shiftX = (p - 0.5) * 28;
+        zoom = 1.26 + 0.06 * Math.sin(p * Math.PI);
+        shiftX = (p - 0.5) * -58;
+        shiftY = Math.sin(p * Math.PI) * -14;
+        rotRad = (p - 0.5) * 0.032;
       } else if (motion.includes('left')) {
-        zoom = 1.13;
-        shiftX = (0.5 - p) * 28;
+        zoom = 1.26 + 0.06 * Math.sin(p * Math.PI);
+        shiftX = (p - 0.5) * 58;
+        shiftY = Math.sin(p * Math.PI) * 14;
+        rotRad = (0.5 - p) * 0.032;
       } else {
-        zoom = 1.03 + 0.12 * p;
-        shiftY = (p - 0.5) * -10;
+        zoom = 1.04 + 0.32 * p;
+        shiftY = (0.5 - p) * -26;
+        rotRad = Math.sin(p * Math.PI) * -0.016;
       }
 
       const dw = iw * baseScale * zoom;
       const dh = ih * baseScale * zoom;
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.drawImage(img, (w - dw) / 2 + shiftX, (h - dh) / 2 + shiftY, dw, dh);
+      ctx.translate(w / 2 + shiftX, h / 2 + shiftY);
+      ctx.rotate(rotRad);
+      ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
       ctx.restore();
     }
 
@@ -3832,14 +3856,31 @@
         drawProceduralCinemaScene(ctx, w, h, elapsedSec, cat, sceneIdx, fadeAlpha);
       }
 
+      // Dynamic animated light sweep & energy flash across scene cuts
+      if (localSec < 0.35 && totalScenes > 1) {
+        const flashA = (1 - localSec / 0.35) * 0.28;
+        const flashGrad = ctx.createRadialGradient(w / 2, h * 0.42, 10, w / 2, h * 0.42, w * 0.85);
+        flashGrad.addColorStop(0, `rgba(255,255,255,${flashA.toFixed(3)})`);
+        flashGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = flashGrad;
+        ctx.fillRect(0, 0, w, h);
+      }
+      const sweepX = ((elapsedSec * 95) % (w + 180)) - 90;
+      const sweepGrad = ctx.createLinearGradient(sweepX - 70, 0, sweepX + 70, h);
+      sweepGrad.addColorStop(0, 'rgba(255,255,255,0)');
+      sweepGrad.addColorStop(0.5, (cat.accent || '#00E5FF') + '1F');
+      sweepGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = sweepGrad;
+      ctx.fillRect(0, 0, w, h);
+
       // Floating warm/cool ambient dust particles for cinema depth
-      for (let p = 0; p < 14; p++) {
-        const px = ((p * 57 + elapsedSec * (10 + (p % 4) * 4)) % (w + 20)) - 10;
-        const py = ((p * 91 - elapsedSec * (8 + (p % 3) * 3)) % h + h) % h;
-        const pr = 1.1 + (p % 3) * 0.7;
+      for (let p = 0; p < 18; p++) {
+        const px = ((p * 57 + elapsedSec * (16 + (p % 4) * 7)) % (w + 20)) - 10;
+        const py = ((p * 91 - elapsedSec * (14 + (p % 3) * 5)) % h + h) % h;
+        const pr = 1.2 + (p % 3) * 0.9;
         ctx.beginPath();
-        ctx.fillStyle = p % 2 === 0 ? 'rgba(255,255,255,0.22)' : (cat.accent || '#00E5FF');
-        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = p % 2 === 0 ? 'rgba(255,255,255,0.32)' : (cat.accent || '#00E5FF');
+        ctx.globalAlpha = 0.32;
         ctx.arc(px, py, pr, 0, Math.PI * 2);
         ctx.fill();
       }
@@ -4393,21 +4434,60 @@
       throw new Error(lastErrorMsg || 'Live Gemini AI service unavailable. Check internet connection & App Check.');
     }
 
-    async function callImagenBackend({ prompt, aspectRatio = '9:16' }) {
+    async function callImagenBackend({ prompt, imageBase64 = '', imageMimeType = 'image/jpeg', aspectRatio = '9:16' }) {
       if (window.ViralBoostFirebaseReady) {
-        try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3000))]); } catch (_) {}
+        try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3500))]); } catch (_) {}
       }
-      if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.generateImage !== 'function') {
-        return { ok: false };
+      if (window.ViralBoostFirebase && typeof window.ViralBoostFirebase.generateImage === 'function') {
+        try {
+          const fbRes = await Promise.race([
+            window.ViralBoostFirebase.generateImage({ prompt, imageBase64, imageMimeType, aspectRatio }),
+            new Promise(r => setTimeout(() => r({ ok: false, reason: 'timeout' }), 42000))
+          ]);
+          if (fbRes && fbRes.ok && fbRes.dataUrl) return fbRes;
+        } catch (_) {}
       }
-      try {
-        return await Promise.race([
-          window.ViralBoostFirebase.generateImage({ prompt, aspectRatio }),
-          new Promise(r => setTimeout(() => r({ ok: false }), 7500))
-        ]);
-      } catch (_) {
-        return { ok: false };
+      // Secondary HTTP proxy (/api/gemini?action=image) if available
+      const proxyEndpoint = resolveGeminiProxyEndpoint();
+      if (proxyEndpoint) {
+        try {
+          const resp = await fetch(proxyEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'image', prompt, imageBase64, imageMimeType, aspectRatio })
+          });
+          if (resp.ok) {
+            const j = await resp.json();
+            if (j && j.ok && j.dataUrl) return j;
+          }
+        } catch (_) {}
       }
+      // Optional local key fallback for Nano Banana image generation / photo editing
+      const userKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+      if (userKey) {
+        const parts = [];
+        if (imageBase64) parts.push({ inlineData: { mimeType: imageMimeType || 'image/jpeg', data: imageBase64 } });
+        parts.push({ text: prompt });
+        for (const mName of ['gemini-nano-banana-2.1', 'gemini-3.1-flash-lite-image', 'gemini-3-pro-image']) {
+          try {
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(userKey)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts }],
+                generationConfig: { responseModalities: ['IMAGE', 'TEXT'] }
+              })
+            });
+            const d = await r.json();
+            const inline = (d?.candidates?.[0]?.content?.parts || []).find(p => p?.inlineData?.data);
+            if (r.ok && inline?.inlineData?.data) {
+              const mime = inline.inlineData.mimeType || 'image/png';
+              return { ok: true, model: mName, mimeType: mime, dataUrl: `data:${mime};base64,${inline.inlineData.data}` };
+            }
+          } catch (_) {}
+        }
+      }
+      return { ok: false };
     }
 
     function buildResilientStudioScenesFallback({ mode = 'prompt', topic = '', scriptText = '', category = {}, beatName = '' }) {
@@ -4472,10 +4552,17 @@
         }
       }
 
+      const sceneArcs = [
+        `Scene 1/4 opening reveal: ${cleanTopic}, dramatic glowing aura awakening, cinematic close-up, volumetric lighting`,
+        `Scene 2/4 dynamic action transformation: ${cleanTopic}, high-energy superhero/cinema motion blur, neon rim light`,
+        `Scene 3/4 peak power climax: ${cleanTopic}, glowing energy trails & dramatic wide-angle sky backdrop`,
+        `Scene 4/4 iconic hero victory finale: ${cleanTopic}, triumphant cinematic portrait, golden hour lens flare`
+      ];
+
       const scenes = [0, 1, 2, 3].map(i => ({
         timeRange: `${i * 3}-${(i + 1) * 3}s`,
         caption: captions[i],
-        visualPrompt: `Photorealistic 9:16 vertical film still scene ${i + 1}, ${catEn}, ${cleanTopic}, dramatic golden/cyan lighting, 35mm depth of field`,
+        visualPrompt: `${sceneArcs[i]}, ${catEn}, photorealistic 9:16 vertical film still, 35mm depth of field`,
         cameraMotion: motions[i]
       }));
 
@@ -4550,17 +4637,39 @@
       if (window.ViralBoostFirebaseReady) {
         try { await Promise.race([window.ViralBoostFirebaseReady, new Promise(r => setTimeout(r, 3000))]); } catch (_) {}
       }
-      if (!window.ViralBoostFirebase || typeof window.ViralBoostFirebase.generateVeoVideo !== 'function') {
-        return { ok: false };
+      // 1) Try Firebase AI Video Factory if supported by loaded SDK
+      if (window.ViralBoostFirebase && typeof window.ViralBoostFirebase.generateVeoVideo === 'function') {
+        try {
+          const fbVeo = await Promise.race([
+            window.ViralBoostFirebase.generateVeoVideo({ prompt, imageBase64, imageMimeType, aspectRatio }),
+            new Promise(r => setTimeout(() => r({ ok: false, reason: 'timeout' }), 15000))
+          ]);
+          if (fbVeo && fbVeo.ok && fbVeo.videoUrl) return fbVeo;
+        } catch (_) {}
       }
-      try {
-        return await Promise.race([
-          window.ViralBoostFirebase.generateVeoVideo({ prompt, imageBase64, imageMimeType, aspectRatio }),
-          new Promise(r => setTimeout(() => r({ ok: false, reason: 'timeout' }), 6500))
-        ]);
-      } catch (e) {
-        return { ok: false, reason: String(e?.message || e || '') };
+      // 2) Try Serverless /api/gemini Veo endpoint when deployed on Node/Vercel with server key
+      const proxyEndpoint = resolveGeminiProxyEndpoint();
+      if (proxyEndpoint) {
+        try {
+          const resp = await fetch(proxyEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'veo', prompt, imageBase64, imageMimeType, aspectRatio })
+          });
+          if (resp.ok) {
+            const j = await resp.json();
+            if (j && j.ok && j.videoBase64) {
+              const bin = atob(j.videoBase64);
+              const bytes = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+              const mime = j.mimeType || 'video/mp4';
+              const blob = new Blob([bytes], { type: mime });
+              return { ok: true, model: j.model || 'veo', mimeType: mime, videoUrl: URL.createObjectURL(blob) };
+            }
+          }
+        } catch (_) {}
       }
+      return { ok: false };
     }
 
     function preloadStudioCoverForExport(srcUrl) {
@@ -4637,6 +4746,18 @@
       if (btn) {
         btn.textContent = text;
         btn.disabled = Boolean(disabled);
+      }
+      const badge = document.getElementById('top-player-export-badge');
+      if (badge) {
+        badge.textContent = text;
+      }
+    }
+
+    function toggleTopRenderedVideoPlayer() {
+      studioMediaCache.showRenderedInTopPlayer = !studioMediaCache.showRenderedInTopPlayer;
+      renderOverlay();
+      if (!studioMediaCache.showRenderedInTopPlayer) {
+        startReelCanvasLoop();
       }
     }
 
@@ -4806,6 +4927,7 @@
             try { URL.revokeObjectURL(exportedReelUrl); } catch (_) {}
           }
           exportedReelUrl = URL.createObjectURL(blob);
+          studioMediaCache.showRenderedInTopPlayer = true;
           exportedReelStats = {
             frames: renderedFrames,
             targetFps: TARGET_FPS,
@@ -5245,6 +5367,7 @@
 
       const topic = customTopic || (mode === 'script' ? customScript.split('\n')[0].slice(0, 70) : `${cat.titleHindi} (${cat.titleEnglish})`);
       stopStudioVoiceover();
+      studioMediaCache.showRenderedInTopPlayer = false;
       if (studioMediaCache.veoVideoUrl) {
         try { URL.revokeObjectURL(studioMediaCache.veoVideoUrl); } catch (_) {}
         studioMediaCache.veoVideoUrl = '';
@@ -5292,11 +5415,11 @@
         s.hashtags = res.data.hashtags || '#ViralReels #TrendingShorts #ViralBoostAI';
         s.scenes = scenes;
 
-        // STEP 2: Attempt Google Veo real AI video generation, else 4-Scene Imagen 3 / Photo 3D Motion
+        // STEP 2: Attempt Google Veo real AI video generation, else 4-Scene Nano Banana AI Image-to-Image / Text-to-Image
         s.progressStep = 2;
         s.progressStage = mode === 'photo'
-          ? '2. Animating Photo via Veo / 3D Motion Engine...'
-          : '2. Rendering 4-Scene Cinema Visuals...';
+          ? '2. Transforming Photo into 4 AI Cinema Scenes (Nano Banana / Veo)...'
+          : '2. Rendering 4-Scene AI Cinema Visuals...';
         s.progressPct = 58;
         renderOverlay();
 
@@ -5319,24 +5442,41 @@
           }
           s.coverDataUrl = studioMediaCache.sceneDataUrls[0] || '';
         } else if (mode === 'photo') {
-          // Photo-to-Video: build 4 color-graded 3D camera cuts from the user's uploaded photo
+          // Photo-to-Video: Transform uploaded photo into 4 distinct AI scenes via Nano Banana (image-to-image),
+          // falling back per-scene to dynamic 3D graded cuts only if an individual AI image call fails.
+          const imgResults = await Promise.allSettled(
+            scenes.map((sc, idx) =>
+              callImagenBackend({
+                prompt: `Transform the exact person from this uploaded photo into Scene ${idx + 1}/4 of a 9:16 vertical cinematic AI video: ${sc.visualPrompt || sc.caption || topic}. Creator command: ${topic}. Keep the person's facial identity recognizable while placing them inside this dynamic action/story environment with dramatic cinema lighting, no text or watermarks.`,
+                imageBase64: photoBase64,
+                imageMimeType: photoMime,
+                aspectRatio: '9:16'
+              }).catch(() => null)
+            )
+          );
           const photoImg = await preloadStudioCoverForExport(studioMediaCache.uploadedPhotoDataUrl || s.coverDataUrl);
-          const photoScenes = scenes.map((sc, idx) => createCinematicPhotoSceneDataUrl(photoImg, idx, cat, sc));
-          studioMediaCache.sceneDataUrls = photoScenes;
-          s.coverDataUrl = photoScenes[0] || studioMediaCache.uploadedPhotoDataUrl || s.coverDataUrl;
-          s.engineUsed = 'PHOTO_3D_MOTION';
+          let aiPhotoSceneCount = 0;
+          const finalPhotoScenes = scenes.map((sc, idx) => {
+            const r = imgResults[idx];
+            if (r && r.status === 'fulfilled' && r.value && r.value.ok && r.value.dataUrl) {
+              aiPhotoSceneCount++;
+              return r.value.dataUrl;
+            }
+            return createCinematicPhotoSceneDataUrl(photoImg, idx, cat, sc);
+          });
+          studioMediaCache.sceneDataUrls = finalPhotoScenes;
+          s.coverDataUrl = finalPhotoScenes[0] || studioMediaCache.uploadedPhotoDataUrl || s.coverDataUrl;
+          s.engineUsed = aiPhotoSceneCount > 0 ? 'AI_PHOTO_TO_VIDEO' : 'PHOTO_3D_MOTION';
         } else {
-          // Prompt / Script mode: try Gemini/Imagen for all 4 scenes when live, with photorealistic 4-scene fallback
-          const imgResults = s.aiSource === 'SMART_STUDIO'
-            ? []
-            : await Promise.allSettled(
-                scenes.map((sc) =>
-                  callImagenBackend({
-                    prompt: `Photorealistic 9:16 vertical film still, 35mm cinema lens, ${sc.visualPrompt || sc.caption || topic}, category ${cat.titleEnglish}, dramatic realistic lighting, no text overlay`,
-                    aspectRatio: '9:16'
-                  }).catch(() => null)
-                )
-              );
+          // Prompt / Script mode: generate 4 AI scene stills in parallel via Nano Banana / Imagen
+          const imgResults = await Promise.allSettled(
+            scenes.map((sc) =>
+              callImagenBackend({
+                prompt: `Photorealistic 9:16 vertical film still, 35mm cinema lens, ${sc.visualPrompt || sc.caption || topic}, category ${cat.titleEnglish}, dramatic realistic lighting, no text overlay`,
+                aspectRatio: '9:16'
+              }).catch(() => null)
+            )
+          );
           const finalSceneUrls = scenes.map((sc, idx) => {
             const r = imgResults[idx];
             if (r && r.status === 'fulfilled' && r.value && r.value.ok && r.value.dataUrl) {
@@ -5358,9 +5498,11 @@
         s.progressStep = 3;
         s.progressStage = s.engineUsed === 'VEO_VIDEO'
           ? '3. Google Veo 9:16 MP4 Stream Ready!'
-          : s.aiSource === 'SMART_STUDIO'
-            ? '3. Smart 4-Scene 1080×1920 @ 30FPS Ready!'
-            : '3. 4-Scene 1080×1920 @ 30FPS Motion Ready!';
+          : s.engineUsed === 'AI_PHOTO_TO_VIDEO'
+            ? '3. Nano Banana AI Photo-to-Video 1080×1920 @ 30FPS Ready!'
+            : s.aiSource === 'SMART_STUDIO'
+              ? '3. Smart 4-Scene 1080×1920 @ 30FPS Ready!'
+              : '3. 4-Scene 1080×1920 @ 30FPS Motion Ready!';
         s.progressPct = 100;
         state.aiHistory.unshift({
           id: 'ai_' + Date.now(),
@@ -5383,9 +5525,11 @@
 
         const readyLabel = s.engineUsed === 'VEO_VIDEO'
           ? '🎬 Google Veo Native 9:16 Video Ready!'
-          : s.engineUsed === 'PHOTO_3D_MOTION'
-            ? '📸 3D Photo Motion Reel Ready!'
-            : '🎞️ 4-Scene Photorealistic AI Reel Ready!';
+          : s.engineUsed === 'AI_PHOTO_TO_VIDEO'
+            ? '✨ Nano Banana AI Transformed Video Ready!'
+            : s.engineUsed === 'PHOTO_3D_MOTION'
+              ? '📸 3D Photo Motion Reel Ready!'
+              : '🎞️ 4-Scene Photorealistic AI Reel Ready!';
         showToast(readyLabel, 'success');
 
         if (s.engineUsed !== 'VEO_VIDEO') {
@@ -7012,46 +7156,103 @@
         }
       };
 
-      bridge.generateImage = async ({ prompt, aspectRatio = "9:16" }) => {
+      bridge.generateImage = async ({ prompt, imageBase64 = "", imageMimeType = "image/jpeg", aspectRatio = "9:16" }) => {
         bridge.lastAiError = "";
         const imgPrompt = String(prompt || "Vibrant creator studio artwork");
+        const aiClient = appCheckTokenOk ? primaryAi : directAi;
+
+        const buildImgContents = () => {
+          if (imageBase64) {
+            return [{
+              role: "user",
+              parts: [
+                { inlineData: { mimeType: imageMimeType || "image/jpeg", data: imageBase64 } },
+                { text: imgPrompt }
+              ]
+            }];
+          }
+          return imgPrompt;
+        };
+
         try {
-          return await runWithAiFallback(async ({ getImagen, getGeminiImage }) => {
-            if (typeof getImagen === "function") {
+          // When transforming a user-uploaded photo (imageBase64 present), call Nano Banana image-to-image models directly
+          if (!imageBase64) {
+            const modelsObj = buildAiModels(aiClient, "gemini-3.8-flash");
+            if (typeof modelsObj.getImagen === "function") {
               try {
-                const res = await getImagen(aspectRatio).generateImages(imgPrompt);
+                const res = await withModelTimeout(
+                  modelsObj.getImagen(aspectRatio).generateImages(imgPrompt),
+                  35000,
+                  "imagen-3.0-generate-002"
+                );
                 if (res?.images?.length > 0 && res.images[0]?.bytesBase64Encoded) {
                   const img = res.images[0];
                   const mime = img.mimeType || "image/png";
-                  return {
-                    ok: true,
-                    mimeType: mime,
-                    dataUrl: `data:${mime};base64,${img.bytesBase64Encoded}`
-                  };
+                  return { ok: true, mimeType: mime, dataUrl: `data:${mime};base64,${img.bytesBase64Encoded}` };
                 }
               } catch (imErr) {
-                if (isAppCheckFailure(imErr)) throw imErr;
-              }
-            }
-            for (const imgModel of IMAGE_MODEL_CASCADE) {
-              try {
-                const gRes = await getGeminiImage(imgModel).generateContent(imgPrompt);
-                const parts = gRes?.response?.candidates?.[0]?.content?.parts || [];
-                const inline = parts.find(p => p?.inlineData?.data);
-                if (inline?.inlineData?.data) {
-                  const mime = inline.inlineData.mimeType || "image/png";
-                  return {
-                    ok: true,
-                    mimeType: mime,
-                    dataUrl: `data:${mime};base64,${inline.inlineData.data}`
-                  };
+                if (isAppCheckFailure(imErr)) {
+                  appCheckTokenOk = false;
+                  bridge.appCheckReady = false;
                 }
-              } catch (mErr) {
-                if (isAppCheckFailure(mErr)) throw mErr;
               }
             }
-            throw new Error("Live AI returned no image output.");
-          }, ["gemini-3.8-flash"]);
+          }
+
+          const activeAi = appCheckTokenOk ? primaryAi : directAi;
+          for (const imgModel of IMAGE_MODEL_CASCADE) {
+            try {
+              const gModel = getGenerativeModel(activeAi, {
+                model: imgModel,
+                generationConfig: { responseModalities: ["IMAGE", "TEXT"] }
+              });
+              const gRes = await withModelTimeout(
+                gModel.generateContent(buildImgContents()),
+                38000,
+                imgModel
+              );
+              const parts = gRes?.response?.candidates?.[0]?.content?.parts || [];
+              const inline = parts.find(p => p?.inlineData?.data);
+              if (inline?.inlineData?.data) {
+                const mime = inline.inlineData.mimeType || "image/png";
+                return {
+                  ok: true,
+                  model: imgModel,
+                  mimeType: mime,
+                  dataUrl: `data:${mime};base64,${inline.inlineData.data}`
+                };
+              }
+            } catch (mErr) {
+              if (isAppCheckFailure(mErr)) {
+                appCheckTokenOk = false;
+                bridge.appCheckReady = false;
+                try {
+                  const directModel = getGenerativeModel(directAi, {
+                    model: imgModel,
+                    generationConfig: { responseModalities: ["IMAGE", "TEXT"] }
+                  });
+                  const dRes = await withModelTimeout(
+                    directModel.generateContent(buildImgContents()),
+                    38000,
+                    imgModel
+                  );
+                  const dParts = dRes?.response?.candidates?.[0]?.content?.parts || [];
+                  const dInline = dParts.find(p => p?.inlineData?.data);
+                  if (dInline?.inlineData?.data) {
+                    const mime = dInline.inlineData.mimeType || "image/png";
+                    return {
+                      ok: true,
+                      model: imgModel,
+                      mimeType: mime,
+                      dataUrl: `data:${mime};base64,${dInline.inlineData.data}`
+                    };
+                  }
+                } catch (_) {}
+              }
+              bridge.lastAiError = String(mErr?.message || mErr || "");
+            }
+          }
+          throw new Error(bridge.lastAiError || "Live AI returned no image output.");
         } catch (imgErr) {
           bridge.lastAiError = String(imgErr?.message || imgErr || "AI Image generation error");
           throw imgErr;
@@ -7064,9 +7265,9 @@
         let instruction = "";
         if (mode === "photo") {
           instruction = [
-            `Analyze the attached user photo carefully and create a viral 4-scene Hindi/Hinglish Instagram Reel / YouTube Short in category "${catTitle}" synced to "${beatName}".`,
-            topic ? `Creator Mood / Direction: ${topic}` : "",
-            "Write a natural emotional/engaging voiceover matching the photo's real subjects, expression, setting, and colors. Split into exactly 4 3-second scenes (0-3s, 3-6s, 6-9s, 9-12s) with short on-screen captions, cameraMotion (zoom-in/pan-right/zoom-out/pan-left), and 10 trending #hashtags."
+            `Analyze the attached user photo carefully and direct a viral 4-scene AI transformation 9:16 Reel in category "${catTitle}" synced to "${beatName}".`,
+            topic ? `Creator Command / Concept: ${topic}` : "",
+            "Write a natural emotional/engaging Hindi/Hinglish voiceover matching the creator's command and photo subject. Split into exactly 4 3-second scenes (0-3s, 3-6s, 6-9s, 9-12s), each with a distinct detailed visualPrompt instructing an image-editing AI how to transform the person in the photo into a dynamic new action/superhero/cinematic frame (e.g. glowing awakening, flying/action scene, climax energy, heroic victory pose), cameraMotion (zoom-in/pan-right/zoom-out/pan-left), and 10 trending #hashtags."
           ].filter(Boolean).join("\n");
         } else if (mode === "script") {
           instruction = [
@@ -7158,50 +7359,52 @@
       };
 
       bridge.generateVeoVideo = async ({ prompt = "", imageBase64 = "", imageMimeType = "image/jpeg", aspectRatio = "9:16" }) => {
+        const modelFactory = typeof FirebaseAI.getVeoModel === "function"
+          ? FirebaseAI.getVeoModel
+          : typeof FirebaseAI.getVideoGenerationModel === "function"
+            ? FirebaseAI.getVideoGenerationModel
+            : null;
+        if (!modelFactory) {
+          return { ok: false, reason: "Using 4-Scene Nano Banana AI + 30FPS Motion Compositor" };
+        }
         try {
-          return await runWithAiFallback(async ({ aiInstance }) => {
-            const veoModels = ["veo-3.0-generate-preview", "veo-2.0-generate-001"];
-            for (const modelName of veoModels) {
-              try {
-                // Attempt Veo if supported by loaded Firebase AI Web SDK build
-                const modelFactory = typeof FirebaseAI.getVeoModel === "function"
-                  ? FirebaseAI.getVeoModel
-                  : typeof FirebaseAI.getVideoGenerationModel === "function"
-                    ? FirebaseAI.getVideoGenerationModel
-                    : null;
-                if (!modelFactory) continue;
+          const activeAi = appCheckTokenOk ? primaryAi : directAi;
+          const veoModels = ["veo-3.0-generate-preview", "veo-2.0-generate-001"];
+          for (const modelName of veoModels) {
+            try {
+              const veoModel = modelFactory(activeAi, {
+                model: modelName,
+                generationConfig: { aspectRatio }
+              });
+              const req = imageBase64
+                ? { prompt, image: { imageBytes: imageBase64, mimeType: imageMimeType } }
+                : prompt;
+              const vRes = typeof veoModel.generateVideos === "function"
+                ? await veoModel.generateVideos(req)
+                : typeof veoModel.generateVideo === "function"
+                  ? await veoModel.generateVideo(req)
+                  : null;
 
-                const veoModel = modelFactory(aiInstance, {
-                  model: modelName,
-                  generationConfig: { aspectRatio }
-                });
-                const req = imageBase64
-                  ? { prompt, image: { imageBytes: imageBase64, mimeType: imageMimeType } }
-                  : prompt;
-                const vRes = typeof veoModel.generateVideos === "function"
-                  ? await veoModel.generateVideos(req)
-                  : typeof veoModel.generateVideo === "function"
-                    ? await veoModel.generateVideo(req)
-                    : null;
-
-                const vid = vRes?.videos?.[0] || vRes?.generatedVideos?.[0]?.video || null;
-                if (vid?.bytesBase64Encoded) {
-                  const bin = atob(vid.bytesBase64Encoded);
-                  const bytes = new Uint8Array(bin.length);
-                  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-                  const mime = vid.mimeType || "video/mp4";
-                  const blob = new Blob([bytes], { type: mime });
-                  return { ok: true, model: modelName, mimeType: mime, videoUrl: URL.createObjectURL(blob) };
-                }
-                if (vid?.uri) {
-                  return { ok: true, model: modelName, mimeType: vid.mimeType || "video/mp4", videoUrl: vid.uri };
-                }
-              } catch (innerErr) {
-                if (isAppCheckFailure(innerErr)) throw innerErr;
+              const vid = vRes?.videos?.[0] || vRes?.generatedVideos?.[0]?.video || null;
+              if (vid?.bytesBase64Encoded) {
+                const bin = atob(vid.bytesBase64Encoded);
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                const mime = vid.mimeType || "video/mp4";
+                const blob = new Blob([bytes], { type: mime });
+                return { ok: true, model: modelName, mimeType: mime, videoUrl: URL.createObjectURL(blob) };
+              }
+              if (vid?.uri) {
+                return { ok: true, model: modelName, mimeType: vid.mimeType || "video/mp4", videoUrl: vid.uri };
+              }
+            } catch (innerErr) {
+              if (isAppCheckFailure(innerErr)) {
+                appCheckTokenOk = false;
+                bridge.appCheckReady = false;
               }
             }
-            return { ok: false, reason: "Veo video tier unavailable; using 4-Scene Imagen 3 + Motion Compositor" };
-          });
+          }
+          return { ok: false, reason: "Using 4-Scene Nano Banana AI + 30FPS Motion Compositor" };
         } catch (err) {
           return { ok: false, reason: String(err?.message || err || "") };
         }

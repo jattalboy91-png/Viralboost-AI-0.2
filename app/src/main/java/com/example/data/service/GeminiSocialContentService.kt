@@ -13,6 +13,9 @@ import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
@@ -69,6 +72,11 @@ class GeminiSocialContentService {
 
     companion object {
         val TEXT_MODEL_CASCADE = listOf("gemini-3.8-flash", "gemini-3.5-flash-lite")
+        val IMAGE_MODEL_CASCADE = listOf(
+            "gemini-nano-banana-2.1",
+            "gemini-3.1-flash-lite-image",
+            "gemini-3-pro-image"
+        )
     }
 
     // Structured JSON schema for social content generation
@@ -165,14 +173,18 @@ class GeminiSocialContentService {
         }
     }
 
-    private val imageModel by lazy {
-        val config = generationConfig {
-            responseModalities = listOf(ResponseModality.IMAGE)
+    private val cachedImageModels = java.util.concurrent.ConcurrentHashMap<String, GenerativeModel>()
+
+    private fun imageModelFor(modelName: String): GenerativeModel {
+        return cachedImageModels.getOrPut(modelName) {
+            val config = generationConfig {
+                responseModalities = listOf(ResponseModality.IMAGE, ResponseModality.TEXT)
+            }
+            Firebase.ai.generativeModel(
+                modelName = modelName,
+                generationConfig = config
+            )
         }
-        Firebase.ai.generativeModel(
-            modelName = "gemini-nano-banana-2.1",
-            generationConfig = config
-        )
     }
 
     private fun logError(msg: String, err: Throwable? = null) {
@@ -240,9 +252,9 @@ class GeminiSocialContentService {
         val safeTopic = topic.trim().ifBlank { "$categoryTitle Viral Reel" }
         val instruction = when (mode) {
             "photo" -> buildString {
-                appendLine("Analyze the attached photo carefully and create a viral 4-scene Hindi/Hinglish 9:16 Reel in category \"$categoryTitle\" synced to \"$beatName\".")
-                if (topic.isNotBlank()) appendLine("Creator Mood / Direction: ${topic.trim()}")
-                append("Write a natural spoken Hindi/Hinglish voiceover matching the photo's subject and mood, split into 4 timed scenes (0-3s, 3-6s, 6-9s, 9-12s), plus 10 trending #hashtags.")
+                appendLine("Analyze the attached photo carefully and direct a viral 4-scene AI transformation 9:16 Reel in category \"$categoryTitle\" synced to \"$beatName\".")
+                if (topic.isNotBlank()) appendLine("Creator Command / Concept: ${topic.trim()}")
+                append("Write a natural spoken Hindi/Hinglish voiceover matching the creator's command and photo subject, split into 4 timed scenes (0-3s, 3-6s, 6-9s, 9-12s), each with a rich visualPrompt instructing an image model how to transform the person from the photo into a dynamic action/cinematic frame (e.g. glowing transformation, flying/heroic action, climax energy, victory pose), plus 10 trending #hashtags.")
             }
             "script" -> buildString {
                 appendLine("Split this creator's custom Hindi/Hinglish script/shayari/story for category \"$categoryTitle\" synced to \"$beatName\" into 4 timed 9:16 Reel scenes:")
@@ -304,41 +316,82 @@ class GeminiSocialContentService {
     }
 
     /**
-     * Calls `gemini-nano-banana-2.1` to generate up to 4 photorealistic 9:16 scene stills.
-     * Transparently returns any billing/quota/network error message without fabricating fake AI images.
+     * Calls `gemini-nano-banana-2.1` (cascading to `gemini-3.1-flash-lite-image` and `gemini-3-pro-image`)
+     * to generate 4 AI scene stills in parallel. When [photoBitmap] is provided (Photo-to-Video mode),
+     * performs image-to-image transformation preserving the person's identity across all 4 scenes.
      */
     suspend fun tryGenerateSceneImages(
         scenes: List<StudioSceneItem>,
-        categoryTitle: String
+        categoryTitle: String,
+        photoBitmap: Bitmap? = null,
+        userCommand: String = ""
     ): Pair<List<Bitmap>, String?> = withContext(Dispatchers.IO) {
-        val bitmaps = mutableListOf<Bitmap>()
-        var errMsg: String? = null
-        for ((idx, scene) in scenes.take(4).withIndex()) {
-            try {
-                val prompt = "Vertical 9:16 cinematic film still, scene ${idx + 1}, $categoryTitle, ${scene.visualPrompt}, dramatic lighting, photorealistic, no text"
-                val response = withTimeout(10_000L) {
-                    imageModel.generateContent(prompt)
-                }
-                val bmp = response.candidates.firstOrNull()
-                    ?.content?.parts?.filterIsInstance<ImagePart>()
-                    ?.firstOrNull()?.image
-                if (bmp != null) {
-                    bitmaps.add(bmp)
-                }
-            } catch (e: CancellationException) {
-                if (e is TimeoutCancellationException) {
-                    errMsg = "Image generation timed out"
-                    break
-                } else {
-                    throw e
-                }
-            } catch (t: Throwable) {
-                errMsg = t.localizedMessage ?: "Image model unavailable"
-                logError("Nano Banana image generation skipped for scene $idx", t)
-                break
-            }
+        val scaledInput = photoBitmap?.let { bmp ->
+            val maxSide = 768
+            val scale = minOf(1f, maxSide.toFloat() / maxOf(1, bmp.width), maxSide.toFloat() / maxOf(1, bmp.height))
+            if (scale < 0.99f) {
+                Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt().coerceAtLeast(1), (bmp.height * scale).toInt().coerceAtLeast(1), true)
+            } else bmp
         }
-        bitmaps to errMsg
+
+        val targetScenes = scenes.take(4)
+        var sharedErrMsg: String? = null
+
+        val results: List<Bitmap?> = coroutineScope {
+            targetScenes.mapIndexed { idx, scene ->
+                async {
+                    val promptText = if (scaledInput != null) {
+                        buildString {
+                            append("Transform the exact person from this uploaded photo into Scene ${idx + 1}/4 of a 9:16 vertical cinematic AI video: ")
+                            append(scene.visualPrompt)
+                            if (userCommand.isNotBlank()) append(". Creator concept: $userCommand")
+                            append(". Keep the person's facial identity recognizable while placing them inside this vivid dynamic action scene ($categoryTitle), dramatic cinema lighting, no text or watermarks.")
+                        }
+                    } else {
+                        "Vertical 9:16 cinematic film still, scene ${idx + 1}, $categoryTitle, ${scene.visualPrompt}, dramatic lighting, photorealistic, no text"
+                    }
+
+                    for (imgModelName in IMAGE_MODEL_CASCADE) {
+                        try {
+                            val model = imageModelFor(imgModelName)
+                            val response = withTimeout(45_000L) {
+                                if (scaledInput != null) {
+                                    model.generateContent(
+                                        content {
+                                            image(scaledInput)
+                                            text(promptText)
+                                        }
+                                    )
+                                } else {
+                                    model.generateContent(promptText)
+                                }
+                            }
+                            val bmp = response.candidates.firstOrNull()
+                                ?.content?.parts?.filterIsInstance<ImagePart>()
+                                ?.firstOrNull()?.image
+                            if (bmp != null) {
+                                return@async bmp
+                            }
+                        } catch (e: CancellationException) {
+                            if (e is TimeoutCancellationException) {
+                                sharedErrMsg = "AI image generation timed out after 45s"
+                                logError("Timeout on $imgModelName scene $idx", e)
+                            } else {
+                                throw e
+                            }
+                        } catch (t: Throwable) {
+                            sharedErrMsg = t.localizedMessage ?: "AI image model unavailable"
+                            logError("Image generation failed on $imgModelName scene $idx", t)
+                        }
+                    }
+                    null
+                }
+            }.awaitAll()
+        }
+
+        val bitmaps = results.filterNotNull()
+        val finalErr = if (bitmaps.isEmpty()) sharedErrMsg else null
+        bitmaps to finalErr
     }
 
     /**
@@ -432,7 +485,9 @@ class GeminiSocialContentService {
         val voiceoverText = json.optString("voiceoverText").ifBlank {
             scenes.joinToString(". ") { it.caption }
         }
-        val cta = json.optString("cta").ifBlank { "वीडियो पसंद आए तो Save & Share ज़रूर करें! 🔥" }
+        val cta = json.optString("callToAction").ifBlank {
+            json.optString("cta").ifBlank { "वीडियो पसंद आए तो Save & Share ज़रूर करें! 🔥" }
+        }
 
         return StudioVideoPackage(
             title = title,

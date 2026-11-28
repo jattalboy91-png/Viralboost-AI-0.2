@@ -26,6 +26,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const action = String(body.action || 'text').trim().toLowerCase();
     const prompt = String(body.prompt || '').trim();
     const platform = String(body.platform || 'Instagram Reels & YouTube Shorts').trim();
     const tone = String(body.tone || 'High-Energy Viral (Hinglish)').trim();
@@ -38,6 +39,120 @@ module.exports = async function handler(req, res) {
 
     if (!prompt && !imageBase64) {
       return res.status(400).json({ ok: false, error: 'Prompt or image is required.' });
+    }
+
+    // 1) Optional Real Google Veo Video Generation via Gemini API (predictLongRunning)
+    if (action === 'veo') {
+      const veoModels = ['veo-2.0-generate-001', 'veo-3.0-generate-preview'];
+      let lastVeoErr = 'Veo video generation unavailable on this API key.';
+      for (const veoModel of veoModels) {
+        try {
+          const instanceObj = { prompt: prompt || 'Cinematic 9:16 vertical short reel' };
+          if (imageBase64) {
+            instanceObj.image = { bytesBase64Encoded: imageBase64, mimeType: imageMimeType };
+          }
+          const startResp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${veoModel}:predictLongRunning?key=${encodeURIComponent(apiKey)}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                instances: [instanceObj],
+                parameters: { aspectRatio: String(body.aspectRatio || '9:16') }
+              })
+            }
+          );
+          const startJson = await startResp.json();
+          if (!startResp.ok || !startJson?.name) {
+            lastVeoErr = startJson?.error?.message || `Veo HTTP ${startResp.status}`;
+            continue;
+          }
+          const opName = startJson.name;
+          for (let poll = 0; poll < 16; poll++) {
+            await new Promise((r) => setTimeout(r, 3500));
+            const pollResp = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${encodeURIComponent(apiKey)}`
+            );
+            const pollJson = await pollResp.json();
+            if (pollJson?.done) {
+              const sample =
+                pollJson?.response?.generateVideoResponse?.generatedSamples?.[0]?.video ||
+                pollJson?.response?.videos?.[0] ||
+                pollJson?.response?.generatedVideos?.[0]?.video ||
+                null;
+              if (sample?.bytesBase64Encoded) {
+                return res.status(200).json({
+                  ok: true,
+                  model: veoModel,
+                  mimeType: sample.mimeType || 'video/mp4',
+                  videoBase64: sample.bytesBase64Encoded
+                });
+              }
+              if (sample?.uri) {
+                const sep = sample.uri.includes('?') ? '&' : '?';
+                const vidResp = await fetch(`${sample.uri}${sep}key=${encodeURIComponent(apiKey)}`);
+                if (vidResp.ok) {
+                  const arrBuf = await vidResp.arrayBuffer();
+                  return res.status(200).json({
+                    ok: true,
+                    model: veoModel,
+                    mimeType: sample.mimeType || 'video/mp4',
+                    videoBase64: Buffer.from(arrBuf).toString('base64')
+                  });
+                }
+              }
+              lastVeoErr = pollJson?.error?.message || 'Veo completed without video output.';
+              break;
+            }
+          }
+        } catch (veoErr) {
+          lastVeoErr = veoErr?.message || String(veoErr);
+        }
+      }
+      return res.status(503).json({ ok: false, error: lastVeoErr });
+    }
+
+    // 2) AI Image Generation & Photo-to-AI Transformation (Nano Banana 2.1 / 3.1 Flash Lite Image)
+    if (action === 'image') {
+      const imgModels = ['gemini-nano-banana-2.1', 'gemini-3.1-flash-lite-image', 'gemini-3-pro-image'];
+      let lastImgErr = 'Image generation unavailable.';
+      const parts = [];
+      if (imageBase64) {
+        parts.push({ inlineData: { mimeType: imageMimeType, data: imageBase64 } });
+      }
+      parts.push({ text: prompt || 'Cinematic 9:16 vertical film still' });
+
+      for (const imgModel of imgModels) {
+        try {
+          const imgResp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${imgModel}:generateContent?key=${encodeURIComponent(apiKey)}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts }],
+                generationConfig: { responseModalities: ['IMAGE', 'TEXT'] }
+              })
+            }
+          );
+          const imgJson = await imgResp.json();
+          const outParts = imgJson?.candidates?.[0]?.content?.parts || [];
+          const inline = outParts.find((p) => p?.inlineData?.data);
+          if (imgResp.ok && inline?.inlineData?.data) {
+            const mime = inline.inlineData.mimeType || 'image/png';
+            return res.status(200).json({
+              ok: true,
+              model: imgModel,
+              mimeType: mime,
+              dataUrl: `data:${mime};base64,${inline.inlineData.data}`
+            });
+          }
+          lastImgErr = imgJson?.error?.message || `Image HTTP ${imgResp.status}`;
+        } catch (imgErr) {
+          lastImgErr = imgErr?.message || String(imgErr);
+        }
+      }
+      return res.status(502).json({ ok: false, error: lastImgErr });
     }
 
     const systemInstruction = String(
